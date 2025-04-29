@@ -1,0 +1,227 @@
+# Copyright 2025 DeepMind Technologies Limited. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+
+"""Wraps the Gemini Live API into a Processor.
+
+## Example usage
+
+```py
+p = LiveModel(
+    api_key=API_KEY,
+    model_name="gemini-2.0-flash-live-001",
+)
+```
+
+Given a stream of content `input_stream`, you can use the processor to generate
+a stream of content as follows:
+```py
+input_stream = processor.stream_content([processor.ProcessorPart('hello'),
+processor.ProcessorPart('world')])
+async for part in p(input_stream):
+    # Do something with part
+```
+"""
+
+import asyncio
+from collections.abc import AsyncIterable
+import logging
+from typing import Iterable, Optional
+from genai_processors import content_api
+from genai_processors import processor
+from google.genai import client
+from google.genai import types as genai_types
+
+
+PartTypes = content_api.ProcessorPartTypes
+ProcessorPart = content_api.ProcessorPart
+
+
+def to_parts(
+    msg: genai_types.LiveServerMessage,
+) -> Iterable[content_api.ProcessorPart]:
+  """Converts a LiveServerMessage to a stream of ProcessorParts."""
+  if msg.server_content:
+    custom_metadata = msg.server_content.to_json_dict()
+    if "model_turn" in custom_metadata:
+      del custom_metadata["model_turn"]
+    if msg.server_content.model_turn:
+      for part in msg.server_content.model_turn.parts:
+        yield content_api.ProcessorPart(
+            value=part,
+            role=msg.server_content.model_turn.role,
+        )
+    for k, v in custom_metadata.items():
+      value = ""
+      if k in ("input_transcription", "output_transcription"):
+        if "text" in v:
+          value = v["text"]
+        yield content_api.ProcessorPart(
+            value=value,
+            role="MODEL",
+            substream_name=k,
+        )
+      else:
+        yield content_api.ProcessorPart(
+            value="",
+            role="MODEL",
+            custom_metadata={k: v},
+        )
+  if msg.tool_call:
+    function_calls = msg.tool_call.function_calls
+    for function_call in function_calls:
+      yield content_api.ProcessorPart.from_function_call(
+          name=function_call.name,
+          args=function_call.args,
+          role="MODEL",
+          custom_metadata={"id": function_call.id},
+      )
+  if msg.tool_call_cancellation and msg.tool_call_cancellation.ids:
+    for function_call_id in msg.tool_call_cancellation.ids:
+      yield content_api.ProcessorPart.from_function_response(
+          name="",
+          response={"output": "cancelled"},
+          role="MODEL",
+          custom_metadata={"id": function_call_id},
+      )
+  if msg.usage_metadata:
+    yield content_api.ProcessorPart(
+        value="",
+        role="MODEL",
+        custom_metadata={"usage_metadata": msg.usage_metadata.to_json_dict()},
+    )
+
+  if msg.go_away:
+    yield content_api.ProcessorPart(
+        value="",
+        role="MODEL",
+        custom_metadata={"go_away": msg.go_away.to_json_dict()},
+    )
+
+  if msg.session_resumption_update:
+    yield content_api.ProcessorPart(
+        value="",
+        role="MODEL",
+        custom_metadata={
+            "session_resumption_update": (
+                msg.session_resumption_update.to_json_dict()
+            )
+        },
+    )
+
+
+class LiveProcessor(processor.Processor):
+  """Gemini Live API Processor to generate realtime content.
+
+  The realtime content captured via mic and camera should be passed to the
+  processor with the `realtime` substream name. The default substream is used
+  for standard content input.
+
+  An image sent on the default substream will be processed by the model as an
+  ad-hoc user input, not as a realtime input captured from realtime devices.
+  This lets the user send an image to the model and ask a question about it,
+  for example "What is this?", independently of the video stream being sent to
+  the model on the `realtime` substream.
+  """
+
+  def __init__(
+      self,
+      api_key: str,
+      model_name: str,
+      realtime_config: Optional[genai_types.LiveConnectConfigOrDict] = None,
+      debug_config: client.DebugConfig | None = None,
+      http_options: (
+          genai_types.HttpOptions | genai_types.HttpOptionsDict | None
+      ) = None,
+  ):
+    """Initializes the Live Processor.
+
+    Args:
+      api_key: The [API key](https://ai.google.dev/gemini-api/docs/api-key) to
+        use for authentication. Applies to the Gemini Developer API only.
+      model_name: The name of the model to use. See
+        https://ai.google.dev/gemini-api/docs/models for a list of available
+          models. Only use models with a `-live-` suffix.
+      realtime_config: The configuration for generating realtime content.
+      debug_config: Config settings that control network behavior of the client.
+        This is typically used when running test code.
+      http_options: Http options to use for the client. These options will be
+        applied to all requests made by the client. Example usage: `client =
+        genai.Client(http_options=types.HttpOptions(api_version='v1'))`.
+
+    Returns:
+      A `Processor` that calls the Genai API in a realtime aka live fashion.
+    """
+    self._client = client.Client(
+        api_key=api_key,
+        debug_config=debug_config,
+        http_options=http_options,
+    )
+    self._model_name = model_name
+    self._realtime_config = realtime_config
+
+  async def __call__(
+      self, content: AsyncIterable[ProcessorPart]
+  ) -> AsyncIterable[ProcessorPart]:
+
+    output_queue = asyncio.Queue[Optional[ProcessorPart]](maxsize=1_000)
+
+    async with self._client.aio.live.connect(
+        model=self._model_name,
+        config=self._realtime_config,
+    ) as session:
+
+      async def consume_content():
+        async for chunk_part in content:
+          if chunk_part.part.function_response:
+            await session.send_tool_response(
+                function_responses=chunk_part.part.function_response
+            )
+          elif chunk_part.substream_name == "realtime":
+            await session.send_realtime_input(media=chunk_part.part.inline_data)
+          elif not chunk_part.substream_name:
+            # Default substream.
+            content_parts = content_api.ProcessorContent(chunk_part)
+            await session.send_client_content(
+                turns=list(content_parts.all_parts),
+            )
+          else:
+            await output_queue.put(chunk_part)
+        await output_queue.put(None)
+
+      async def produce_content():
+        try:
+          while True:
+            async for response in session.receive():
+              for part in to_parts(response):
+                await output_queue.put(part)
+            # Allow `yield` if session.receive() does not return anything.
+            await asyncio.sleep(0)
+        finally:
+          await output_queue.put(None)
+
+      try:
+        async with asyncio.TaskGroup() as tg:
+          consume_content_task = tg.create_task(consume_content())
+          produce_content_task = tg.create_task(produce_content())
+
+          while chunk := await output_queue.get():
+            yield chunk
+
+          consume_content_task.cancel()
+          produce_content_task.cancel()
+
+      except Exception as e:
+        logging.exception("Failed to process content: %s", e)
+        raise
