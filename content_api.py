@@ -219,7 +219,7 @@ class ProcessorPart:
   def get_custom_metadata(self, key: str, default=None) -> Any:
     """Returns custom metadata for a given key."""
     if self._custom_metadata:
-      return self._custom_metadata.get(key, default=default)
+      return self._custom_metadata.get(key, default)
     return None
 
   @property

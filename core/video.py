@@ -88,7 +88,7 @@ class VideoIn(processor.Processor):
     # This prevents the blue tint in the video feed
     frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     img = PIL.Image.fromarray(frame_rgb)  # Now using RGB frame
-    img.thumbnail([1024, 1024])
+    img.thumbnail((1024, 1024))
 
     image_io = io.BytesIO()
     img.save(image_io, format="jpeg")
@@ -129,7 +129,7 @@ class VideoIn(processor.Processor):
   def _get_single_screen_frame(self):
     """Get a single frame from the screen."""
     try:
-      from mss import mss
+      from mss import mss  # pytype: disable=import-error # pylint: disable=g-import-not-at-top
     except ImportError:
       raise ImportError("Please install mss package using 'pip install mss'")
     sct = mss.mss()
