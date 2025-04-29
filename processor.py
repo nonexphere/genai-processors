@@ -995,7 +995,7 @@ async def process_streams_parallel(
 
 
 def dataclass_to_part(
-    dataclass: dataclasses.dataclass,
+    dataclass: Any,
     substream_name: str | None = None,
     custom_metadata: dict[str, Any] | None = None,
 ) -> ProcessorPart:

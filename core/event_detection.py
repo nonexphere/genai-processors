@@ -133,7 +133,9 @@ class EventState:
   # processor sends a detection output.
   sensitivity: int = 1
   # Output to return when the event is detected.
-  output: Optional[content_api.ProcessorContent] = None
+  output: content_api.ProcessorContent = dataclasses.field(
+      default_factory=content_api.ProcessorContent
+  )
 
 
 class EventDetection(processor.Processor):
@@ -172,7 +174,9 @@ class EventDetection(processor.Processor):
 
     self._event_states: dict[str, EventState] = {}
     for event_name, output in output_dict.items():
-      self._event_states[event_name.lower()] = EventState(output=output)
+      self._event_states[event_name.lower()] = EventState(
+          output=content_api.ProcessorContent(output)
+      )
     if sensitivity:
       for event_name, sensitivity_value in sensitivity.items():
         self._event_states[event_name.lower()].sensitivity = sensitivity_value
@@ -251,7 +255,8 @@ class EventDetection(processor.Processor):
       ):
         event_state.event_detected = True
         event_state.detection_time_sec = time.perf_counter()
-        output_queue.put_nowait(event_state.output)
+        for part in event_state.output:
+          output_queue.put_nowait(part)
         self._last_event_detected = event_name
 
   async def __call__(
