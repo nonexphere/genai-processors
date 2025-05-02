@@ -43,10 +43,12 @@ be a string that matches one of the values of the Enum.
 ```py
 import enum
 
+# Only use the enum.auto() function to define the values of the enum. Or ensure
+# all the string values are lower case.
 class EventName(enum.StrEnum):
-  SUNNY = "sunny"
-  RAINING = "raining"
-  RAINING_WITH_MEATBALLS = "raining_with_meatballs"
+  SUNNY = enum.auto()
+  RAINING = enum.auto()
+  RAINING_WITH_MEATBALLS = enum.auto()
 ```
 
 The config passed to the constructor should contain the response schema for
@@ -102,6 +104,7 @@ import time
 from typing import AsyncIterable, Optional
 from genai_processors import content_api
 from genai_processors import processor
+from genai_processors.core import timestamp
 from google import genai
 from google.genai import types as genai_types
 
@@ -132,6 +135,13 @@ class EventState:
   # Number of detection in a row that should happen before the event detection
   # processor sends a detection output.
   sensitivity: int = 1
+  # When events represent transitions between states (e.g. activities: still,
+  # moving, running, ...) some of them can be more specific states included in
+  # others (e.g. running is included in moving). If we are already in a more
+  # specific state we don't want to to transition to a less specific one. This
+  # set represents the events that are more generic than the current event and
+  # should be ignored when we're already in this state.
+  included_in: set[str] = dataclasses.field(default_factory=set)
   # Output to return when the event is detected.
   output: content_api.ProcessorContent = dataclasses.field(
       default_factory=content_api.ProcessorContent
@@ -146,8 +156,9 @@ class EventDetection(processor.Processor):
       api_key: str,
       model: str,
       config: genai_types.GenerateContentConfig,
-      output_dict: dict[str, content_api.ProcessorPart],
+      output_dict: dict[str, content_api.ProcessorContentTypes],
       sensitivity: Optional[dict[str, int]] = None,
+      included_in: Optional[dict[str, set[str]]] = None,
       max_images: int = 5,
   ):
     """Initializes the event detection processor.
@@ -163,6 +174,8 @@ class EventDetection(processor.Processor):
       sensitivity: A dictionary of event names to the number of detection in a
         row that should happen before the event detection processor sends a
         detection output.
+      included_in: A dictionary of event names to the set of events that are
+        more specific than the key, e.g. {"running": {"moving"}}.
       max_images: The maximum number of images to keep in the input stream.
     """
     self._client = genai.Client(api_key=api_key)
@@ -177,14 +190,24 @@ class EventDetection(processor.Processor):
       self._event_states[event_name.lower()] = EventState(
           output=content_api.ProcessorContent(output)
       )
+      # All events are included in themselves.
+      self._event_states[event_name.lower()].included_in = set(
+          [event_name.lower()]
+      )
     if sensitivity:
       for event_name, sensitivity_value in sensitivity.items():
         self._event_states[event_name.lower()].sensitivity = sensitivity_value
 
+    if included_in:
+      for event_name, included_set in included_in.items():
+        self._event_states[event_name.lower()].included_in.update(included_set)
     self._event_counter = collections.defaultdict(int)
     self._last_event_detected = ""
 
-    self._images = collections.deque(maxlen=max_images)
+    # deque of (image, timestamp) tuples.
+    self._images = collections.deque[tuple[ProcessorPart, float]](
+        maxlen=max_images
+    )
 
   def pause_detection(self, event_name: str):
     """Pause event detection for `event_name`.
@@ -226,10 +249,19 @@ class EventDetection(processor.Processor):
       output_queue: asyncio.Queue[ProcessorPart],
   ):
     """Detects an event in the image."""
+    images_with_timestamp = []
+    start_time = None
+    for image, t in self._images:
+      if start_time is None:
+        start_time = t
+      images_with_timestamp.append(image)
+      images_with_timestamp.append(
+          content_api.ProcessorPart(timestamp.to_timestamp(t - start_time))
+      )
     response = await self._client.aio.models.generate_content(
         model=self._model,
         config=self._config,
-        contents=list(self._images),
+        contents=images_with_timestamp,
     )
     if not response.text:
       logging.debug(
@@ -237,10 +269,6 @@ class EventDetection(processor.Processor):
           time.perf_counter(),
       )
       return
-    else:
-      print(
-          f"{time.perf_counter()} - Event detection response: {response.text}"
-      )
 
     # Only interrupt if the event is detected(commentating on) and not already
     # interrupted.
@@ -250,9 +278,12 @@ class EventDetection(processor.Processor):
       event_state = self._event_states[event_name]
       if (
           not event_state.paused
-          and event_name != self._last_event_detected
+          and self._last_event_detected not in event_state.included_in
           and self._event_counter[event_name] >= event_state.sensitivity
       ):
+        logging.debug(
+            "%s - New event detection: %s", time.perf_counter(), response.text
+        )
         event_state.event_detected = True
         event_state.detection_time_sec = time.perf_counter()
         for part in event_state.output:
@@ -273,8 +304,7 @@ class EventDetection(processor.Processor):
           async for part in content:
             output_queue.put_nowait(part)
             if content_api.is_image(part.mimetype):
-              img = part
-              self._images.append(img)
+              self._images.append((part.part, time.perf_counter()))
               if image_detection_task is None or image_detection_task.done():
                 # Only run one image detection task at a time when the previous
                 # one is done. Use a single image to minimize detection latency.

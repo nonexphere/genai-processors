@@ -19,6 +19,7 @@ import functools
 import io
 from typing import Any
 
+from absl import logging
 from google.genai import types as genai_types
 import PIL.Image
 
@@ -168,6 +169,20 @@ class ProcessorPart:
     self._role = value
 
   @property
+  def bytes(self) -> bytes | None:
+    """Returns part contents as bytes.
+
+    Returns:
+      Text encoded into bytes or bytes from inline data if the underlying part
+      is a Blob.
+    """
+    if self.part.text:
+      return self.text.encode()
+    if isinstance(self.part.inline_data, genai_types.Blob):
+      return self.part.inline_data.data
+    return None
+
+  @property
   def substream_name(self) -> str:
     """Returns the stream this part belongs to.
 
@@ -223,6 +238,29 @@ class ProcessorPart:
     return None
 
   @property
+  def function_call(self) -> genai_types.FunctionCall | None:
+    """Returns function call."""
+    return self.part.function_call
+
+  @property
+  def tool_cancellation(self) -> str | None:
+    """Returns an id of a function call to be cancelled.
+
+    If the part is not a tool cancellation request, returns None.
+
+    Returns:
+      The id of the function call to be cancelled or None if this part is not a
+      tool cancellation from the model.
+    """
+    if not self.part.function_response:
+      return None
+    if self.part.function_response.name != 'tool_cancellation':
+      return None
+    if not self.part.function_response.response:
+      return None
+    return self.part.function_response.response.get('function_call_id', None)
+
+  @property
   def pil_image(self) -> PIL.Image.Image:
     """Returns PIL.Image representation of the Part."""
     if not mime_types.is_image(self.mimetype):
@@ -251,9 +289,25 @@ class ProcessorPart:
 
   @classmethod
   def from_function_response(
-      cls, *, name: str, response: dict[str, Any], **kwargs
+      cls,
+      *,
+      name: str,
+      response: dict[str, Any],
+      function_call_id: str | None = None,
+      # TODO(elisseeff): Add this back once the SDK is updated.
+      # will_continue: bool = False,
+      # scheduling: genai_types.FunctionResponseScheculing | None = None,
+      **kwargs,
   ) -> 'ProcessorPart':
-    part = genai_types.Part.from_function_response(name=name, response=response)
+    part = genai_types.Part(
+        function_response=genai_types.FunctionResponse(
+            id=function_call_id,
+            name=name,
+            response=response,
+            # will_continue=will_continue,
+            # scheduling=scheduling,
+        )
+    )
     return cls(part, **kwargs)
 
   @classmethod
@@ -271,6 +325,34 @@ class ProcessorPart:
         outcome=outcome, output=output
     )
     return cls(part, **kwargs)
+
+  @classmethod
+  def from_tool_cancellation(
+      cls, *, function_call_id: str, **kwargs
+  ) -> 'ProcessorPart':
+    """Constructs a ProcessorPart from a tool cancellation id.
+
+    The role is overridden to MODEL.
+
+    Args:
+      function_call_id: The id of the function call to be cancelled.
+      **kwargs: Additional arguments for the ProcessorPart constructor.
+
+    Returns:
+      A ProcessorPart of type tool cancellation.
+    """
+    part = genai_types.Part.from_function_response(
+        name='tool_cancellation',
+        response={'function_call_id': function_call_id},
+    )
+    if 'role' in kwargs and kwargs['role'].upper() != 'MODEL':
+      logging.warning(
+          'Role {kwargs["role"]} is not supported for tool cancellation.'
+          ' Overriding it with the model role.'
+      )
+    extra_args = kwargs
+    extra_args['role'] = 'MODEL'
+    return cls(part, **extra_args)
 
 
 class ProcessorContent:
