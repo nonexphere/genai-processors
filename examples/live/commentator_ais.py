@@ -1,0 +1,173 @@
+r"""Live Commentary WebSocket server for AI Studio.
+
+An applet within AI Studio provides a UI. It gets audio and video from a camera
+or screencast, sends it to this agent and playbacks the audio produced by the
+agent.
+The agent uses Genai Processors to transform incoming streams of parts and
+passes them to Gemini Live API to generate the commentary.
+
+This file contains plumbing to connect the agent to AI Studio.
+
+TODO(antoinehe): add link to the AI Studio applet code here.
+
+See commentator.py for the actual implementation.
+
+To run the server locally:
+
+```shell
+python third_party/py/genai_processors/examples/live/commentator_ais.py
+```
+"""
+
+import argparse
+import asyncio
+import base64
+import dataclasses
+import json
+import os
+import time
+from typing import AsyncIterable
+from absl import logging
+from genai_processors import content_api
+from genai_processors.core import rate_limit_audio
+from genai_processors.examples.live import commentator
+from websockets.asyncio.server import serve
+from websockets.asyncio.server import ServerConnection
+
+
+# You need to define the API key in the environment variables.
+# export GOOGLE_API_KEY=...
+API_KEY = os.environ["GOOGLE_API_KEY"]
+
+# Mimetype for a command chunk. A command represents a specific instruction for
+# the server to trigger actions or modify its state.
+_COMMAND_MIMETYPE = "application/x-command"
+
+
+@dataclasses.dataclass(frozen=True)
+class MediaPart:
+  """A part of media data."""
+
+  base64data: str
+  mime_type: str
+
+  @classmethod
+  def from_json(cls, json_part: str) -> "MediaPart":
+    """Creates a Media Part from a JSON part."""
+    json_dict = json.loads(json_part)
+    return MediaPart(
+        base64data=json_dict["data"],
+        mime_type=json_dict["mime_type"],
+    )
+
+  def is_image(self) -> bool:
+    """Returns whether the part is an image."""
+    return self.mime_type.startswith("image/")
+
+  def is_audio(self) -> bool:
+    """Returns whether the part is audio."""
+    return self.mime_type.startswith("audio/")
+
+  def is_reset_command(self) -> bool:
+    """Returns whether the part is a reset command."""
+    return self.mime_type == _COMMAND_MIMETYPE and self.base64data == "RESET"
+
+
+class AIStudioConnection:
+  """A WebSocket connection with AI Studio."""
+
+  def __init__(self, ais_ws: ServerConnection):
+    self._ais_ws = ais_ws
+
+  async def send(
+      self,
+      output_stream: AsyncIterable[content_api.ProcessorPart],
+  ):
+    """Sends audio to AIS."""
+    async for part in output_stream:
+      if content_api.is_audio(part.mimetype):
+        await self._ais_ws.send(
+            json.dumps({
+                "data": base64.b64encode(part.part.inline_data.data).decode(),
+                "mime_type": part.mimetype,
+            })
+        )
+      elif part.text:
+        await self._ais_ws.send(
+            json.dumps({
+                "data": part.text,
+                "mime_type": "text/plain",
+            })
+        )
+      else:
+        logging.debug(
+            "%s - Chunk not sent to AIS: %s", time.perf_counter(), part
+        )
+
+  async def receive(self) -> AsyncIterable[content_api.ProcessorPart]:
+    """Reads chunks from AIS."""
+    async for json_part in self._ais_ws:
+      part = MediaPart.from_json(json_part)
+      if part.is_image() or part.is_audio():
+        yield content_api.ProcessorPart(
+            base64.b64decode(part.base64data),
+            mimetype=part.mime_type,
+            substream_name="realtime",
+            role="USER",
+        )
+      elif part.is_reset_command():
+        # Stop reading from the WebSocket until the agent has been reset.
+        logging.debug(
+            "%s - RESET command received. Resetting the agent's state.",
+            time.perf_counter(),
+        )
+        return
+      else:
+        # TODO(elisseeff): Handle text chunks.
+        logging.warning("Unknown input type: %s", part.mime_type)
+
+
+async def live_commentary(ais_websocket: ServerConnection):
+  """Runs the live commentary agent on AI Studio input/output streams."""
+  ais = AIStudioConnection(ais_websocket)
+
+  # Running in a loop as the agent can receive a RESET command from AIS, in
+  # which case the live commentary loop needs to be reinitialized.
+  while True:
+    commentator_processor = commentator.create_live_commentator(
+        API_KEY
+    ) + rate_limit_audio.RateLimitAudio(commentator.RECEIVE_SAMPLE_RATE)
+
+    await ais.send(commentator_processor(ais.receive()))
+
+
+async def run_server(port: int) -> None:
+  """Starts the WebSocket server."""
+  async with serve(
+      handler=live_commentary,
+      host="localhost",
+      port=port,
+      max_size=2 * 1024 * 1024,  # 2 MiB
+  ) as server:
+    print(f"Server started on port {port}")
+    await server.serve_forever()
+
+
+if __name__ == "__main__":
+  parser = argparse.ArgumentParser()
+  parser.add_argument(
+      "--port",
+      type=int,
+      default=8765,
+      help="Port to run this WebSocket server on.",
+  )
+  parser.add_argument(
+      "--debug",
+      type=bool,
+      default=False,
+      help="Enable debug logging.",
+  )
+  args = parser.parse_args()
+  if args.debug:
+    logging.set_verbosity(logging.DEBUG)
+  asyncio.run(run_server(args.port))

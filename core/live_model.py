@@ -26,18 +26,28 @@ p = LiveModel(
 
 Given a stream of content `input_stream`, you can use the processor to generate
 a stream of content as follows:
+
 ```py
-input_stream = processor.stream_content([processor.ProcessorPart('hello'),
-processor.ProcessorPart('world')])
+input_stream = processor.stream_content(
+    [
+      processor.ProcessorPart('hello'),
+      processor.ProcessorPart('world')
+    ]
+  )
 async for part in p(input_stream):
-    # Do something with part
+  # Do something with part
 ```
+
+The Live Model processor only considers parts with the substream name "realtime"
+as input (sent to real-time methods), or with the default substream name (sent
+to content generate method).
 """
 
 import asyncio
 from collections.abc import AsyncIterable
-import logging
+import time
 from typing import Iterable, Optional
+from absl import logging
 from genai_processors import content_api
 from genai_processors import processor
 from google.genai import client
@@ -185,18 +195,48 @@ class LiveProcessor(processor.Processor):
       async def consume_content():
         async for chunk_part in content:
           if chunk_part.part.function_response:
+            logging.debug(
+                "%s - Live Model: sending tool response: %s",
+                time.perf_counter(),
+                chunk_part,
+            )
             await session.send_tool_response(
                 function_responses=chunk_part.part.function_response
             )
-          elif chunk_part.substream_name == "realtime":
+          elif (
+              chunk_part.substream_name == "realtime"
+              and chunk_part.part.inline_data
+          ):
             await session.send_realtime_input(media=chunk_part.part.inline_data)
+          elif chunk_part.substream_name == "realtime" and content_api.is_text(
+              chunk_part.mimetype
+          ):
+            logging.debug(
+                "%s - Live Model: sending realtime input: %s",
+                time.perf_counter(),
+                chunk_part.text,
+            )
+            await session.send_realtime_input(text=chunk_part.text)
           elif not chunk_part.substream_name:
             # Default substream.
-            content_parts = content_api.ProcessorContent(chunk_part)
+            logging.debug(
+                "%s - Live Model: sending client content: %s",
+                time.perf_counter(),
+                chunk_part.part,
+            )
+            turn_complete = chunk_part.get_custom_metadata("turn_complete")
             await session.send_client_content(
-                turns=list(content_parts.all_parts),
+                turns=genai_types.Content(
+                    parts=[chunk_part.part], role=chunk_part.role
+                ),
+                turn_complete=True if turn_complete is None else turn_complete,
             )
           else:
+            logging.debug(
+                "%s - Live Model: part passed through: %s",
+                time.perf_counter(),
+                chunk_part,
+            )
             await output_queue.put(chunk_part)
         await output_queue.put(None)
 
@@ -204,6 +244,17 @@ class LiveProcessor(processor.Processor):
         try:
           while True:
             async for response in session.receive():
+              if not (
+                  response.server_content
+                  and response.server_content.model_turn
+                  and response.server_content.model_turn.parts
+                  and response.server_content.model_turn.parts[0].inline_data
+              ):
+                logging.debug(
+                    "%s - Live Model Response: %s",
+                    time.perf_counter(),
+                    response,
+                )
               for part in to_parts(response):
                 await output_queue.put(part)
             # Allow `yield` if session.receive() does not return anything.
