@@ -126,6 +126,7 @@ class RateLimitAudio(processor.Processor):
           while not audio_queue.empty():
             audio_queue.get_nowait()
           self._audio_duration = 0.0
+          audio_queue.put_nowait(part)
         elif (
             not self._delay_other_parts
             or part.substream_name in context_lib.get_reserved_substreams()
@@ -153,6 +154,11 @@ class RateLimitAudio(processor.Processor):
               part.part.inline_data.data, self._sample_rate
           )
         else:
+          # Wait for the audio to be played out before passing on to the next
+          # non-audio part.
+          await self._asyncio_sleep(
+              max(0, start_playing_time - self._perf_counter())
+          )
           await output_queue.put(part)
       await output_queue.put(None)
 

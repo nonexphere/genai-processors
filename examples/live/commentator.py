@@ -16,27 +16,27 @@
 r"""Live commentator using GenAI Processors.
 
 You can run this example from a CLI directly or from AI Studio.
+
 See commentator_cli.py or commentator_ais.py for usage.
 
 The commentator observes the incoming video/audio feed and produces an audio
 commentary on it. While it is the agent who drives the conversation, it is
 interactive and can be interruped/corrected by a user.
 
-This example makes a good use of the various ways the Gemini API can receive
+This example makes good use of the various ways the Gemini API can receive
 content:
  * `system_instruction`: guidelines for the model provided by the agent
    developers. They are hardcoded in this file in the PROMPT_PARTS variable.
  * `session.send_client_content` is used for turn-by-turn scenarios and is
    analogous to what `client.generate_content` does. We use it to provide any
-   additional context (non audio and video feeds) to the model. `EventDetector`
-   uses this option as it is optimal for its fixed cadence, turn-based
-   operation.
+   additional context (non audio and video feeds) to the model. The
+   `event_detection` processor uses this option as it is optimal for its fixed
+   cadence, turn-based operation.
  * `session.send_realtime_input` is used for realtime interactive input and has
    built-in voice activation detection (VAD). This allows us to have lower
    latency and makes the model automatically respond to user's utterances. Note
-   that
-   audio commentary from the model itself needs to be filtered out to avoid VAD
-   activating erroneously. We rely on the echo cancellation built into the
+   that audio commentary from the model itself needs to be filtered out to avoid
+   VAD activating erroneously. We rely on the echo cancellation built into the
    browser for that.
  * **Async function calls**: Gemini API now supports function calls that don't
    block the generation and can even stream their output back to the model. If
@@ -49,10 +49,10 @@ commentator agent, on the contrary, drives the conversation, keeps commentating
 while still reacting to events and to what the user asks.
 
 A naive approach would be to generate one second of commentary every second.
- However, models can produce output much faster than realtime, and forcing
- them to be in a lockstep with the real world will either leave the TPUs
-idle or induce a huge overhead on maintaining or recalculating the KV cache.
- Also text-to-speech works better if it can work on longer sentences.
+However, models can produce output much faster than realtime, and forcing them
+to be in a lockstep with the real world will either leave the TPUs idle or
+induce a huge overhead on maintaining or recalculating the KV cache. Also
+text-to-speech works better if it can work on longer sentences.
 
 So, we employ a more event-driven approach:
 
@@ -69,17 +69,22 @@ process. We register the `start_commentating` tool which drives the timing when
 the model should be making comments. It is the model itself, not a tool, that
 produces comments. By using `behaviour="NON_BLOCKING"` the tool is able to
 schedule the generation of the next comment without interrupting the current
-one.
-It also makes the model ingest the latest observations and tells the model
-whether
- it should continue its previous comment or react to an interruption.
+one. It also makes the model ingest the latest observations and tells the model
+whether it should continue its previous comment or react to an interruption.
+
+Async function calls also allow the model to send structured signals to the
+client while the default output is Audio. We use a `wait_for_user` async
+function to let the model decide when to pause the commentary and wait for the
+user to do something. As soon as the client receives the `wait_for_user` signal,
+it pauses the commentary and sends back an empty response that does not trigger
+any model generate call. The silent response is specific to async function calls
+and enables this "fire-and-forget" calling style.
 
 By representing the agent as an async function we also give the model ability to
  start and stop commentating at will. If the user asks to stop commentating, the
  model will cancel the tool call and turn into a regular voice activated agent.
  When asked to start commentating, the model will invoke `start_commentating`
- tool,
-which will awake the event detection loop.
+ tool, which will awake the event detection loop.
 """
 
 import asyncio
@@ -114,6 +119,10 @@ NO_DETECTION_SENSITIVITY_SEC = 3
 # Audio config
 RECEIVE_SAMPLE_RATE = 24000
 
+# Maximum number of seconds the commentator will wait for a user signal before
+# continuing the commentary.
+MAX_SILENCE_WAIT_FOR_USER_SEC = 5
+
 # User message when the agent detects it should continue commentating.
 COMMENT_MSG = (
     "Continue commentating on what you see, do not repeat the same comments."
@@ -121,13 +130,31 @@ COMMENT_MSG = (
     " hear you and are in the same room. Remember this is a conversation."
     " Do not cancel the commentating unless the user explicitly asks you to."
 )
-# User message when the agent detects something special that should interrupt
-# the commentating.
+# Response when the agent detects something special that should interrupt the
+# commentating while it is ongoing.
 INTERRUPT_COMMENT_MSG = (
-    "Interrupt the current commentary to comment what you see now. Start your"
-    " comment as if you were interrupting yourself. Then commentate on the new"
-    " event that just triggered this interruption. Do not cancel the"
-    " commentary."
+    "Interrupt the current commentary to comment what you see now. If there is"
+    " no commentary going on, start a new one. Start your comment as if you"
+    " were interrupting yourself or interrupting a silence. Then commentate on"
+    " the new event that just triggered this interruption. If this event is"
+    " related to what you asked the user to do, continue the previous comment"
+    " or instructions. Do not cancel the commentary."
+)
+
+# Response when the agent is waiting for a user signal and receives an interrupt
+# from the event detection processor.
+WAIT_FOR_USER_MSG = (
+    "Check if you need to make a `wait_for_user` call to wait for something to"
+    " happen. If you make a `wait_for_user` call, stay silent, do not output"
+    " anything but this call. Otherwise, start commentating, or answer the user"
+    " request or move to the next steps of your instructions or of the"
+    " conversation."
+)
+
+# Response when the agent has waited too long for the user to respond.
+RESUME_COMMENT_MSG = (
+    "Resume commentating. Do not repeat the same comments but check if anything"
+    " explains why the user is not responding."
 )
 
 # Async function declarations.
@@ -152,7 +179,28 @@ TOOLS = [
                 # behaviour="NON_BLOCKING",
             )
         ]
-    )
+    ),
+    genai_types.Tool(
+        function_declarations=[
+            genai_types.FunctionDeclaration(
+                name="wait_for_user",
+                description=(
+                    "Waits for the user to respond to your question or to do"
+                    " something special on the video stream, e.g. user picks up"
+                    " a pen & a piece of paper. This function will return"
+                    " quickly with an empty response. The next user request"
+                    " implies there has been a user response. It is up to the"
+                    " caller of this function to decide then whether to wait"
+                    " for the user again."
+                ),
+                # We use the non-blocking behaviour to ensure the model will not
+                # output anything when receiving the function response:
+                # scheduling is set to `SILENT`.
+                # TODO(elisseeff): Re-enable once we the Async Fns are launched.
+                # behaviour="NON_BLOCKING",
+            )
+        ]
+    ),
 ]
 
 # Prompt for the live api processor.
@@ -174,16 +222,38 @@ PROMPT_PARTS = [
         " adjust your style or tone, you should do so."
     ),
     (
+        "You can be asked to do many different things, such as teaching a skill"
+        ", helping drawing something, explaing how to go into a yoga position,"
+        " or play a game like Simon says. You should do your best to help and"
+        " drive the conversation in that case, that is, be the coach or teacher"
+        " for the user in the video stream."
+    ),
+    (
+        "In some situations, you will need to wait for the user to do something"
+        " or to respond to your question or instructions. When this happens, be"
+        " silent and call `wait_for_user` to let the user respond or do what"
+        " they were instructed to do."
+    ),
+    (
         "When something changes in the image, video or audio, you"
         " should commentate about it interrupting what you were saying"
         " before. It is important to stay relevant to what is happening"
         " recently and not in the images long before."
     ),
     (
-        "Always commentate assuming the persons in the camera hear you"
+        "Always commentate assuming the persons in the video stream hear you"
         " and are in the same room as you. You should always address"
-        " the persons in front ofthe camera as 'you'. You should engage"
-        " with them."
+        " the persons in the video stream as in a normal conversation and not"
+        " say he or she when referring to them."
+    ),
+    (
+        "Do not make long comments at each turn, just one or two sentences. You"
+        " should not repeat the same comments twice."
+    ),
+    (
+        "Remember to always address the persons in the video stream in the"
+        " first person, and not he or she. You can address them by their"
+        " location or how they are dressed."
     ),
 ]
 
@@ -251,7 +321,7 @@ class GenerationRequestInfo:
   generation_start_sec: Optional[float] = None
   # Type of the generation request.
   generation_type: Optional[GenerationType] = None
-  # Time when the audio responsestream started. None if no audio stream was
+  # Time when the audio response stream started. None if no audio stream was
   # received.
   time_audio_start: Optional[float] = None
   # TTFT of the model call. None if no model call was made or if a model call is
@@ -308,6 +378,9 @@ class CommentatorState(enum.Enum):
   # The commentator is interrupting from a detection but has not received audio
   # parts yet.
   INTERRUPTED_FROM_DETECTION = 8
+  # The commentator is waiting for the user to respond to a question or
+  # instruction, or to an interruptio to occur.
+  WAITING_FOR_USER = 9
 
 
 class CommentatorAction(enum.Enum):
@@ -328,6 +401,8 @@ class CommentatorAction(enum.Enum):
   REQUEST_FROM_COMMENTATOR = 6
   # Interrupts the current request (user barging in or event interruption).
   INTERRUPT = 7
+  # Wait for the user to say or do something.
+  WAIT_FOR_USER = 8
 
 
 @dataclasses.dataclass
@@ -359,6 +434,9 @@ class CommentatorStateMachine:
           self.generation_request_info = None
           self.id = None
           return
+        case CommentatorAction.WAIT_FOR_USER:
+          self.state = CommentatorState.WAITING_FOR_USER
+          return
         case CommentatorAction.INTERRUPT:
           if (
               self.state != CommentatorState.REQUESTING_INTERRUPTION
@@ -366,7 +444,6 @@ class CommentatorStateMachine:
           ):
             # The user is interrupting, we can drop any comment request.
             self.generation_request = None
-            self.start_generation(GenerationType.USER_REQUEST)
             self.state = CommentatorState.USER_IS_TALKING
             return
           # Do not return here, we need to handle the case below when self.state
@@ -378,20 +455,20 @@ class CommentatorStateMachine:
         case CommentatorState.OFF:
           pass
         case (
-            CommentatorState.COMMENTATING | CommentatorState.RESPONDING_TO_USER
+            CommentatorState.COMMENTATING
+            | CommentatorState.RESPONDING_TO_USER
+            | CommentatorState.WAITING_FOR_USER
         ):
           match action:
             case CommentatorAction.REQUEST_FROM_COMMENTATOR:
-              self.state = CommentatorState.REQUESTING_COMMENT
-              self.start_generation(GenerationType.COMMENT)
+              if self.state != CommentatorState.WAITING_FOR_USER:
+                self.state = CommentatorState.REQUESTING_COMMENT
               return
             case CommentatorAction.REQUEST_FROM_USER:
               self.state = CommentatorState.REQUESTING_USER_RESPONSE
-              self.start_generation(GenerationType.USER_REQUEST)
               return
             case CommentatorAction.REQUEST_FROM_INTERRUPTION:
               self.state = CommentatorState.REQUESTING_INTERRUPTION
-              self.start_generation(GenerationType.EVENT_INTERRUPTION)
               return
             case CommentatorAction.STREAM_MEDIA_PART:
               if isinstance(state_arg, genai_types.Blob):
@@ -415,7 +492,6 @@ class CommentatorStateMachine:
               return
             case CommentatorAction.REQUEST_FROM_INTERRUPTION:
               self.state = CommentatorState.REQUESTING_INTERRUPTION
-              self.start_generation(GenerationType.EVENT_INTERRUPTION)
               return
             case _:
               pass
@@ -431,6 +507,10 @@ class CommentatorStateMachine:
           match action:
             case CommentatorAction.INTERRUPT:
               self.state = CommentatorState.INTERRUPTED_FROM_DETECTION
+              return
+            case CommentatorAction.STREAM_MEDIA_PART:
+              self.state = CommentatorState.COMMENTATING
+              self.update(action, state_arg)
               return
             case _:
               pass
@@ -451,7 +531,7 @@ class CommentatorStateMachine:
           self.state,
       )
 
-  def start_generation(self, generation_type: GenerationType):
+  def mark_start_generation(self, generation_type: GenerationType):
     logging.debug(
         "%s - Start generation: %s", time.perf_counter(), generation_type
     )
@@ -469,7 +549,8 @@ class CommentatorStateMachine:
       return
     if self.generation_request_info.ttft_sec is None:
       self.generation_request_info.update(media_part)
-      self.ttfts.append(time.perf_counter())
+      if self.generation_request_info.ttft_sec is not None:
+        self.ttfts.append(self.generation_request_info.ttft_sec)
     else:
       self.generation_request_info.update(media_part)
 
@@ -487,6 +568,12 @@ class CommentatorStateMachine:
 
   def tentative_trigger_time(self) -> Optional[float]:
     """Returns the tentative time when the commentator will trigger."""
+    logging.debug(
+        "%s - generation_request_info: %s ttft: %s",
+        time.perf_counter(),
+        self.generation_request_info,
+        self.ttfts,
+    )
     if (
         self.state != CommentatorState.OFF
         and self.generation_request_info
@@ -494,7 +581,10 @@ class CommentatorStateMachine:
     ):
       return (
           self.generation_request_info.time_audio_start
-          + self.generation_request_info.audio_duration
+          # In WAITING_FOR_USER state, the audio duration can be 0. We add a
+          # minimum duration to make sure we trigger another model generate
+          # at a reasonable time.
+          + max(5.0, self.generation_request_info.audio_duration)
           - self.predict_next_ttft()
       )
 
@@ -506,57 +596,99 @@ class LiveCommentator(processor.Processor):
   substream name. Any other parts will be considered as parts of a user request.
   """
 
-  def __init__(
-      self,
-      live_api_processor: live_model.LiveProcessor,
-      event_detection_processor: Optional[
-          event_detection.EventDetection
-      ] = None,
-  ):
+  def __init__(self, live_api_processor: live_model.LiveProcessor):
     """Initializes the processor.
 
     Args:
       live_api_processor: The live API processor to use.
-      event_detection_processor: The event detection processor to use. If None,
-        the processor will not detect events, the comments will be not be
-        interrupted, and the commentator will need to be started manually by the
-        user , e.g. by saying "start commentating".
     """
-    self._detect_processor = event_detection_processor
-    if event_detection_processor is None:
-      self._processor = processor.passthrough()
-    else:
-      self._processor = event_detection_processor
-    self._processor = self._processor + live_api_processor
+    self._processor = live_api_processor
     self._commentator = CommentatorStateMachine()
     # Historic time to first token (TTFT) of the recent requests.
     # We use it request the next comment just before the current one finishes.
     self.ttfts = collections.deque(maxlen=50)
+    # Task to resume the commentator if there is a too long pause.
+    self._resume_task = None
 
-  async def _trigger_comment(
+  def _commentate(
+      self,
+      input_queue: asyncio.Queue[content_api.ProcessorPart],
+      will_continue: bool = False,
+      message: str = COMMENT_MSG,
+      scheduling: genai_types.FunctionResponseScheculing = genai_types.FunctionResponseScheculing.WHEN_IDLE,
+  ) -> None:
+    """Triggers a comment from the model. Input queue is fed to the model."""
+    input_queue.put_nowait(
+        content_api.ProcessorPart.from_function_response(
+            function_call_id=self._commentator.id,
+            name="start_commentating",
+            response={"output": message},
+            # TODO(elisseeff): uncomment this once the SDK is launched.
+            # will_continue=will_continue,
+            # scheduling=scheduling,
+        )
+    )
+
+  def _cancel_commentate(
+      self, input_queue: asyncio.Queue[content_api.ProcessorPart], fn_id: str
+  ):
+    """Cancels a comment from the model. Input queue is fed to the model."""
+    input_queue.put_nowait(
+        content_api.ProcessorPart.from_function_response(
+            function_call_id=fn_id,
+            name="start_commentating",
+            response={},
+            # TODO(elisseeff): uncomment this once the SDK is launched.
+            # will_continue=False,
+            # scheduling=genai_types.FunctionResponseScheculing.SILENT,
+        )
+    )
+
+  def _cancel_wait_for_user(
+      self, input_queue: asyncio.Queue[content_api.ProcessorPart], fn_id: str
+  ):
+    """Cancels wait_for_user from the model. Input queue is fed to the model."""
+    input_queue.put_nowait(
+        content_api.ProcessorPart.from_function_response(
+            function_call_id=fn_id,
+            name="wait_for_user",
+            response={},  # "output": "ok"},
+            # TODO(elisseeff): uncomment this once the SDK is launched.
+            # will_continue=False,
+            # scheduling=genai_types.FunctionResponseScheculing.SILENT,
+        )
+    )
+
+  async def _resume_comment(
       self,
       at_time: float,
       input_queue: asyncio.Queue[content_api.ProcessorPart],
       will_continue: bool = False,
   ):
-    """Triggers a comment from the model."""
-    # Resume event detection EVENT_DETECTION_DURATION_SEC before the comment is
-    # triggered to have a chance to cancel next comment if no event is detected.
-    if self._detect_processor is not None:
-      await asyncio.sleep(
-          max(
-              0,
-              # Add 1 second to the delay to make sure we have time to do
-              # NO_DETECTION_SENSITIVITY_SEC detections.
-              (
-                  at_time
-                  - (NO_DETECTION_SENSITIVITY_SEC + 1)
-                  - time.perf_counter()
-              ),
-          )
-      )
-      self._detect_processor.resume_detection(EventTypes.DETECTION)
-      self._detect_processor.resume_detection(EventTypes.NO_DETECTION)
+    """Resumes a comment from the model."""
+    logging.debug(
+        "%s - WAITING FOR USER - Resume comment in : %s seconds",
+        time.perf_counter(),
+        at_time - time.perf_counter(),
+    )
+    await asyncio.sleep(max(0, at_time - time.perf_counter()))
+    self._commentator.update(CommentatorAction.REQUEST_FROM_COMMENTATOR)
+    self._commentator.mark_start_generation(GenerationType.COMMENT)
+    self._commentate(input_queue, will_continue, message=RESUME_COMMENT_MSG)
+
+  def _cancel_resume_comment(self):
+    """Cancels the resume comment task if it exists."""
+    if self._resume_task is not None:
+      self._resume_task.cancel()
+
+  async def _schedule_comment(
+      self,
+      at_time: float,
+      input_queue: asyncio.Queue[content_api.ProcessorPart],
+      will_continue: bool = False,
+  ):
+    """Schedules and triggers a comment from the model."""
+    self._cancel_resume_comment()
     # Wait for the last moment to trigger the comment. This minimizes the
     # delay between any event on the video stream and the comment.
     await asyncio.sleep(max(0, at_time - time.perf_counter()))
@@ -564,16 +696,21 @@ class LiveCommentator(processor.Processor):
     # the user is talking.
     self._commentator.update(CommentatorAction.REQUEST_FROM_COMMENTATOR)
     if self._commentator.state == CommentatorState.REQUESTING_COMMENT:
-      input_queue.put_nowait(
-          content_api.ProcessorPart.from_function_response(
-              function_call_id=self._commentator.id,
-              name="start_commentating",
-              response={"output": COMMENT_MSG},
-              # TODO(elisseeff): uncomment this once the SDK is launched.
-              # will_continue=will_continue,
-              # scheduling=genai_types.FunctionResponseScheculing.WHEN_IDLE,
-          )
+      logging.debug(
+          "%s - Triggering comment: %s", time.perf_counter(), COMMENT_MSG
       )
+      self._commentator.mark_start_generation(GenerationType.COMMENT)
+      self._commentate(input_queue, will_continue)
+    elif self._commentator.state == CommentatorState.WAITING_FOR_USER:
+      if self._resume_task is None or self._resume_task.done():
+        self._resume_task = asyncio.create_task(
+            self._resume_comment(
+                time.perf_counter() + MAX_SILENCE_WAIT_FOR_USER_SEC,
+                input_queue,
+                will_continue,
+            )
+        )
+      logging.debug("%s - Waiting for user", time.perf_counter())
 
   async def __call__(
       self, content: AsyncIterable[content_api.ProcessorPart]
@@ -588,154 +725,187 @@ class LiveCommentator(processor.Processor):
         [content, utils.dequeue(input_queue)], stop_on_first=True
     )
 
-    try:
-      async with asyncio.TaskGroup() as tg:
-        async for part in self._processor(input_stream):
-          # Handle function calls.
-          if part.function_call:
-            logging.debug(
-                "%s - Received tool call: %s",
-                time.perf_counter(),
-                part,
-            )
-            fn_id = part.get_custom_metadata("id")
-            if part.part.function_call.name == "start_commentating":
-              if self._commentator.state != CommentatorState.OFF:
-                # We already have a comment in progress, ignore this one and
-                # cancel this start_commentating async fn call (done by setting
-                # will_continue=False).
-                logging.debug(
-                    "%s - Ignoring start_commentating: %s",
-                    time.perf_counter(),
-                    fn_id,
-                )
-                input_queue.put_nowait(
-                    content_api.ProcessorPart.from_function_response(
-                        function_call_id=fn_id,
-                        name="start_commentating",
-                        response={},
-                        # TODO(elisseeff): uncomment this once the SDK is launched.
-                        # will_continue=False,
-                        # scheduling=genai_types.FunctionResponseScheculing.WHEN_IDLE,
-                    )
-                )
-              else:
-                self._commentator.update(CommentatorAction.TURN_ON, fn_id)
-                self._commentator.update(CommentatorAction.REQUEST_FROM_USER)
-            continue
-
-          # Handle start of turn, considered as a user request.
-          if part.get_custom_metadata("start_of_user_turn"):
-            self._commentator.update(CommentatorAction.REQUEST_FROM_USER)
-            continue
-
-          # Handle function cancellation:
-          if part.tool_cancellation:
-            if part.tool_cancellation == self._commentator.id:
-              logging.debug(
-                  "%s - Cancelling comment function call: %s",
-                  time.perf_counter(),
-                  self._commentator.id,
-              )
-              self._commentator.update(CommentatorAction.TURN_OFF)
-              if trigger_comment_task is not None:
-                trigger_comment_task.cancel()
-            continue
-
-          # Handle when the model is done generating. All audios parts have
-          # arrived at this point but they have not been all played back yet.
-          if part.get_custom_metadata("generation_complete"):
-            logging.debug("%s - generation_complete", time.perf_counter())
+    async with asyncio.TaskGroup() as tg:
+      start_time = time.perf_counter()
+      async for part in self._processor(input_stream):
+        logging.log_every_n_seconds(
+            logging.INFO,
+            "%s - commentator running for: %s",
+            10,
+            time.perf_counter(),
+            timestamp.to_timestamp(time.perf_counter() - start_time),
+        )
+        # Handle function calls.
+        if part.function_call:
+          logging.info(
+              "%s - Received tool call: %s",
+              time.perf_counter(),
+              part,
+          )
+          fn_id = part.get_custom_metadata("id")
+          if part.part.function_call.name == "start_commentating":
             if self._commentator.state != CommentatorState.OFF:
-              # Schedule the next commentator turn.
-              tentative_trigger_time = (
-                  self._commentator.tentative_trigger_time()
+              # We already have a comment in progress, ignore this one.
+              logging.info(
+                  "%s - Ignoring start_commentating: %s",
+                  time.perf_counter(),
+                  fn_id,
               )
-              if tentative_trigger_time is not None:
-                if self._detect_processor is not None:
-                  self._detect_processor.pause_detection(EventTypes.DETECTION)
-                  self._detect_processor.pause_detection(
-                      EventTypes.NO_DETECTION
-                  )
-                trigger_comment_task = tg.create_task(
-                    self._trigger_comment(
-                        tentative_trigger_time,
-                        input_queue=input_queue,
-                        will_continue=True,
-                    )
-                )
-
-          # Handle interruption from the user.
-          if part.get_custom_metadata("interrupted"):
+              self._cancel_commentate(input_queue, fn_id)
+            else:
+              self._commentator.update(CommentatorAction.TURN_ON, fn_id)
+              self._commentator.mark_start_generation(GenerationType.COMMENT)
+              self._commentator.update(
+                  CommentatorAction.REQUEST_FROM_COMMENTATOR
+              )
+          elif part.part.function_call.name == "wait_for_user":
+            # Respond immediately to the wait_for_user async fn call making it
+            # a fire-and-forget call from the model. The main different with
+            # a sync call is the `SILENT` scheduling that will not trigger
+            # a model generate call.
             logging.debug(
-                "%s - Turn interrupted - user %s", time.perf_counter(), part
+                "%s - Received wait_for_user: %s",
+                time.perf_counter(),
+                fn_id,
             )
-            self._commentator.update(CommentatorAction.INTERRUPT)
+            self._cancel_wait_for_user(input_queue, fn_id)
+            self._commentator.update(CommentatorAction.WAIT_FOR_USER, fn_id)
+            if self._resume_task is None or self._resume_task.done():
+              self._schedule_comment(
+                  at_time=self._commentator.tentative_trigger_time(),
+                  input_queue=input_queue,
+              )
+          continue
+
+        # Handle start of turn, considered as a user request.
+        if part.get_custom_metadata("start_of_user_turn"):
+          self._commentator.mark_start_generation(GenerationType.USER_REQUEST)
+          self._commentator.update(CommentatorAction.REQUEST_FROM_USER)
+          continue
+
+        # Handle function cancellation:
+        if part.tool_cancellation:
+          if part.tool_cancellation == self._commentator.id:
+            logging.debug(
+                "%s - Cancelling comment function call: %s",
+                time.perf_counter(),
+                self._commentator.id,
+            )
+            self._commentator.update(CommentatorAction.TURN_OFF)
             if trigger_comment_task is not None:
               trigger_comment_task.cancel()
-            # An interrupt can also come from an async fn response that cancels
-            # the current generation. Check that the last call was a user
-            # request. The async fn response case will be handled when we
-            # receive the next audio part.
-            if self._commentator.state == CommentatorState.USER_IS_TALKING:
-              logging.debug("%s - Turn interrupted - user", time.perf_counter())
-              yield content_api.ProcessorPart(
-                  "", role="MODEL", custom_metadata={"interrupted": True}
-              )
-            continue
+          continue
 
-          # Handle interrupt request from the event detection. Do not interrupt
-          # yet, wait for the interruption to be confirmed by the model.
-          if part.get_custom_metadata("interrupt_request"):
-            self._commentator.update(
-                CommentatorAction.REQUEST_FROM_INTERRUPTION
-            )
-            if (
-                self._commentator.state
-                == CommentatorState.REQUESTING_INTERRUPTION
-                and self._commentator.id is not None
-            ):
-              input_queue.put_nowait(
-                  content_api.ProcessorPart.from_function_response(
-                      function_call_id=self._commentator.id,
-                      name="start_commentating",
-                      response={"output": INTERRUPT_COMMENT_MSG},
-                      # TODO(elisseeff): uncomment this once the SDK is launched
-                      # will_continue=True,
-                      # scheduling=genai_types.FunctionResponseScheculing.INTERRUPT,
+        # Handle when the model is done generating. All audios parts have
+        # arrived at this point but they have not been all played back yet.
+        if part.get_custom_metadata("generation_complete"):
+          logging.debug("%s - generation_complete", time.perf_counter())
+
+          yield processor.ProcessorPart(
+              "",
+              role="MODEL",
+              custom_metadata={"generation_complete": True},
+          )
+
+          if self._commentator.state != CommentatorState.OFF:
+            # Schedule the next commentator turn.
+            tentative_trigger_time = self._commentator.tentative_trigger_time()
+            if tentative_trigger_time is not None:
+              trigger_comment_task = tg.create_task(
+                  self._schedule_comment(
+                      at_time=tentative_trigger_time,
+                      input_queue=input_queue,
+                      will_continue=True,
                   )
               )
 
-          if part.part.inline_data:
-            if (
-                self._commentator.state
-                == CommentatorState.INTERRUPTED_FROM_DETECTION
-            ):
-              # First audio part after an interruption from the event
-              # detection. Interrupt the audio stream currently being played and
-              # considers the new audio parts.
-              logging.debug(
-                  "%s - Yield interrupt from interruption, audio should"
-                  " stop now",
-                  time.perf_counter(),
-              )
-              yield content_api.ProcessorPart(
-                  "", role="MODEL", custom_metadata={"interrupted": True}
-              )
-            self._commentator.update(
-                CommentatorAction.STREAM_MEDIA_PART, part.part.inline_data
+        # Handle interruption from the user.
+        if part.get_custom_metadata("interrupted"):
+          self._commentator.update(CommentatorAction.INTERRUPT)
+          if trigger_comment_task is not None:
+            trigger_comment_task.cancel()
+          if self._resume_task is not None:
+            self._resume_task.cancel()
+          # An interrupt can also come from an async fn response that cancels
+          # the current generation. Check that the last call was a user
+          # request. The async fn response case will be handled when we
+          # receive the next audio part.
+          if self._commentator.state == CommentatorState.USER_IS_TALKING:
+            logging.debug("%s - Turn interrupted - user", time.perf_counter())
+            self._commentator.mark_start_generation(GenerationType.USER_REQUEST)
+            # Delay the generation start to model how long the user talked.
+            # The interrupt signal is received when user starts talk.
+            # `generation_start_sec` should be the time when the user stops
+            # talking.
+            self._commentator.generation_request_info.generation_start_sec = (
+                time.perf_counter() + 2
+            )
+            yield content_api.ProcessorPart(
+                "", role="MODEL", custom_metadata={"interrupted": True}
+            )
+          else:
+            logging.debug(
+                "%s - Turn interrupted - detection", time.perf_counter()
+            )
+          continue
+
+        # Handle interrupt request from the event detection. Do not interrupt
+        # yet, wait for the interruption to be confirmed by the model.
+        if part.get_custom_metadata("interrupt_request"):
+          if self._commentator.state == CommentatorState.WAITING_FOR_USER:
+            response = WAIT_FOR_USER_MSG
+          else:
+            response = INTERRUPT_COMMENT_MSG
+          self._commentator.update(CommentatorAction.REQUEST_FROM_INTERRUPTION)
+          if self._resume_task is not None:
+            self._resume_task.cancel()
+          if (
+              self._commentator.state
+              == CommentatorState.REQUESTING_INTERRUPTION
+              and self._commentator.id is not None
+          ):
+            self._commentator.mark_start_generation(
+                GenerationType.EVENT_INTERRUPTION
+            )
+            self._commentate(
+                input_queue,
+                will_continue=True,
+                message=response,
+                scheduling=genai_types.FunctionResponseScheculing.INTERRUPT,
             )
 
-          yield part
+        # Handle audio parts received from the live API.
+        if part.part.inline_data:
+          if (
+              self._commentator.state
+              == CommentatorState.INTERRUPTED_FROM_DETECTION
+          ):
+            # First audio part after an interruption from the event
+            # detection. Interrupt the audio stream currently being played and
+            # considers the new audio parts.
+            logging.debug(
+                "%s - Yield interrupt from interruption, audio should stop now",
+                time.perf_counter(),
+            )
+            yield content_api.ProcessorPart(
+                "", role="MODEL", custom_metadata={"interrupted": True}
+            )
+          self._commentator.update(
+              CommentatorAction.STREAM_MEDIA_PART, part.part.inline_data
+          )
 
-        # We're done receiving audio, cancel the trigger comment task if it
-        # exists
-        if trigger_comment_task is not None:
-          trigger_comment_task.cancel()
-          await trigger_comment_task
-    except Exception as e:
-      logging.exception("LiveCommentary got exception:")
-      raise e
+        yield part
+
+      # We're done receiving audio, cancel the trigger comment task if it
+      # exists
+      if trigger_comment_task is not None:
+        trigger_comment_task.cancel()
+    if self._resume_task is not None:
+      try:
+        self._resume_task.cancel()
+        await self._resume_task
+      except asyncio.CancelledError:
+        pass
 
 
 def create_live_commentator(api_key: str) -> processor.Processor:
@@ -803,7 +973,7 @@ def create_live_commentator(api_key: str) -> processor.Processor:
       realtime_config=genai_types.LiveConnectConfig(
           tools=TOOLS,
           system_instruction=PROMPT_PARTS,
-          # output_audio_transcription={},
+          output_audio_transcription={},
           realtime_input_config=genai_types.RealtimeInputConfig(
               turn_coverage="TURN_INCLUDES_ALL_INPUT"
           ),
@@ -811,7 +981,6 @@ def create_live_commentator(api_key: str) -> processor.Processor:
       ),
       http_options=genai_types.HttpOptions(api_version="v1alpha"),
   )
-  return timestamp.add_timestamps() + LiveCommentator(
-      live_api_processor=live_api_processor,
-      event_detection_processor=event_detection_processor,
+  return event_detection_processor + LiveCommentator(
+      live_api_processor=live_api_processor
   )

@@ -19,13 +19,11 @@ from __future__ import annotations
 import abc
 import asyncio
 from collections.abc import AsyncIterable, Callable, Iterable, Sequence
-import dataclasses
 import functools
 import inspect
-import json
 import types
 import typing
-from typing import Any, Protocol, Self, TypeAlias, TypeVar, overload
+from typing import Any, Protocol, Self, TypeAlias, overload
 
 import dataclasses_json
 from google.genai import types as genai_types
@@ -992,44 +990,6 @@ async def process_streams_parallel(
   """Processes a sequence of content streams using the specified processor."""
   async for c in streams.concat(*[processor(s) for s in content_streams]):
     yield c
-
-
-def dataclass_to_part(
-    dataclass: Any,
-    substream_name: str | None = None,
-    custom_metadata: dict[str, Any] | None = None,
-) -> ProcessorPart:
-  """Creates a ProcessorPart object with the JSON representation of an arbitrary dataclass.
-
-  Args:
-      dataclass: An instance of an arbitrary dataclass.
-      substream_name: (Optional) The substream name to set on the part.
-      custom_metadata: (Optional) Custom metadata to set on the part.
-
-  Returns:
-      A ProcessorPart object containing a JSON representation of the dataclass.
-  """
-  return ProcessorPart(
-      json.dumps(dataclasses.asdict(dataclass)),
-      substream_name=substream_name,
-      custom_metadata=custom_metadata,
-  )
-
-
-T = TypeVar('T')
-
-
-def part_to_dataclass(part: ProcessorPart, json_dataclass: type[T]) -> T:
-  """Returns the dataclass representation of a ProcessorPart."""
-  if not part.text:
-    raise ValueError('Part text is empty')
-  try:
-    # JSON conversions are provided by the dataclass_json decorator.
-    return json_dataclass.from_json(part.text)  # pytype: disable=attribute-error
-  except AttributeError as e:
-    raise ValueError(
-        f'{json_dataclass.__name__} is not a valid json dataclass'
-    ) from e
 
 
 def to_genai_part(

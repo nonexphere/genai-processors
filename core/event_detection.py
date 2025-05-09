@@ -99,9 +99,9 @@ detection before you generate an output for the event detection.
 import asyncio
 import collections
 import dataclasses
-import logging
 import time
 from typing import AsyncIterable, Optional
+from absl import logging
 from genai_processors import content_api
 from genai_processors import processor
 from genai_processors.core import timestamp
@@ -220,6 +220,7 @@ class EventDetection(processor.Processor):
     event_state.paused = True
     event_state.event_detected = False
     self._event_counter[event_name.lower()] = 0
+    self._last_event_detected = ""
 
   def resume_detection(self, event_name: str) -> None:
     """Resumes event detection for `event_name`."""
@@ -263,6 +264,12 @@ class EventDetection(processor.Processor):
         config=self._config,
         contents=images_with_timestamp,
     )
+    logging.debug(
+        "%s - Event detection response: %s / %s",
+        time.perf_counter(),
+        response.text,
+        self._last_event_detected,
+    )
     if not response.text:
       logging.debug(
           "%s - No text response from the event detection model",
@@ -278,16 +285,16 @@ class EventDetection(processor.Processor):
       event_state = self._event_states[event_name]
       if (
           not event_state.paused
-          and self._last_event_detected not in event_state.included_in
           and self._event_counter[event_name] >= event_state.sensitivity
       ):
-        logging.debug(
-            "%s - New event detection: %s", time.perf_counter(), response.text
-        )
-        event_state.event_detected = True
-        event_state.detection_time_sec = time.perf_counter()
-        for part in event_state.output:
-          output_queue.put_nowait(part)
+        if self._last_event_detected not in event_state.included_in:
+          logging.debug(
+              "%s - New event detection: %s", time.perf_counter(), response.text
+          )
+          event_state.event_detected = True
+          event_state.detection_time_sec = time.perf_counter()
+          for part in event_state.output:
+            output_queue.put_nowait(part)
         self._last_event_detected = event_name
 
   async def __call__(
@@ -296,28 +303,31 @@ class EventDetection(processor.Processor):
     """Run the event detection processor."""
     output_queue = asyncio.Queue()
 
-    try:
-      async with asyncio.TaskGroup() as tg:
+    async with asyncio.TaskGroup() as tg:
 
-        async def consume_content():
-          image_detection_task = None
-          async for part in content:
-            output_queue.put_nowait(part)
-            if content_api.is_image(part.mimetype):
-              self._images.append((part.part, time.perf_counter()))
-              if image_detection_task is None or image_detection_task.done():
-                # Only run one image detection task at a time when the previous
-                # one is done. Use a single image to minimize detection latency.
-                image_detection_task = tg.create_task(
-                    self.detect_event(output_queue)
-                )
-          output_queue.put_nowait(None)
+      async def consume_content():
+        image_detection_task = None
+        async for part in content:
+          output_queue.put_nowait(part)
+          if content_api.is_image(part.mimetype):
+            self._images.append((part.part, time.perf_counter()))
+            if image_detection_task is None or image_detection_task.done():
+              # Only run one image detection task at a time when the previous
+              # one is done. Use a single image to minimize detection latency.
+              image_detection_task = tg.create_task(
+                  self.detect_event(output_queue)
+              )
+        output_queue.put_nowait(None)
+        if image_detection_task is not None:
+          try:
+            image_detection_task.cancel()
+            await image_detection_task
+          except asyncio.CancelledError:
+            pass
 
-        tg.create_task(consume_content())
+      consume_content_task = tg.create_task(consume_content())
 
-        while chunk := await output_queue.get():
-          yield chunk
+      while chunk := await output_queue.get():
+        yield chunk
 
-    except Exception as e:
-      print_exception("Event detection", e)
-      raise e
+      await consume_content_task

@@ -115,12 +115,17 @@ ALL_SUPPORTED_INPUT_TYPES = (
 
 def is_text(mime: str) -> bool:
   """Returns whether the content is a human-readable text."""
-  return mime in INPUT_TEXT_TYPES
+  return mime in INPUT_TEXT_TYPES or mime.startswith('text/')
 
 
 def is_json(mime: str) -> bool:
   """Returns whether the content is a human-readable json."""
-  return mime == TEXT_JSON
+  return mime == TEXT_JSON or mime.startswith(TEXT_JSON)
+
+
+def is_dataclass(mime: str) -> bool:
+  """Returns whether the content is a dataclass."""
+  return mime.startswith('application/json; type=')
 
 
 def is_image(mime: str) -> bool:

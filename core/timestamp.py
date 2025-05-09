@@ -15,7 +15,6 @@
 """Processor adding timestamps to content."""
 
 import functools
-import symtable
 import time
 from typing import AsyncIterable
 

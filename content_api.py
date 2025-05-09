@@ -15,9 +15,11 @@
 """Syntax sugar for working with Processor `Content` and `Part` wrappers."""
 
 from collections.abc import Callable, Iterable, Iterator
+import dataclasses
 import functools
 import io
-from typing import Any
+import json
+from typing import Any, TypeVar
 
 from absl import logging
 from google.genai import types as genai_types
@@ -212,7 +214,9 @@ class ProcessorPart:
     Raises:
       ValueError if part has no text.
     """
-    if not mime_types.is_text(self.mimetype):
+    if not mime_types.is_text(self.mimetype) and not mime_types.is_json(
+        self.mimetype
+    ):
       raise ValueError('Part is not text.')
     return self.part.text or ''
 
@@ -259,6 +263,27 @@ class ProcessorPart:
     if not self.part.function_response.response:
       return None
     return self.part.function_response.response.get('function_call_id', None)
+
+  T = TypeVar('T')
+
+  def get_dataclass(self, json_dataclass: type[T]) -> T:
+    """Returns representation of the Part as a given dataclass.
+
+    Args:
+      json_dataclass: A dataclass that can be converted to/from JSON.
+
+    Returns:
+      The dataclass representation of the Part.
+    """
+    if not mime_types.is_dataclass(self.mimetype):
+      raise ValueError('Part is not a dataclass.')
+    try:
+      # JSON conversions are provided by the dataclass_json decorator.
+      return json_dataclass.from_json(self.text)  # pytype: disable=attribute-error
+    except AttributeError as e:
+      raise ValueError(
+          f'{json_dataclass.__name__} is not a valid json dataclass'
+      ) from e
 
   @property
   def pil_image(self) -> PIL.Image.Image:
@@ -353,6 +378,14 @@ class ProcessorPart:
     extra_args = kwargs
     extra_args['role'] = 'MODEL'
     return cls(part, **extra_args)
+
+  @classmethod
+  def from_dataclass(cls, *, dataclass: Any, **kwargs) -> 'ProcessorPart':
+    part = ProcessorPart(
+        json.dumps(dataclasses.asdict(dataclass)),
+        mimetype=f'application/json; type={type(dataclass).__name__}',
+    )
+    return cls(part, **kwargs)
 
 
 class ProcessorContent:

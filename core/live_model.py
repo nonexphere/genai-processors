@@ -262,17 +262,12 @@ class LiveProcessor(processor.Processor):
         finally:
           await output_queue.put(None)
 
-      try:
-        async with asyncio.TaskGroup() as tg:
-          consume_content_task = tg.create_task(consume_content())
-          produce_content_task = tg.create_task(produce_content())
+      async with asyncio.TaskGroup() as tg:
+        consume_content_task = tg.create_task(consume_content())
+        produce_content_task = tg.create_task(produce_content())
 
-          while chunk := await output_queue.get():
-            yield chunk
+        while chunk := await output_queue.get():
+          yield chunk
 
-          consume_content_task.cancel()
-          produce_content_task.cancel()
-
-      except Exception as e:
-        logging.exception("Failed to process content: %s", e)
-        raise
+        consume_content_task.cancel()
+        produce_content_task.cancel()

@@ -93,6 +93,7 @@ class AIStudioConnection:
 
   def __init__(self, ais_ws: ServerConnection):
     self._ais_ws = ais_ws
+    self.is_resetting = False
 
   async def send(
       self,
@@ -100,6 +101,9 @@ class AIStudioConnection:
   ):
     """Sends audio to AIS."""
     async for part in output_stream:
+      if self.is_resetting:
+        return
+
       if content_api.is_audio(part.mimetype):
         await self._ais_ws.send(
             json.dumps({
@@ -112,6 +116,20 @@ class AIStudioConnection:
             json.dumps({
                 "data": part.text,
                 "mime_type": "text/plain",
+            })
+        )
+      elif part.get_custom_metadata("generation_complete", False):
+        await self._ais_ws.send(
+            json.dumps({
+                "data": "GENERATION_COMPLETE",
+                "mime_type": "application/x-state",
+            })
+        )
+      elif part.get_custom_metadata("interrupted", False):
+        await self._ais_ws.send(
+            json.dumps({
+                "data": "INTERRUPTED",
+                "mime_type": "application/x-state",
             })
         )
       else:
@@ -136,6 +154,7 @@ class AIStudioConnection:
             "%s - RESET command received. Resetting the agent's state.",
             time.perf_counter(),
         )
+        self.is_resetting = True
         return
       else:
         # TODO(elisseeff): Handle text chunks.
@@ -153,7 +172,12 @@ async def live_commentary(ais_websocket: ServerConnection):
         API_KEY
     ) + rate_limit_audio.RateLimitAudio(commentator.RECEIVE_SAMPLE_RATE)
 
-    await ais.send(commentator_processor(ais.receive()))
+    try:
+      await ais.send(commentator_processor(ais.receive()))
+    except Exception as e:  # pylint: disable=broad-exception-caught
+      logging.debug("Resetting live commentary after receiving error : %s", e)
+
+    ais.is_resetting = False
 
 
 async def run_server(port: int) -> None:
