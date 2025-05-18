@@ -13,25 +13,27 @@
 # limitations under the License.
 # ==============================================================================
 
-r"""Live Commentary WebSocket server for AI Studio.
+r"""Live Commentator WebSocket server for AI Studio.
 
 An applet within AI Studio provides a UI. It gets audio and video from a camera
 or screencast, sends it to this agent and playbacks the audio produced by the
 agent.
+
 The agent uses Genai Processors to transform incoming streams of parts and
 passes them to Gemini Live API to generate the commentary.
 
 This file contains plumbing to connect the agent to AI Studio.
 
-TODO(antoinehe): add link to the AI Studio applet code here.
-
 See commentator.py for the actual implementation.
 
 To run the server locally:
 
-```shell
-python third_party/py/genai_processors/examples/live/commentator_ais.py
-```
+ * Install the dependencies with `pip install genai-processors`.
+ * Access the applet at
+ https://aistudio.google.com/app/apps/github/google/genai-processors/examples/live/ais_app.
+ * Define a GOOGLE_API_KEY environment variable with your API key.
+ * Launch the commentator agent: `python3 ./commentator_ais.py`.
+ * Allow the applet to use a camera and enable one of the video sources.
 """
 
 import argparse
@@ -42,21 +44,31 @@ import json
 import os
 import time
 from typing import AsyncIterable
+
 from absl import logging
 from genai_processors import content_api
-from genai_processors.core import rate_limit_audio
+# copybara:strip_begin
 from genai_processors.examples.live import commentator
+# copybara:strip_end_and_replace_begin
+# import commentator
+# copybara:replace_end
 from websockets.asyncio.server import serve
 from websockets.asyncio.server import ServerConnection
-
+from websockets.exceptions import ConnectionClosed
 
 # You need to define the API key in the environment variables.
 # export GOOGLE_API_KEY=...
 API_KEY = os.environ["GOOGLE_API_KEY"]
 
-# Mimetype for a command chunk. A command represents a specific instruction for
+# Mimetype for a command part. A command represents a specific instruction for
 # the server to trigger actions or modify its state.
 _COMMAND_MIMETYPE = "application/x-command"
+
+# Config parts can be sent to this server to configure the live commentator.
+_CONFIG_MIMETYPE = "application/x-config"
+
+# Mimetype to represent the state of either the client or the server.
+_STATE_MIMETYPE = "application/x-state"
 
 
 @dataclasses.dataclass(frozen=True)
@@ -87,6 +99,30 @@ class MediaPart:
     """Returns whether the part is a reset command."""
     return self.mime_type == _COMMAND_MIMETYPE and self.base64data == "RESET"
 
+  def is_config(self) -> bool:
+    """Returns whether the part is a config."""
+    return self.mime_type == _CONFIG_MIMETYPE
+
+  def is_mic_off(self) -> bool:
+    """Returns whether the part indicates the client has turned off the mic."""
+    return self.mime_type == _STATE_MIMETYPE and self.base64data == "MIC_OFF"
+
+
+@dataclasses.dataclass
+class LiveCommentatorConfig:
+  """Config for the live commentator."""
+
+  chattiness: float = 0.5
+
+  @classmethod
+  def from_json(cls, json_config: str) -> "LiveCommentatorConfig":
+    """Creates a LiveCommentatorConfig from a JSON config."""
+    json_dict = json.loads(json_config)
+    config = LiveCommentatorConfig()
+    if (chattiness := json_dict.get("chattiness", None)) is not None:
+      config.chattiness = chattiness
+    return config
+
 
 class AIStudioConnection:
   """A WebSocket connection with AI Studio."""
@@ -94,6 +130,7 @@ class AIStudioConnection:
   def __init__(self, ais_ws: ServerConnection):
     self._ais_ws = ais_ws
     self.is_resetting = False
+    self.live_commentator_config = LiveCommentatorConfig()
 
   async def send(
       self,
@@ -118,18 +155,18 @@ class AIStudioConnection:
                 "mime_type": "text/plain",
             })
         )
-      elif part.get_custom_metadata("generation_complete", False):
+      elif part.get_metadata("generation_complete", False):
         await self._ais_ws.send(
             json.dumps({
                 "data": "GENERATION_COMPLETE",
-                "mime_type": "application/x-state",
+                "mime_type": _STATE_MIMETYPE,
             })
         )
-      elif part.get_custom_metadata("interrupted", False):
+      elif part.get_metadata("interrupted", False):
         await self._ais_ws.send(
             json.dumps({
                 "data": "INTERRUPTED",
-                "mime_type": "application/x-state",
+                "mime_type": _STATE_MIMETYPE,
             })
         )
       else:
@@ -148,6 +185,13 @@ class AIStudioConnection:
             substream_name="realtime",
             role="USER",
         )
+      elif part.is_mic_off():
+        yield content_api.ProcessorPart(
+            "",
+            substream_name="realtime",
+            role="USER",
+            metadata={"audio_stream_end": True},
+        )
       elif part.is_reset_command():
         # Stop reading from the WebSocket until the agent has been reset.
         logging.debug(
@@ -156,8 +200,18 @@ class AIStudioConnection:
         )
         self.is_resetting = True
         return
+      elif part.is_config():
+        self.live_commentator_config = LiveCommentatorConfig.from_json(
+            part.base64data
+        )
+        logging.debug(
+            "%s - Config received: %s",
+            time.perf_counter(),
+            self.live_commentator_config,
+        )
+        self.is_resetting = True
+        return
       else:
-        # TODO(elisseeff): Handle text chunks.
         logging.warning("Unknown input type: %s", part.mime_type)
 
 
@@ -169,15 +223,32 @@ async def live_commentary(ais_websocket: ServerConnection):
   # which case the live commentary loop needs to be reinitialized.
   while True:
     commentator_processor = commentator.create_live_commentator(
-        API_KEY
-    ) + rate_limit_audio.RateLimitAudio(commentator.RECEIVE_SAMPLE_RATE)
-
+        API_KEY,
+        chattiness=ais.live_commentator_config.chattiness,
+        unsafe_string_list=None,
+    )
     try:
       await ais.send(commentator_processor(ais.receive()))
     except Exception as e:  # pylint: disable=broad-exception-caught
-      logging.debug("Resetting live commentary after receiving error : %s", e)
+      logging.debug(
+          "%s - Resetting live commentary after receiving error : %s",
+          time.perf_counter(),
+          e,
+      )
 
     ais.is_resetting = False
+
+    # Exit the loop if the connection is closed.
+    try:
+      await ais_websocket.send(
+          json.dumps({
+              "data": "HEALTH_CHECK",
+              "mime_type": _STATE_MIMETYPE,
+          })
+      )
+    except ConnectionClosed:
+      logging.debug("Connection between AIS and agent has been closed.")
+      break
 
 
 async def run_server(port: int) -> None:

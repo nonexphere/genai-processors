@@ -49,7 +49,7 @@ async def _add_timestamps(
           to_timestamp(time.perf_counter() - start, with_ms=with_ms),
           substream_name=substream_name,
           # Do not trigger a model generate call when the timestamp is added.
-          custom_metadata={"turn_complete": False},
+          metadata={"turn_complete": False},
       )
     yield part
 

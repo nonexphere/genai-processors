@@ -20,7 +20,6 @@ from typing import AsyncIterable, Optional
 from genai_processors import content_api
 from genai_processors import processor
 from genai_processors import streams
-from genai_processors import utils
 from google.genai import types as genai_types
 import pyaudio
 
@@ -66,20 +65,19 @@ class PyAudioIn(processor.Processor):
     self._rate = rate
     self._substream_name = substream_name
 
-  async def __call__(
+  async def call(
       self, content: AsyncIterable[ProcessorPart]
   ) -> AsyncIterable[ProcessorPart]:
     """Receives audio input from the user and sends it to the model."""
     audio_queue = asyncio.Queue[Optional[ProcessorPart]]()
 
-    async with asyncio.TaskGroup() as tg:
-      audio_in_task = tg.create_task(self._get_audio(audio_queue))
+    audio_in_task = processor.create_task(self._get_audio(audio_queue))
 
-      async for part in streams.merge(
-          [content, utils.dequeue(audio_queue)], stop_on_first=True
-      ):
-        yield part
-      audio_in_task.cancel()
+    async for part in streams.merge(
+        [content, streams.dequeue(audio_queue)], stop_on_first=True
+    ):
+      yield part
+    audio_in_task.cancel()
 
   async def _get_audio(
       self, output_queue: asyncio.Queue[Optional[ProcessorPart]]
@@ -109,7 +107,7 @@ class PyAudioIn(processor.Processor):
             ProcessorPart(
                 genai_types.Part.from_bytes(
                     data=data,
-                    mime_type=f"audio/l16;rate={self._rate}",
+                    mime_type="audio/pcm",
                 ),
                 substream_name=self._substream_name,
                 role="USER",
@@ -147,7 +145,7 @@ class PyAudioOut(processor.Processor):
     self._rate = rate
     self._passthrough_audio = passthrough_audio
 
-  async def __call__(
+  async def call(
       self, content: AsyncIterable[ProcessorPart]
   ) -> AsyncIterable[ProcessorPart]:
     """Receives audio output from a live session."""
@@ -166,15 +164,14 @@ class PyAudioOut(processor.Processor):
         if part.part.inline_data is not None:
           await asyncio.to_thread(stream.write, part.part.inline_data.data)
 
-    async with asyncio.TaskGroup() as tg:
-      play_audio_task = tg.create_task(play_audio())
+    play_audio_task = processor.create_task(play_audio())
 
-      async for part in content:
-        if content_api.is_audio(part.mimetype):
-          audio_output.put_nowait(part)
-          if self._passthrough_audio:
-            yield part
-        else:
+    async for part in content:
+      if content_api.is_audio(part.mimetype):
+        audio_output.put_nowait(part)
+        if self._passthrough_audio:
           yield part
-      await audio_output.put(None)
-      play_audio_task.cancel()
+      else:
+        yield part
+    await audio_output.put(None)
+    play_audio_task.cancel()

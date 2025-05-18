@@ -59,7 +59,7 @@ import functools
 from typing import TypeAlias, TypeVar
 
 from . import context
-from . import utils
+from . import streams
 
 
 _T = TypeVar('_T')
@@ -89,8 +89,8 @@ def apply_sync(fn: StreamFn, content: Iterable[_T]) -> list[_T]:
 
   async def run_with_context():
     async with context.context():
-      as_async = utils.stream_content(content)
-      return await utils.gather_stream(fn(as_async))
+      as_async = streams.stream_content(content)
+      return await streams.gather_stream(fn(as_async))
 
   return asyncio.run(run_with_context())
 
@@ -114,9 +114,7 @@ def map_part_function(
     stream.
   """
   match_fn = match_fn or (lambda _: True)
-  return context.add_context_if_missing(
-      functools.partial(_apply_part_function, (fn, match_fn))
-  )
+  return functools.partial(_apply_part_function, (fn, match_fn))
 
 
 def _to_tuple_fns(

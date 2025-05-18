@@ -51,7 +51,7 @@ class TopicVerbalizer(processor.PartProcessor):
   def match(self, part: ProcessorPart) -> bool:
     return part.mimetype == "application/json; type=Topic"
 
-  async def __call__(
+  async def call(
       self,
       part: ProcessorPart,
   ) -> AsyncIterable[ProcessorPart]:

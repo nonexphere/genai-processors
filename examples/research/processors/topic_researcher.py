@@ -67,7 +67,7 @@ class TopicResearcher(processor.PartProcessor):
         p_verbalizer + p_preamble + p_suffix + self._genai_processor
     )
 
-  async def __call__(
+  async def call(
       self,
       part: ProcessorPart,
   ) -> AsyncIterable[ProcessorPart]:

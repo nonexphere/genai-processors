@@ -17,31 +17,33 @@
 import asyncio
 from collections.abc import AsyncIterable, Iterable
 import copy
+from typing import TypeVar
 
-from . import content_api
 from . import context
-from . import utils
+
+_T = TypeVar('_T')
 
 
 def split(
-    content: AsyncIterable[content_api.ProcessorPart],
+    content: AsyncIterable[_T],
     *,
     n: int = 2,
     with_copy: bool = False,
-) -> tuple[AsyncIterable[content_api.ProcessorPart], ...]:
-  """Split a part stream into `n` identical part streams.
+) -> tuple[AsyncIterable[_T], ...]:
+  """Split a stream into `n` identical streams.
 
   Recommended to be used with processor.context to ensure error propagation.
 
   Args:
     content: content to be split
     n: number of streams to return
-    with_copy: whether to copy the content parts or not. It is recommended to
-      copy the content parts when side effects between streams can happen. This
-      is the case when one processor changes a part in place (e.g. update its
-      metadata). As this can be expensive if the content parts are large and the
-      number of streams is high, the default is to not copy. Consider setting
-      this to True if there is a change that a part can be modified in place.
+    with_copy: whether to copy the items of the streams or not. It is
+      recommended to copy the items when side effects between streams can
+      happen. This is the case when one processor changes a part in place (e.g.
+      update its metadata). As this can be expensive if the items are large and
+      the number of streams is high, the default is to not copy. Consider
+      setting this to True if there is a chance that a part can be modified in
+      place.
 
   Returns:
     n streams of content.
@@ -66,8 +68,8 @@ def split(
       queue.put_nowait(None)
 
   async def dequeue(
-      queue: asyncio.Queue[content_api.ProcessorPart],
-  ) -> AsyncIterable[content_api.ProcessorPart]:
+      queue: asyncio.Queue[_T],
+  ) -> AsyncIterable[_T]:
     while (part := await queue.get()) is not None:
       yield part
 
@@ -76,10 +78,8 @@ def split(
   return tuple(dequeue(queue) for queue in queues)
 
 
-async def concat(
-    *contents: AsyncIterable[content_api.ProcessorPart],
-) -> AsyncIterable[content_api.ProcessorPart]:
-  """Concatenate multiple part streams into one.
+async def concat(*contents: AsyncIterable[_T]) -> AsyncIterable[_T]:
+  """Concatenate multiple streams into one.
 
   The streams are looped over concurrently before being assembled into a single
   output stream.
@@ -111,15 +111,15 @@ async def concat(
 
 
 async def merge(
-    streams: Iterable[AsyncIterable[content_api.ProcessorPart]],
+    streams: Iterable[AsyncIterable[_T]],
     *,
     queue_maxsize: int = 0,
     stop_on_first: bool = False,
-) -> AsyncIterable[content_api.ProcessorPart]:
-  """Merges multiple streams of ProcessorParts into one.
+) -> AsyncIterable[_T]:
+  """Merges multiple streams into one.
 
   The order is defined by the asyncio loop and will likely be determined by the
-  time when the parts are available.
+  time when the items are available.
 
   If a stream is cancelled, the overall merge will be cancelled and all other
   streams will be cancelled as well.
@@ -146,7 +146,7 @@ async def merge(
     running_tasks = []
     for s in streams:
       active_streams += 1
-      running_tasks.append(tg.create_task(utils.enqueue(s, out)))
+      running_tasks.append(tg.create_task(enqueue(s, out)))
 
     while active_streams:
       part = await out.get()
@@ -159,3 +159,86 @@ async def merge(
       yield part
     for t in running_tasks:
       t.cancel()
+
+
+async def enqueue(
+    content: AsyncIterable[_T], queue: asyncio.Queue[_T | None]
+) -> None:
+  """Enqueues all content into a queue.
+
+  When the queue is unbounded, this function will not block. When the queue is
+  bounded, this function will block until the queue has space.
+
+  Args:
+    content: The content to enqueue.
+    queue: The queue to enqueue to.
+  """
+  try:
+    async for part in content:
+      await queue.put(part)
+  finally:
+    await queue.put(None)
+
+
+async def dequeue(queue: asyncio.Queue[_T | None]) -> AsyncIterable[_T]:
+  """Dequeues content from a queue.
+
+  Args:
+    queue: The queue to dequeue from. The queue must end with a None item.
+
+  Yields:
+    The content from the queue as an AsyncIterable. The items are yielded in
+    the order they were enqueued.
+  """
+  while (part := await queue.get()) is not None:
+    queue.task_done()
+    yield part
+  queue.task_done()
+
+
+async def stream_content(
+    content: Iterable[_T],
+    with_delay_sec: float | None = None,
+    delay_first: bool = False,
+    delay_end: bool = True,
+) -> AsyncIterable[_T]:
+  """Converts non-async content into an AsyncIterable.
+
+  Args:
+    content: the items to yield. The state of the iterator provided by `content`
+      is undefined post-invocation and should not be relied on.
+    with_delay_sec: If set, asyncio.sleep() is called with this value between
+      yielding parts, and optionally also before and after.
+    delay_first: If set to True, a delay is added before the first part.
+    delay_end: Unless set to False, a delay is added between the last part and
+      stopping the returned AsyncIterator.
+
+  Yields:
+    an item in `content` (unchanged).
+  """
+  # Getting the next value from content must not block. For this reason
+  # this function doesn't work for generators.
+  delay_next = with_delay_sec is not None and delay_first
+  for c in content:
+    if delay_next:
+      await asyncio.sleep(with_delay_sec)
+    else:
+      delay_next = with_delay_sec is not None  # From the 2nd iteration onwards.
+    yield c
+  if with_delay_sec is not None and delay_end:
+    await asyncio.sleep(with_delay_sec)
+
+
+async def gather_stream(content: AsyncIterable[_T]) -> list[_T]:
+  """Gathers an AsyncIterable into a list of items."""
+  return [c async for c in content]
+
+
+async def aenumerate(
+    aiterable: AsyncIterable[_T],
+) -> AsyncIterable[tuple[int, _T]]:
+  """Enumerate an async iterable."""
+  i = 0
+  async for x in aiterable:
+    yield (i, x)
+    i += 1

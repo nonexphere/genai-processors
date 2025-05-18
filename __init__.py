@@ -15,13 +15,15 @@
 
 """Google DeepMind genai processors library."""
 
+__version__ = '0.0.1'
+
 from . import content_api
 from . import context
+from . import debug
 from . import map_processor
 from . import mime_types
 from . import processor
 from . import streams
-from . import utils
 
 # Aliases
 ProcessorPart = content_api.ProcessorPart
@@ -41,5 +43,5 @@ parallel_concat = processor.parallel_concat
 create_filter = processor.create_filter
 part_processor_function = processor.part_processor_function
 
-stream_content = utils.stream_content
-gather_stream = utils.gather_stream
+stream_content = streams.stream_content
+gather_stream = streams.gather_stream

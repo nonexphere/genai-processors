@@ -89,7 +89,7 @@ class RateLimitAudio(processor.Processor):
     self._sample_rate = sample_rate
     self._delay_other_parts = delay_other_parts
 
-  async def __call__(
+  async def call(
       self, content: AsyncIterable[ProcessorPart]
   ) -> AsyncIterable[ProcessorPart]:
     """Rate limits audio output."""
@@ -118,7 +118,7 @@ class RateLimitAudio(processor.Processor):
               )
           else:
             audio_queue.put_nowait(part)
-        elif part.get_custom_metadata("interrupted"):
+        elif part.get_metadata("interrupted"):
           logging.debug(
               "%s - Interrupted - flush audio queue", time.perf_counter()
           )
@@ -162,13 +162,12 @@ class RateLimitAudio(processor.Processor):
           await output_queue.put(part)
       await output_queue.put(None)
 
-    async with asyncio.TaskGroup() as tg:
-      consume_audio_task = tg.create_task(consume_audio())
-      consume_content_task = tg.create_task(consume_content())
-      while part := await output_queue.get():
-        yield part
-      consume_content_task.cancel()
-      consume_audio_task.cancel()
+    consume_audio_task = processor.create_task(consume_audio())
+    consume_content_task = processor.create_task(consume_content())
+    while part := await output_queue.get():
+      yield part
+    consume_content_task.cancel()
+    consume_audio_task.cancel()
 
   # The following wrappers allow unit-tests to mock out walltime.
   def _perf_counter(self):

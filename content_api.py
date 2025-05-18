@@ -35,7 +35,7 @@ class ProcessorPart:
   system.
 
   Includes metadata such as the producer of the content, the substream the part
-  belongs to, the MIME type of the content, and custom metadata.
+  belongs to, the MIME type of the content, and arbitrary metadata.
   """
 
   def __init__(
@@ -45,7 +45,7 @@ class ProcessorPart:
       role: str = '',
       substream_name: str = '',
       mimetype: str | None = None,
-      custom_metadata: dict[str, Any] | None = None,
+      metadata: dict[str, Any] | None = None,
   ) -> None:
     """Constructs a ProcessorPart using a `Part` or `ProcessorPart`.
 
@@ -54,17 +54,17 @@ class ProcessorPart:
       role: Optional. The producer of the content. In Genai models, must be
         either 'user' or 'model', but the user can set their own semantics.
         Useful to set for multi-turn conversations, otherwise can be empty.
-      substream_name: (Optional) ProcessorPart stream can be split to multiple
+      substream_name: (Optional) ProcessorPart stream can be split into multiple
         independent streams. They may have specific semantics, e.g. a song and
         its lyrics, or can be just alternative responses. Prefer using a default
         substream with an empty name. If the `ProcessorPart` is created using
         another `ProcessorPart`, this ProcessorPart inherits the existing
         substream_name, unless it is overridden in this argument.
       mimetype: Mime type of the data.
-      custom_metadata: (Optional) Auxiliary custom information about the part.
-        If the `ProcessorPart` is created using another `ProcessorPart`, this
-        ProcessorPart inherits the existing custom_metadata, unless it is
-        overridden in this argument.
+      metadata: (Optional) Auxiliary information about the part. If the
+        `ProcessorPart` is created using another `ProcessorPart`, this
+        ProcessorPart inherits the existing metadata, unless it is overridden in
+        this argument.
     """
     super().__init__()
 
@@ -76,7 +76,7 @@ class ProcessorPart:
         role = role or value.role
         substream_name = substream_name or value.substream_name
         mimetype = mimetype or value.mimetype
-        custom_metadata = custom_metadata or value.custom_metadata
+        metadata = metadata or value.metadata
       case str():
         self._part = genai_types.Part(text=value)
       case bytes():
@@ -114,7 +114,7 @@ class ProcessorPart:
 
     self._role = role
     self._substream_name = substream_name
-    self._custom_metadata = custom_metadata
+    self._metadata = metadata
 
     # Set the MIME type.
     if mimetype:
@@ -132,8 +132,8 @@ class ProcessorPart:
     optional_args = ''
     if self.substream_name:
       optional_args += f', substream_name={self.substream_name!r}'
-    if self.custom_metadata:
-      optional_args += f', custom_metadata={self.custom_metadata}'.rstrip('\n')
+    if self.metadata:
+      optional_args += f', metadata={self.metadata}'.rstrip('\n')
     if self.role:
       optional_args += f', role={self.role!r}'
     return (
@@ -146,7 +146,7 @@ class ProcessorPart:
         self._part == other._part
         and self._role.lower() == other._role.lower()
         and self._substream_name.lower() == other._substream_name.lower()
-        and self._custom_metadata == other._custom_metadata
+        and self._metadata == other._metadata
     )
 
   @property
@@ -226,19 +226,19 @@ class ProcessorPart:
     self._part = genai_types.Part(text=value)
 
   @property
-  def custom_metadata(self) -> dict[str, Any] | None:
-    """Returns custom metadata."""
-    return self._custom_metadata
+  def metadata(self) -> dict[str, Any] | None:
+    """Returns metadata."""
+    return self._metadata
 
-  @custom_metadata.setter
-  def custom_metadata(self, value: dict[str, Any] | None) -> None:
-    """Sets custom metadata."""
-    self._custom_metadata = value
+  @metadata.setter
+  def metadata(self, value: dict[str, Any] | None) -> None:
+    """Sets metadata."""
+    self._metadata = value
 
-  def get_custom_metadata(self, key: str, default=None) -> Any:
-    """Returns custom metadata for a given key."""
-    if self._custom_metadata:
-      return self._custom_metadata.get(key, default)
+  def get_metadata(self, key: str, default=None) -> Any:
+    """Returns metadata for a given key."""
+    if self._metadata:
+      return self._metadata.get(key, default)
     return None
 
   @property
@@ -319,18 +319,18 @@ class ProcessorPart:
       name: str,
       response: dict[str, Any],
       function_call_id: str | None = None,
-      # TODO(elisseeff): Add this back once the SDK is updated.
-      # will_continue: bool = False,
-      # scheduling: genai_types.FunctionResponseScheculing | None = None,
+      will_continue: bool = False,
+      scheduling: genai_types.FunctionResponseScheduling | None = None,
       **kwargs,
   ) -> 'ProcessorPart':
+    """Constructs a ProcessorPart as a function response."""
     part = genai_types.Part(
         function_response=genai_types.FunctionResponse(
             id=function_call_id,
             name=name,
             response=response,
-            # will_continue=will_continue,
-            # scheduling=scheduling,
+            will_continue=will_continue,
+            scheduling=scheduling,
         )
     )
     return cls(part, **kwargs)
@@ -339,6 +339,7 @@ class ProcessorPart:
   def from_executable_code(
       cls, *, code: str, language: genai_types.Language, **kwargs
   ) -> 'ProcessorPart':
+    """Constructs a ProcessorPart as an executable code part."""
     part = genai_types.Part.from_executable_code(code=code, language=language)
     return cls(part, **kwargs)
 
@@ -346,6 +347,7 @@ class ProcessorPart:
   def from_code_execution_result(
       cls, *, outcome: genai_types.Outcome, output: str, **kwargs
   ) -> 'ProcessorPart':
+    """Constructs a ProcessorPart as a code execution result part."""
     part = genai_types.Part.from_code_execution_result(
         outcome=outcome, output=output
     )
@@ -381,6 +383,7 @@ class ProcessorPart:
 
   @classmethod
   def from_dataclass(cls, *, dataclass: Any, **kwargs) -> 'ProcessorPart':
+    """Constructs a ProcessorPart from a dataclass."""
     part = ProcessorPart(
         json.dumps(dataclasses.asdict(dataclass)),
         mimetype=f'application/json; type={type(dataclass).__name__}',
@@ -500,7 +503,6 @@ class ProcessorContent:
 
 
 # Types that can be converted to a ProcessorPart.
-# TODO(kpsawhney): Add anything that can be converted to a `Part`
 ProcessorPartTypes = (
     genai_types.Part | ProcessorPart | str | bytes | PIL.Image.Image
 )
@@ -532,7 +534,12 @@ is_python = mime_types.is_python
 
 
 # Functions that reduce ProcessorContent to well known formats.
-def as_text(content: ProcessorContentTypes, *, strict: bool = False) -> str:
+def as_text(
+    content: ProcessorContentTypes,
+    *,
+    strict: bool = False,
+    substream_name: str | None = None,
+) -> str:
   """Returns a text representation of the content.
 
   The returned text is a concatenation of all text parts in the content.
@@ -542,9 +549,13 @@ def as_text(content: ProcessorContentTypes, *, strict: bool = False) -> str:
       `ProcessorContentTypes`.
     strict: If True, unsupported content types will raise a ValueError.
       Otherwise, they will be ignored.
+    substream_name: If set, only text parts with the given substream name will
+      be returned.
   """
   text_parts = []
   for mime, part in ProcessorContent(content).items():
+    if substream_name is not None and part.substream_name != substream_name:
+      continue
     if is_text(mime):
       text_parts.append(part.text)
     elif strict:

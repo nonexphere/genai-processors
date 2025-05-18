@@ -33,12 +33,10 @@ from . import content_api
 from . import context as context_lib
 from . import map_processor
 from . import streams
-from . import utils
 
 # Aliases
 context = context_lib.context
 create_task = context_lib.create_task
-add_context_if_missing = context_lib.add_context_if_missing
 PROMPT_STREAM = context_lib.PROMPT_STREAM
 DEBUG_STREAM = context_lib.DEBUG_STREAM
 STATUS_STREAM = context_lib.STATUS_STREAM
@@ -47,8 +45,8 @@ ProcessorPart = content_api.ProcessorPart
 MatchFn: TypeAlias = Callable[[ProcessorPart], bool]
 
 dataclass_json = dataclasses_json.dataclass_json
-stream_content = utils.stream_content
-gather_stream = utils.gather_stream
+stream_content = streams.stream_content
+gather_stream = streams.gather_stream
 
 
 # Part queue size. It should be a big number to avoid blocking the processor.
@@ -78,6 +76,18 @@ def _combined_key_prefix(
   return ','.join(map(_key_prefix, fn_list))
 
 
+async def _normalize_part_stream(
+    content: AsyncIterable[content_api.ProcessorPartTypes],
+) -> AsyncIterable[ProcessorPart]:
+  """Yields ProcessorParts given a stream of content convertible to them."""
+  async for part in content:
+    match part:
+      case ProcessorPart():
+        yield part
+      case _:
+        yield ProcessorPart(part)
+
+
 @typing.runtime_checkable
 class ProcessorFn(Protocol):
   """A Processor function.
@@ -88,22 +98,90 @@ class ProcessorFn(Protocol):
 
   def __call__(
       self, content: AsyncIterable[ProcessorPart]
-  ) -> AsyncIterable[ProcessorPart]:
+  ) -> AsyncIterable[content_api.ProcessorPartTypes]:
     ...
 
 
 class Processor(abc.ABC):
   """Any class implementing a processor should inherit from this."""
 
-  @abc.abstractmethod
+  @typing.final
   async def __call__(
-      self, content: AsyncIterable[ProcessorPart]
+      self, content: AsyncIterable[content_api.ProcessorPartTypes]
   ) -> AsyncIterable[ProcessorPart]:
-    async for part in content:
-      yield part
+    """Processes the given content.
 
-  def to_processor_fn(self) -> ProcessorFn:
-    return self
+    Descendants should override `call` method instead of this one:
+      .__call__() is the convenient way to invoke a processor.
+      .call() is the convenient way to implement a processor.
+
+    Args:
+      content: the input stream of content to process.
+
+    Yields:
+      the result of processing the input content.
+    """
+    content = _normalize_part_stream(content)
+    # Ensures that the same taskgroup is always added to the context and
+    # includes the proper way of handling generators, i.e. use a queue inside
+    # the task group instead of a generator.
+    #
+    # When an async generator yields control (e.g., via `yield` or `await`), it
+    # temporarily exits any active `async with` context managers. If a task
+    # *within* the TaskGroup` fails, the `TaskGroup` cancels all other tasks,
+    # including any task consuming the generator. This cancellation appears as a
+    # `CancelledError` at the `await` or `yield` point *in the consumer*, not
+    # within the generator. The generator's internal `try...except` blocks
+    # cannot catch this CancelledError` because it's raised *outside* the
+    # generator's execution. Using a queue ensures that the `yield` statement is
+    # always executed within the task group and that the `CancelledError` is
+    # handled correctly.
+    tg = context_lib.task_group()
+    if tg is None:
+      output_queue = asyncio.Queue[ProcessorPart | None]()
+
+      async def _with_context():
+        async with context():
+          try:
+            async for p in _normalize_part_stream(self.call(content)):
+              output_queue.put_nowait(p)
+          finally:
+            output_queue.put_nowait(None)
+
+      task = asyncio.create_task(_with_context())
+      try:
+        async for p in streams.dequeue(output_queue):
+          yield p
+      finally:
+        await task
+    else:
+      async for p in _normalize_part_stream(self.call(content)):
+        yield p
+
+  @abc.abstractmethod
+  async def call(
+      self, content: AsyncIterable[ProcessorPart]
+  ) -> AsyncIterable[content_api.ProcessorPartTypes]:
+    """Implements the Processor logic.
+
+    Do not invoke this method directly:
+      .__call__() is the convenient way to invoke a processor.
+      .call() is the convenient way to implement a processor.
+
+    It must be implemented by the processor and is responsible for processing
+    the input content and yielding the output content.
+
+    As with any async function it is highly commended not to block inside the
+    `call` method as this will prevent other coroutines to make progress.
+
+    Args:
+      content: the input stream of content to process.
+
+    Yields:
+      the result of processing the input content.
+    """
+    async for p in content:
+      yield p
 
   @property
   def key_prefix(self) -> str:
@@ -130,13 +208,11 @@ class Processor(abc.ABC):
       The chain of this process with `other`.
     """
     if isinstance(other, PartProcessor):
-      return _ChainProcessor(
-          [self.to_processor_fn(), other.to_processor().to_processor_fn()]
-      )
+      return _ChainProcessor([self.call, other.to_processor().call])
     elif isinstance(other, _ChainProcessor):
-      return _ChainProcessor([self.to_processor_fn()] + other._processor_list)
+      return _ChainProcessor([self.call] + other._processor_list)
     else:
-      return _ChainProcessor([self.to_processor_fn(), other.to_processor_fn()])
+      return _ChainProcessor([self.call, other.call])
 
 
 @typing.runtime_checkable
@@ -149,7 +225,9 @@ class PartProcessorFn(Protocol):
   after another.
   """
 
-  def __call__(self, part: ProcessorPart) -> AsyncIterable[ProcessorPart]:
+  def __call__(
+      self, part: ProcessorPart
+  ) -> AsyncIterable[content_api.ProcessorPartTypes]:
     ...
 
 
@@ -187,8 +265,39 @@ class PartProcessorWithMatchFn(PartProcessorFn, Protocol):
 class PartProcessor(abc.ABC):
   """Any class implementing a part processor should inherit from this."""
 
-  @abc.abstractmethod
+  @typing.final
   async def __call__(self, part: ProcessorPart) -> AsyncIterable[ProcessorPart]:
+    """Processes the given part.
+
+    Descendants should override `call` method instead of this one:
+      .__call__() is the convenient way to invoke a processor.
+      .call() is the convenient way to implement a processor.
+
+    Args:
+      part: the Part to process.
+
+    Yields:
+      the result of processing the input Part.
+    """
+    async for result in _normalize_part_stream(self.call(part)):
+      yield result
+
+  @abc.abstractmethod
+  async def call(
+      self, part: ProcessorPart
+  ) -> AsyncIterable[content_api.ProcessorPartTypes]:
+    """Implements the Processor logic.
+
+    Do not invoke this method directly:
+      .__call__() is the convenient way to invoke processor.
+      .call() is the convenient way to implement processor.
+
+    Args:
+      part: the Part to process.
+
+    Yields:
+      the result of processing the input Part.
+    """
     yield part
 
   def match(self, part: ProcessorPart) -> bool:
@@ -198,9 +307,6 @@ class PartProcessor(abc.ABC):
   @property
   def key_prefix(self) -> str:
     return self.__class__.__qualname__
-
-  def to_part_processor_fn(self) -> PartProcessorFn:
-    return self
 
   @overload
   def __add__(self, other: PartProcessor) -> PartProcessor:
@@ -222,11 +328,9 @@ class PartProcessor(abc.ABC):
     if isinstance(other, _ChainPartProcessor):
       return _ChainPartProcessor([self] + other._processor_list)
     elif isinstance(other, _ChainProcessor):
-      return _ChainProcessor(
-          [self.to_processor().to_processor_fn()] + other._processor_list
-      )
+      return _ChainProcessor([self.to_processor().call] + other._processor_list)
     elif isinstance(other, Processor):
-      return _ChainProcessor([self.to_processor().to_processor_fn(), other])
+      return _ChainProcessor([self.to_processor().call, other])
     else:
       return _ChainPartProcessor([self, other])
 
@@ -472,7 +576,7 @@ def _is_part_processor_protocol(obj: Any) -> bool:
 
   def _full_name(obj: Any) -> str:
     """Returns the full qualified name of the object `obj`."""
-    return obj.__module__ + '.' + obj.__qualname__
+    return obj.__module__ + '.' + getattr(obj, '__qualname__', '')
 
   if not callable(obj):
     return False
@@ -521,17 +625,12 @@ class _PartProcessorWrapper(PartProcessor):
     self._fn = fn
     self._match_fn = match_fn or (lambda _: True)
 
-  def to_part_processor_fn(self) -> PartProcessorFn:
-    return self._fn
-
-  async def __call__(
-      self, content: ProcessorPart
-  ) -> AsyncIterable[ProcessorPart]:
-    if not self._match_fn(content):
-      yield content
-      return
-    async for part in self._fn(content):
+  async def call(self, part: ProcessorPart) -> AsyncIterable[ProcessorPart]:
+    if not self._match_fn(part):
       yield part
+      return
+    async for result in self._fn(part):
+      yield result
 
   def match(self, part: ProcessorPart) -> bool:
     return self._match_fn(part)
@@ -564,20 +663,16 @@ class _ChainPartProcessor(PartProcessor):
           other,
       ])
     elif isinstance(other, _ChainProcessor):
-      return _ChainProcessor(
-          [self.to_processor().to_processor_fn(), *other._processor_list]
-      )
+      return _ChainProcessor([self.to_processor().call, *other._processor_list])
     elif not self._processor_list:
-      return _ChainProcessor([other.to_processor_fn()])
+      return _ChainProcessor([other.call])
     else:
-      return _ChainProcessor(
-          [self.to_processor().to_processor_fn(), other.to_processor_fn()]
-      )
+      return _ChainProcessor([self.to_processor().call, other.call])
 
   def match(self, part: ProcessorPart) -> bool:
     return any(p.match(part) for p in self._processor_list)
 
-  async def __call__(self, part: ProcessorPart) -> AsyncIterable[ProcessorPart]:
+  async def call(self, part: ProcessorPart) -> AsyncIterable[ProcessorPart]:
     if not self._processor_list:
       # Empty chain = passthrough processor
       yield part
@@ -600,23 +695,20 @@ class _ProcessorWrapper(Processor):
   """A ProcessorFn wrapped in a class."""
 
   def __init__(self, fn: ProcessorFn):
-    self._fn = fn
+    self.call = fn
 
   def __repr__(self):
-    return f'_ProcessorWrapper({repr(self._fn)})'
+    return f'_ProcessorWrapper({repr(self.call)})'
 
-  async def __call__(
+  async def call(
       self, content: AsyncIterable[ProcessorPart]
   ) -> AsyncIterable[ProcessorPart]:
-    async for part in self._fn(content):
-      yield part
-
-  def to_processor_fn(self) -> ProcessorFn:
-    return self._fn
+    # This method is overriden in the __init__.
+    yield ProcessorPart(text='')
 
   @property
   def key_prefix(self) -> str:
-    return _key_prefix(self._fn)
+    return _key_prefix(self.call)
 
 
 class _ChainProcessor(Processor):
@@ -632,12 +724,10 @@ class _ChainProcessor(Processor):
     if isinstance(other, _ChainProcessor):
       return _ChainProcessor(self._processor_list + other._processor_list)
     elif isinstance(other, PartProcessor):
-      return _ChainProcessor(
-          [*self._processor_list, other.to_processor().to_processor_fn()]
-      )
-    return _ChainProcessor([*self._processor_list, other.to_processor_fn()])
+      return _ChainProcessor([*self._processor_list, other.to_processor().call])
+    return _ChainProcessor([*self._processor_list, other.call])
 
-  async def __call__(
+  async def call(
       self, content: AsyncIterable[ProcessorPart]
   ) -> AsyncIterable[ProcessorPart]:
     if not self._processor_list:
@@ -696,7 +786,6 @@ def _chain_processors(
   if len(processors) == 1:
     return processors[0]
 
-  @add_context_if_missing
   async def processor(
       content: AsyncIterable[ProcessorPart],
   ) -> AsyncIterable[ProcessorPart]:
@@ -705,7 +794,7 @@ def _chain_processors(
     # Chain all processors together
     for processor in processors:
       content = _capture_reserved_substreams(content, output_queue)
-      content = processor(content)
+      content = _normalize_part_stream(processor(content))
     # Place output processed output parts on the queue.
     create_task(_enqueue_content(content, output_queue), name=task_name)
     while (part := await output_queue.get()) is not None:
@@ -730,11 +819,11 @@ class _CaptureReservedSubstreams(PartProcessor):
     self._queue = queue
     self._part_processor_fn = p
 
-  async def __call__(self, part: ProcessorPart) -> AsyncIterable[ProcessorPart]:
+  async def call(self, part: ProcessorPart) -> AsyncIterable[ProcessorPart]:
     if context_lib.is_reserved_substream(part.substream_name):
       await self._queue.put(part)
       return
-    async for part in self._part_processor_fn(part):
+    async for part in _normalize_part_stream(self._part_processor_fn(part)):
       if context_lib.is_reserved_substream(part.substream_name):
         await self._queue.put(part)
       else:
@@ -765,7 +854,6 @@ def _chain_part_processors(
     processors.
   """
 
-  @add_context_if_missing
   async def processor(
       part: ProcessorPart,
   ) -> AsyncIterable[ProcessorPart]:
@@ -814,16 +902,17 @@ class _ParallelProcessor(Processor):
     list_repr = ','.join(map(repr, self._processor_list))
     return f'ParallelProcessor[{list_repr}]'
 
-  @add_context_if_missing
-  async def __call__(
+  async def call(
       self, content: AsyncIterable[ProcessorPart]
   ) -> AsyncIterable[ProcessorPart]:
     # Create a queue to put output parts
     output_queue = asyncio.Queue(maxsize=_MAX_QUEUE_SIZE)
     stream_inputs = streams.split(content, n=len(self._processor_list))
     output_streams = [
-        processor(
-            _capture_reserved_substreams(stream_inputs[idx], output_queue)
+        _normalize_part_stream(
+            processor(
+                _capture_reserved_substreams(stream_inputs[idx], output_queue)
+            )
         )
         for idx, processor in enumerate(self._processor_list)
     ]
@@ -864,12 +953,8 @@ class _ParallelPartProcessor(PartProcessor):
     else:
       return _ParallelPartProcessor(self._processor_list + [processor])
 
-  async def __call__(
-      self, content: ProcessorPart
-  ) -> AsyncIterable[ProcessorPart]:
-    async for result in _parallel_part_processors(self._processor_list)(
-        content
-    ):
+  async def call(self, part: ProcessorPart) -> AsyncIterable[ProcessorPart]:
+    async for result in _parallel_part_processors(self._processor_list)(part):
       yield result
 
   def match(self, part: ProcessorPart) -> bool:
@@ -911,7 +996,6 @@ def _parallel_part_processors(
     processors concurrently.
   """
 
-  @add_context_if_missing
   async def part_processor(
       content: ProcessorPart,
   ) -> AsyncIterable[ProcessorPart]:
@@ -982,7 +1066,6 @@ PASSTHROUGH_ALWAYS = _passthrough_always
 passthrough = lambda: _ChainPartProcessor([])
 
 
-@add_context_if_missing
 async def process_streams_parallel(
     processor: ProcessorFn,
     content_streams: Sequence[AsyncIterable[ProcessorPart]],

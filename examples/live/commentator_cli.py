@@ -23,7 +23,7 @@ Agent commentating on the video and audio stream from the default device inputs.
 To install the dependencies for this script, run:
 
 ```
-pip install google-genai opencv-python pyaudio pillow mss genai-processors
+pip install pyaudio genai-processors
 ```
 
 Before running this script, ensure the `GOOGLE_API_KEY` environment
@@ -38,32 +38,30 @@ the model from interrupting itself it is important that you use headphones.
 To run the script:
 
 ```shell
-python commentator_cli.py
+python3 ./commentator_cli.py
 ```
 
 The script takes a video-mode flag `--mode`, this can be "camera", "screen". The
 default is "camera". To share your screen run:
 
 ```shell
-python commentator_cli.py --mode=screen
-```
-
-**NOTE**: add the `--config=darwin_arm64` flag to run on mac.
-
-```shell
-blaze run --config=darwin_arm64 \
-  learning/deepmind/evergreen/agent/realtime/cookbook:live_commentator_oss
+pytho3n ./commentator_cli.py --mode=screen
 ```
 """
 
 import argparse
 import asyncio
 import os
+
+from absl import logging
 from genai_processors import content_api
 from genai_processors.core import audio_io
-from genai_processors.core import rate_limit_audio
 from genai_processors.core import video
+# copybara:strip_begin
 from genai_processors.examples.live import commentator
+# copybara:strip_end_and_replace_begin
+# import commentator
+# copybara:replace_end
 import pyaudio
 
 # You need to define the API key in the environment variables.
@@ -96,15 +94,12 @@ async def run_commentator(video_mode: str) -> None:
       yield content_api.ProcessorPart("Ending the stream")
 
   commentator_processor = commentator.create_live_commentator(API_KEY)
-  rate_limit_audio_processor = rate_limit_audio.RateLimitAudio(
-      commentator.RECEIVE_SAMPLE_RATE
-  )
+
   consume_output = audio_io.PyAudioOut(pya)
 
   live_commentary_agent = (
       input_processor
       + commentator_processor
-      + rate_limit_audio_processor
       + consume_output
   )
 
@@ -121,5 +116,13 @@ if __name__ == "__main__":
       help="pixels to stream from",
       choices=["camera", "screen"],
   )
+  parser.add_argument(
+      "--debug",
+      type=bool,
+      default=False,
+      help="Enable debug logging.",
+  )
   args = parser.parse_args()
+  if args.debug:
+    logging.set_verbosity(logging.DEBUG)
   asyncio.run(run_commentator(video_mode=args.mode))

@@ -53,7 +53,7 @@ class Preamble(processor.Processor):
     )
     self._content_factory = content_factory
 
-  async def __call__(
+  async def call(
       self, content: AsyncIterable[content_api.ProcessorPart]
   ) -> AsyncIterable[content_api.ProcessorPart]:
     if self._content is not None:
@@ -70,7 +70,7 @@ class Preamble(processor.Processor):
 class Suffix(Preamble):
   """Appends a suffix to the full content."""
 
-  async def __call__(
+  async def call(
       self, content: AsyncIterable[content_api.ProcessorPart]
   ) -> AsyncIterable[content_api.ProcessorPart]:
     async for content_part in content:

@@ -22,7 +22,6 @@ import cv2
 from genai_processors import content_api
 from genai_processors import processor
 from genai_processors import streams
-from genai_processors import utils
 import PIL.Image
 
 ProcessorPart = content_api.ProcessorPart
@@ -58,24 +57,23 @@ class VideoIn(processor.Processor):
     self._video_mode = video_mode
     self._substream_name = substream_name
 
-  async def __call__(
+  async def call(
       self, content: AsyncIterable[ProcessorPart]
   ) -> AsyncIterable[ProcessorPart]:
     output_queue = asyncio.Queue[Optional[ProcessorPart]]()
-    async with asyncio.TaskGroup() as tg:
-      if self._video_mode == VideoMode.CAMERA:
-        video_task = tg.create_task(self.get_frames(output_queue))
-      elif self._video_mode == VideoMode.SCREEN:
-        video_task = tg.create_task(self.get_screen(output_queue))
-      else:
-        raise ValueError(f"Unsupported video mode: {self._video_mode}")
-      input_stream = streams.merge(
-          [content, utils.dequeue(output_queue)], stop_on_first=True
-      )
-      async for part in input_stream:
-        yield part
+    if self._video_mode == VideoMode.CAMERA:
+      video_task = processor.create_task(self.get_frames(output_queue))
+    elif self._video_mode == VideoMode.SCREEN:
+      video_task = processor.create_task(self.get_screen(output_queue))
+    else:
+      raise ValueError(f"Unsupported video mode: {self._video_mode}")
+    input_stream = streams.merge(
+        [content, streams.dequeue(output_queue)], stop_on_first=True
+    )
+    async for part in input_stream:
+      yield part
 
-      video_task.cancel()
+    video_task.cancel()
 
   def _get_single_camera_frame(self, cap) -> Optional[ProcessorPart]:
     """Get a single frame from the camera."""

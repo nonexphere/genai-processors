@@ -102,7 +102,7 @@ Your JSON:
 
     self._pipeline = p_preamble + p_suffix + self._p_genai_model
 
-  async def __call__(
+  async def call(
       self, content: AsyncIterable[ProcessorPart]
   ) -> AsyncIterable[ProcessorPart]:
     json_parts = []

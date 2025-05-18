@@ -60,10 +60,10 @@ from google.genai import client
 from google.genai import types as genai_types
 
 
-def genai_response_to_custom_metadata(
+def genai_response_to_metadata(
     response: genai_types.GenerateContentResponse,
 ) -> dict[str, Any]:
-  """Converts a Genai response to custom metadata, to be attached to a ProcessorPart."""
+  """Converts a Genai response to metadata, to be attached to a ProcessorPart."""
   return {
       "create_time": response.create_time,
       "response_id": response.response_id,
@@ -77,7 +77,6 @@ def genai_response_to_custom_metadata(
   }
 
 
-# TODO(b/403621093): Support `live` models
 class GenaiModel(processor.Processor):
   """`Processor` that calls the Genai API in turn-based fashion.
 
@@ -141,7 +140,7 @@ class GenaiModel(processor.Processor):
     self._model_name = model_name
     self._generate_content_config = generate_content_config
 
-  async def __call__(
+  async def call(
       self, content: AsyncIterable[content_api.ProcessorPartTypes]
   ) -> AsyncIterable[content_api.ProcessorPartTypes]:
     contents = []
@@ -160,5 +159,5 @@ class GenaiModel(processor.Processor):
           for part in content.parts:
             yield processor.ProcessorPart(
                 part,
-                custom_metadata=genai_response_to_custom_metadata(res),
+                metadata=genai_response_to_metadata(res),
             )

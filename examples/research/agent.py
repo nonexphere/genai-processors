@@ -31,7 +31,7 @@ The agent orchestrates these processors, passing the output of one to the
 input of the next.
 
 For example usage, see the accompanying Colab:
-  # TODO(kpsawhney): Add link to Colab once it's submitted.
+  https://colab.research.google.com/github/google/genai-processors/examples/research/research.ipynb
 """
 
 from typing import AsyncIterable
@@ -113,7 +113,7 @@ class ResearchAgent(processor.Processor):
         + p_genai_model
     )
 
-  async def __call__(
+  async def call(
       self, content: AsyncIterable[ProcessorPart]
   ) -> AsyncIterable[ProcessorPart]:
     async for content_part in self._pipeline(content):

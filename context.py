@@ -15,9 +15,8 @@
 """Context vars for managing task groups."""
 
 import asyncio
-from collections.abc import AsyncIterable, Callable, Coroutine, Iterable
+from collections.abc import Coroutine, Iterable
 import contextvars
-import functools
 from typing import Any, TypeVar
 
 from absl import logging
@@ -49,7 +48,10 @@ def raise_flattened_exception_group(exception: Exception):
 
 
 class CancellableContextTaskGroup(asyncio.TaskGroup):
-  """TaskGroup that adds itself to a contextvar to be accessed by create_task and has a method for cancelling all tasks in the group."""
+  """TaskGroup that adds itself to a contextvar to be accessed by create_task.
+
+  Includes a method for cancelling all tasks in the group.
+  """
 
   def __init__(
       self, *args, reserved_substreams: Iterable[str] | None = None, **kwargs
@@ -134,7 +136,17 @@ _without_context_background_tasks = set()
 
 
 def create_task(*args, **kwargs) -> asyncio.Task:
-  """Creates a task that uses the context TaskGroup, if no context is available then `asyncio.create_task` will be used."""
+  """Creates a task that uses the context TaskGroup.
+
+  If no context is available then `asyncio.create_task` will be used.
+
+  Args:
+    *args: Positional arguments to pass to `asyncio.create_task`.
+    **kwargs: Keyword arguments to pass to `asyncio.create_task`.
+
+  Returns:
+    An asyncio task.
+  """
   tg = task_group()
 
   if tg is None:
@@ -149,39 +161,10 @@ def create_task(*args, **kwargs) -> asyncio.Task:
 _T = TypeVar('_T')
 
 
-def add_context_if_missing(
-    f: Callable[..., AsyncIterable[_T]],
-) -> Callable[..., AsyncIterable[_T]]:
-  """Decorator to add a context to an function that produces an AsyncIterable if there is no context.
-
-  This can be useful if your method does not await created tasks as it will
-  guarantee error propagation.
-
-  Args:
-    f: async callable that yields. (aka any type of processor)
-
-  Returns:
-     f wrapped with logic to add a context if missing.
-  """
-
-  @functools.wraps(f)
-  async def wrapper(*args, **kwargs):
-    tg = task_group()
-    if tg is None:
-      async with context():
-        async for c in f(*args, **kwargs):
-          yield c
-    else:
-      async for c in f(*args, **kwargs):
-        yield c
-
-  return wrapper
-
-
 async def context_cancel_coro(
     f: Coroutine[Any, Any, _T],
 ) -> _T:
-  """Coroutine wrapper that cancels all tasks in the context if the wrapper is cancelled."""
+  """Wrapper that cancels all tasks in context if the wrapper is cancelled."""
   async with context() as ctx:
     try:
       return await f

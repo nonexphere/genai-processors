@@ -16,36 +16,37 @@ r"""Event detection processor.
 
 This processor detects events from the images it receives in its input stream:
 
- * All input is propagated to the output.
- * Last `max_images` encountered in the input are used to detect event.
- Non-image content is ignored.
- * If an event is detected corresponding ProcessorParts are injected in-to the
- output.
- * Event detection is asynchronous so events may not necessarily be injected
- after the ProcessorPart on which it has been observed.
+ *  All inputs are passed to the output.
+ *  The last `max_images` encountered in the input are used to detect event.
+    Non-image content is ignored.
+ *  If an event is detected, the `ProcessorParts` corresponding to the current
+    transition of states (set in the `output_dict` passed in the constructor)
+    are injected into the output.
+ *  Event detection is asynchronous so events may not necessarily be injected
+    after the `ProcessorPart` on which it has been observed.
 
+This processor keeps making calls to the model passed in the constructor to
+detect events in the images. When the model is generating a response, the
+processor keeps collecting up to `max_images` coming up in the input stream and
+sends them all together to the model in the next call. `max_images` is a
+parameter that controls the number of images to keep in the input stream and
+should be tuned based on the image frequency in the input stream and the latency
+of the model to generate a response. With a FPS of 1, a `max_images` of 5 is a
+reasonable value.
 
-It keeps making calls to the model passed in the constructor to detect events
-in the images. When the model is generating a response, the processor keeps
-collecting up to `max_images` coming up in the input stream and sends them all
-together to the model in the next call. `max_images` is a parameter that
-controls the number of images to keep in the input stream and should be tuned
-based on the image frequency in the input stream and the latency of the model
-to generate a response. With a FPS of 1, a `max_images` of 5 is a reasonable
-value.
+The set of events should be defined by an enum.StrEnum class.
 
-The event detection can be paused and resumed for a given event name.
-
-The set of events should be defined by an Enum class. The model response will
-be a string that matches one of the values of the Enum.
+The model response will be a string that matches one of the values of the Enum.
 
 
 ```py
 import enum
 
 # Only use the enum.auto() function to define the values of the enum. Or ensure
-# all the string values are lower case.
-class EventName(enum.StrEnum):
+# all the string values are lower case. The empty string is used to define the
+# default start state.
+
+class EventState(enum.StrEnum):
   SUNNY = enum.auto()
   RAINING = enum.auto()
   RAINING_WITH_MEATBALLS = enum.auto()
@@ -68,29 +69,45 @@ config = {
 }
 ```
 
-Each event is associated to an output that the processor will generate when the
-event is detected. The output should be a `ProcessorPart` and is defined by the
-user. It is specified in the constructor via the `output_dict` argument.
+Each event state transition is associated to an output that the processor will
+generate when the event transitionis detected. The output should be a
+`ProcessorContentTypes` or None and is passed to the constructor via the
+`output_dict` argument. When the output is None, the transition is detected but
+no output is generated.
+
+By default, self-transitions are ignored, i.e. if the
+transition is from a state to the same state, no output will be generated.
 
 ```python
 output_dict = {
-    EventName.EVENT_1: ProcessorPart(
+    # The "*" wild card can be used to define all states, i.e. transitions from
+    # any state (including the start state) to the event state.
+    ("*", EventState.EVENT_1): ProcessorPart(
         text="event_1 is detected",
         role="USER",
         end_of_turn=True,
     ),
-    EventName.EVENT_2: ProcessorPart(
+    (EventState.EVENT_1, EventSate.EVENT_2): ProcessorPart(
         text="event_2 is detected",
         role="USER",
         end_of_turn=True,
     ),
+    # No output for this transition.
+    (EventState.EVENT_2, EventState.EVENT_1): None,
 }
 ```
+
+
+If an observed event transition is not included in the `output_dict`, the
+processor will not generate any output for that transition and the new event
+state will be ignored, i.e. the next transition starting state will be the same
+as the previous one.
 
 Lastly, the sensitivity dictionary passed to the constructor is used to
 define the number of detections in a row that should happen before the event
 detection processor sends a detection output. The keys of this dictionary should
-be the event names and the values should be the number of detection in a row.
+be the event transitions and the values should be the number of detection in a
+row.
 
 This is helpful in noisy situations where you want to have confirmation of a
 detection before you generate an output for the event detection.
@@ -98,9 +115,8 @@ detection before you generate an output for the event detection.
 
 import asyncio
 import collections
-import dataclasses
 import time
-from typing import AsyncIterable, Optional
+from typing import AsyncIterable, Optional, TypeAlias
 from absl import logging
 from genai_processors import content_api
 from genai_processors import processor
@@ -110,42 +126,11 @@ from google.genai import types as genai_types
 
 ProcessorPart = content_api.ProcessorPart
 
-
-def print_exception(tag: str, e: Exception):
-  if isinstance(e, ExceptionGroup):
-    for e in e.exceptions:
-      print_exception(tag, e)
-  else:
-    print(f"Exception in {tag}: {e}")
-    raise e
-
-
-@dataclasses.dataclass
-class EventState:
-  """State of an single event detection."""
-
-  # True if the event detection is paused. The detection should not output
-  # anything when the event is detected but paused.
-  paused: bool = False
-  # The time in seconds when the event was last detected. The reference time is
-  # not specified. To be used to compute duration, not absolute time.
-  detection_time_sec: float = 0
-  # True if the event is detected.
-  event_detected: bool = False
-  # Number of detection in a row that should happen before the event detection
-  # processor sends a detection output.
-  sensitivity: int = 1
-  # When events represent transitions between states (e.g. activities: still,
-  # moving, running, ...) some of them can be more specific states included in
-  # others (e.g. running is included in moving). If we are already in a more
-  # specific state we don't want to to transition to a less specific one. This
-  # set represents the events that are more generic than the current event and
-  # should be ignored when we're already in this state.
-  included_in: set[str] = dataclasses.field(default_factory=set)
-  # Output to return when the event is detected.
-  output: content_api.ProcessorContent = dataclasses.field(
-      default_factory=content_api.ProcessorContent
-  )
+# Name of the default start state, i.e. no event detected.
+START_STATE = ""
+# A transition between two events. A state is represented here by a string,
+# which is the name of the event (events should be defined by an enum.StrEnum).
+EventTransition: TypeAlias = tuple[str, str]
 
 
 class EventDetection(processor.Processor):
@@ -156,9 +141,10 @@ class EventDetection(processor.Processor):
       api_key: str,
       model: str,
       config: genai_types.GenerateContentConfig,
-      output_dict: dict[str, content_api.ProcessorContentTypes],
-      sensitivity: Optional[dict[str, int]] = None,
-      included_in: Optional[dict[str, set[str]]] = None,
+      output_dict: dict[
+          EventTransition, content_api.ProcessorContentTypes | None
+      ],
+      sensitivity: Optional[dict[EventTransition, int]] = None,
       max_images: int = 5,
   ):
     """Initializes the event detection processor.
@@ -169,13 +155,16 @@ class EventDetection(processor.Processor):
       config: The configuration to use for the event detection model. This
         configuration should contain the response schema for the event detection
         model.
-      output_dict: A dictionary of event names to the output to return when the
-        event is detected. All event names should be in the keys of this dict.
-      sensitivity: A dictionary of event names to the number of detection in a
+      output_dict: A dictionary of transitions between events to the output to
+        return when the transition is detected. A transition is a pair of event
+        names `(from_event_state, to_event_state)`, where `from_event_state` can
+        be the start state `START_STATE`, an event name, or the wild card `"*"`
+        to define all transitions from any state (including the start state) to
+        the event state. When the output is None, the transition is detected but
+        no output is returned.
+      sensitivity: A dictionary of transitions to the number of detection in a
         row that should happen before the event detection processor sends a
-        detection output.
-      included_in: A dictionary of event names to the set of events that are
-        more specific than the key, e.g. {"running": {"moving"}}.
+        detection output. By default, the sensitivity is 1 for a transition.
       max_images: The maximum number of images to keep in the input stream.
     """
     self._client = genai.Client(api_key=api_key)
@@ -185,65 +174,37 @@ class EventDetection(processor.Processor):
     if not config.response_schema:
       raise ValueError("Response schema is required for event detection.")
 
-    self._event_states: dict[str, EventState] = {}
-    for event_name, output in output_dict.items():
-      self._event_states[event_name.lower()] = EventState(
-          output=content_api.ProcessorContent(output)
-      )
-      # All events are included in themselves.
-      self._event_states[event_name.lower()].included_in = set(
-          [event_name.lower()]
-      )
-    if sensitivity:
-      for event_name, sensitivity_value in sensitivity.items():
-        self._event_states[event_name.lower()].sensitivity = sensitivity_value
-
-    if included_in:
-      for event_name, included_set in included_in.items():
-        self._event_states[event_name.lower()].included_in.update(included_set)
-    self._event_counter = collections.defaultdict(int)
-    self._last_event_detected = ""
+    self._sensitivity = sensitivity
+    self._output_dict = {}
+    self._init_output_dict(output_dict)
+    self._last_transition = (START_STATE, START_STATE)
+    self._transition_counter = (self._last_transition, 0)
 
     # deque of (image, timestamp) tuples.
     self._images = collections.deque[tuple[ProcessorPart, float]](
         maxlen=max_images
     )
 
-  def pause_detection(self, event_name: str):
-    """Pause event detection for `event_name`.
-
-    Args:
-      event_name: The name of the event to pause. This should be one of the keys
-        in the `output_dict` passed to the constructor.
-    """
-    event_state = self._event_states[event_name.lower()]
-    event_state.paused = True
-    event_state.event_detected = False
-    self._event_counter[event_name.lower()] = 0
-    self._last_event_detected = ""
-
-  def resume_detection(self, event_name: str) -> None:
-    """Resumes event detection for `event_name`."""
-    self._event_states[event_name.lower()].paused = False
-
-  def event_state(self, event_name: str) -> EventState:
-    return self._event_states[event_name.lower()]
-
-  def _update_counter(self, event_name: str) -> None:
-    """Updates the counter for `event_name`."""
-    if self._event_states.get(event_name.lower()) is None:
-      raise ValueError(
-          f"Event name {event_name} is not in the event states. Please check"
-          " the `output_dict` passed to the constructor."
-      )
-    if self._event_states[event_name.lower()].paused:
-      # Do not update the counter if the event is paused.
-      return
-    for k in self._event_states:
-      if k == event_name.lower():
-        self._event_counter[k] += 1
-      else:
-        self._event_counter[k] = 0
+  def _init_output_dict(
+      self,
+      output_dict: dict[EventTransition, content_api.ProcessorContentTypes],
+  ):
+    """Initializes the output dictionary."""
+    # Collect the list of event states from the output_dict (including start
+    # state).
+    event_states = [START_STATE]
+    for transition in output_dict:
+      event_states.append(transition[1])
+    # Add all wild card transitions.
+    for transition, output in output_dict.items():
+      if transition[0] == "*":
+        for event_state in event_states:
+          self._output_dict[(event_state, transition[1])] = output
+    # Add the other transitions: it will override the wild card transitions by
+    # more specific transitions.
+    for transition, output in output_dict.items():
+      if transition[0] != "*":
+        self._output_dict[transition] = output
 
   async def detect_event(
       self,
@@ -265,10 +226,12 @@ class EventDetection(processor.Processor):
         contents=images_with_timestamp,
     )
     logging.debug(
-        "%s - Event detection response: %s / %s",
+        "%s - Event detection response: %s / last transition: %s / transition"
+        " counter: %s",
         time.perf_counter(),
         response.text,
-        self._last_event_detected,
+        self._last_transition,
+        self._transition_counter,
     )
     if not response.text:
       logging.debug(
@@ -277,57 +240,71 @@ class EventDetection(processor.Processor):
       )
       return
 
-    # Only interrupt if the event is detected(commentating on) and not already
-    # interrupted.
     event_name = response.text.lower()
-    self._update_counter(event_name)
-    if event_name in self._event_states:
-      event_state = self._event_states[event_name]
-      if (
-          not event_state.paused
-          and self._event_counter[event_name] >= event_state.sensitivity
-      ):
-        if self._last_event_detected not in event_state.included_in:
-          logging.debug(
-              "%s - New event detection: %s", time.perf_counter(), response.text
-          )
-          event_state.event_detected = True
-          event_state.detection_time_sec = time.perf_counter()
-          for part in event_state.output:
-            output_queue.put_nowait(part)
-        self._last_event_detected = event_name
+    current_transition = (self._last_transition[1], event_name)
+    if current_transition == self._transition_counter[0]:
+      self._transition_counter = (
+          current_transition,
+          self._transition_counter[1] + 1,
+      )
+    else:
+      self._transition_counter = (current_transition, 1)
 
-  async def __call__(
+    is_valid_transition = (
+        current_transition in self._output_dict
+        or current_transition[0] == START_STATE
+    )
+    is_valid_transition = (
+        is_valid_transition and current_transition[1] != current_transition[0]
+    )
+    is_sensitivity_reached = (
+        current_transition not in self._sensitivity
+        or self._transition_counter[1] > self._sensitivity[current_transition]
+    )
+    if is_valid_transition and is_sensitivity_reached:
+      logging.debug(
+          "%s - New event transition: %s",
+          time.perf_counter(),
+          current_transition,
+      )
+      if (
+          current_transition in self._output_dict
+          and self._output_dict[current_transition] is not None
+      ):
+        for part in self._output_dict[current_transition]:
+          output_queue.put_nowait(part)
+      self._last_transition = current_transition
+      self._transition_counter = (current_transition, 1)
+
+  async def call(
       self, content: AsyncIterable[ProcessorPart]
   ) -> AsyncIterable[ProcessorPart]:
     """Run the event detection processor."""
     output_queue = asyncio.Queue()
 
-    async with asyncio.TaskGroup() as tg:
+    async def consume_content():
+      image_detection_task = None
+      async for part in content:
+        output_queue.put_nowait(part)
+        if content_api.is_image(part.mimetype):
+          self._images.append((part.part, time.perf_counter()))
+          if image_detection_task is None or image_detection_task.done():
+            # Only run one image detection task at a time when the previous
+            # one is done. Use a single image to minimize detection latency.
+            image_detection_task = processor.create_task(
+                self.detect_event(output_queue)
+            )
+      output_queue.put_nowait(None)
+      if image_detection_task is not None:
+        try:
+          image_detection_task.cancel()
+          await image_detection_task
+        except asyncio.CancelledError:
+          pass
 
-      async def consume_content():
-        image_detection_task = None
-        async for part in content:
-          output_queue.put_nowait(part)
-          if content_api.is_image(part.mimetype):
-            self._images.append((part.part, time.perf_counter()))
-            if image_detection_task is None or image_detection_task.done():
-              # Only run one image detection task at a time when the previous
-              # one is done. Use a single image to minimize detection latency.
-              image_detection_task = tg.create_task(
-                  self.detect_event(output_queue)
-              )
-        output_queue.put_nowait(None)
-        if image_detection_task is not None:
-          try:
-            image_detection_task.cancel()
-            await image_detection_task
-          except asyncio.CancelledError:
-            pass
+    consume_content_task = processor.create_task(consume_content())
 
-      consume_content_task = tg.create_task(consume_content())
+    while chunk := await output_queue.get():
+      yield chunk
 
-      while chunk := await output_queue.get():
-        yield chunk
-
-      await consume_content_task
+    await consume_content_task

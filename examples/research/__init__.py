@@ -32,7 +32,7 @@ The agent orchestrates these processors, passing the output of one to the
 input of the next.
 
 For example usage, see the accompanying Colab:
-  # TODO(kpsawhney): Add link to Colab once it's submitted.
+  https://colab.research.google.com/github/google/genai-processors/examples/research/research.ipynb
 """
 
 import re
