@@ -14,7 +14,7 @@ a comprehensive answer.
 The best way to understand and use this example is through the accompanying
 Colab notebook:
 
-➡️ **[`genai_research_api.ipynb`](https://colab.research.google.com/github/google-deepmind/genai-processors/blob/main/examples/research/research.ipynb)**
+➡️ **[`genai_research_api.ipynb`](https://colab.research.google.com/github/google/genai-processors/blob/main/examples/research/research.ipynb)**
 
 ### Requirements
 

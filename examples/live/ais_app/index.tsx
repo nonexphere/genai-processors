@@ -49,6 +49,29 @@ export class LiveCommentator extends LitElement {
       },
       {once: true},
     );
+    this.getRootNode().addEventListener('keydown', (e: Event) =>
+      this.keydownHandler(e),
+    );
+  }
+
+  private keydownHandler(e: Event) {
+    const code = (e as KeyboardEvent).code;
+    if (code === 'KeyM') {
+      if (this.mic) this.micOff();
+      else void this.micOn();
+    }
+    if (code === 'KeyR') {
+      this.reset();
+    }
+    if (code === 'Digit1') {
+      this.videoOn(Object.keys(this.videoSources)[0]);
+    }
+    if (code === 'Digit2') {
+      this.videoOn(Object.keys(this.videoSources)[1]);
+    }
+    if (code === 'Digit3') {
+      this.videoOn(Object.keys(this.videoSources)[2]);
+    }
   }
 
   private initializeWebSocket() {

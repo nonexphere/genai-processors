@@ -202,8 +202,8 @@ responds to various events:
     *   Before the current commentary finishes, a new comment is scheduled at a
         time that would make the model output the content of the new comment
         just after the current one is fully played. This scheduling is based on
-        an estimate of TTFT (see [section](#ttft) below). The state is still in
-        `TALKING`.
+        an estimate of TTFT (see [section](#⏱️-timing-and-latency) below). The
+        state is still in `TALKING`.
     *   When the scheduled time arrives, the state transitions to
         `REQUESTING_COMMENT`.
     *   A request is sent to the model to generate the next comment
@@ -231,7 +231,7 @@ responds to various events:
     *   The state transitions to `OFF`.
     *   Any scheduled comments are cancelled.
 
-## ⏱️ Timing and Latency {#ttft}
+## ⏱️ Timing and Latency
 
 The `LiveCommentator` keeps track of the latency of each generation request,
 measured as the time from when the request is sent to the model, to when the
