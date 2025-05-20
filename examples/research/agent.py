@@ -29,9 +29,6 @@ The agent is composed of three main processors:
 
 The agent orchestrates these processors, passing the output of one to the
 input of the next.
-
-For example usage, see the accompanying Colab:
-  https://colab.research.google.com/github/google/genai-processors/examples/research/research.ipynb
 """
 
 from typing import AsyncIterable
