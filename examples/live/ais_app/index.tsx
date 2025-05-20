@@ -187,6 +187,9 @@ export class LiveCommentator extends LitElement {
 
   private async videoOn(sourceId: String) {
     this.screenOff();
+    if (this.video != sourceId) {
+      this.videoOff();
+    }
 
     this.video = sourceId;
     this.videoStream = await navigator.mediaDevices.getUserMedia({
