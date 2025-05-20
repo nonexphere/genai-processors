@@ -47,11 +47,7 @@ from typing import AsyncIterable
 
 from absl import logging
 from genai_processors import content_api
-# copybara:strip_begin
-from genai_processors.examples.live import commentator
-# copybara:strip_end_and_replace_begin
-# import commentator
-# copybara:replace_end
+import commentator
 from websockets.asyncio.server import serve
 from websockets.asyncio.server import ServerConnection
 from websockets.exceptions import ConnectionClosed

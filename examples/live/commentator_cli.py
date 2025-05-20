@@ -57,11 +57,7 @@ from absl import logging
 from genai_processors import content_api
 from genai_processors.core import audio_io
 from genai_processors.core import video
-# copybara:strip_begin
-from genai_processors.examples.live import commentator
-# copybara:strip_end_and_replace_begin
-# import commentator
-# copybara:replace_end
+import commentator
 import pyaudio
 
 # You need to define the API key in the environment variables.

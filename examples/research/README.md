@@ -9,24 +9,6 @@ a comprehensive answer.
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](../../LICENSE)
 
-## 🚀 Getting Started
-
-The best way to understand and use this example is through the accompanying
-Colab notebook:
-
-➡️ **[`genai_research_api.ipynb`](https://colab.research.google.com/github/google/genai-processors/blob/main/examples/research/research.ipynb)**
-
-### Requirements
-
-*   Python 3.10+
-*   The `genai-processors` library (and its dependencies).
-*   A valid Google AI API key with the Gemini API enabled.
-
-Ensure you have the main library installed:
-```bash
-pip install genai-processors
-```
-
 ## ✨ Key Features
 
 This example highlights several key capabilities of the `genai-processors`

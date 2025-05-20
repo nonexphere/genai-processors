@@ -83,7 +83,7 @@ following them in order):
 
 Explore the [examples/](examples/) directory for practical demonstrations:
 
-*   [Research Agent Colab](examples/research/research.ipynb) - a research agent
+*   [Research Agent Colab](examples/research/README.md) - a research agent
     built with Processors, comprising 3 sub-processors, chaining, creating
     `ProcessorPart`s, etc.
 *   [Live Commentary Example](examples/live/README.md) - a description of a live
