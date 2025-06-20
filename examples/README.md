@@ -23,7 +23,7 @@ We recommend checking the following CLI examples first:
     turn-based context.
 
 Sub-directories include more complex agents like [Research](research/README.md)
-(deep research agent) or [Commentator](examples/live/README.md) (live
+(deep research agent) or [Commentator](live/README.md) (live
 commentator on a video feed including an interruption mechanism). Check the
 README files in these subdirectories to get an in-depth description of how they
 work and how they were built.
