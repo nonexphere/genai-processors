@@ -12,4 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Examples of genai processors."""
+"""Examples of genai processors and of their usage."""

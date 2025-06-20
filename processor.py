@@ -26,13 +26,10 @@ import typing
 from typing import Any, Protocol, Self, TypeAlias, overload
 
 import dataclasses_json
-from google.genai import types as genai_types
-from PIL import Image
-
-from . import content_api
-from . import context as context_lib
-from . import map_processor
-from . import streams
+from genai_processors import content_api
+from genai_processors import context as context_lib
+from genai_processors import map_processor
+from genai_processors import streams
 
 # Aliases
 context = context_lib.context
@@ -42,6 +39,7 @@ DEBUG_STREAM = context_lib.DEBUG_STREAM
 STATUS_STREAM = context_lib.STATUS_STREAM
 
 ProcessorPart = content_api.ProcessorPart
+ProcessorPartTypes = content_api.ProcessorPartTypes
 MatchFn: TypeAlias = Callable[[ProcessorPart], bool]
 
 dataclass_json = dataclasses_json.dataclass_json
@@ -77,7 +75,7 @@ def _combined_key_prefix(
 
 
 async def _normalize_part_stream(
-    content: AsyncIterable[content_api.ProcessorPartTypes],
+    content: AsyncIterable[ProcessorPartTypes],
 ) -> AsyncIterable[ProcessorPart]:
   """Yields ProcessorParts given a stream of content convertible to them."""
   async for part in content:
@@ -98,7 +96,7 @@ class ProcessorFn(Protocol):
 
   def __call__(
       self, content: AsyncIterable[ProcessorPart]
-  ) -> AsyncIterable[content_api.ProcessorPartTypes]:
+  ) -> AsyncIterable[ProcessorPartTypes]:
     ...
 
 
@@ -107,7 +105,7 @@ class Processor(abc.ABC):
 
   @typing.final
   async def __call__(
-      self, content: AsyncIterable[content_api.ProcessorPartTypes]
+      self, content: AsyncIterable[ProcessorPartTypes]
   ) -> AsyncIterable[ProcessorPart]:
     """Processes the given content.
 
@@ -161,7 +159,7 @@ class Processor(abc.ABC):
   @abc.abstractmethod
   async def call(
       self, content: AsyncIterable[ProcessorPart]
-  ) -> AsyncIterable[content_api.ProcessorPartTypes]:
+  ) -> AsyncIterable[ProcessorPartTypes]:
     """Implements the Processor logic.
 
     Do not invoke this method directly:
@@ -171,7 +169,7 @@ class Processor(abc.ABC):
     It must be implemented by the processor and is responsible for processing
     the input content and yielding the output content.
 
-    As with any async function it is highly commended not to block inside the
+    As with any async function it is highly recommended not to block inside the
     `call` method as this will prevent other coroutines to make progress.
 
     Args:
@@ -180,10 +178,10 @@ class Processor(abc.ABC):
     Yields:
       the result of processing the input content.
     """
-    async for p in content:
-      yield p
+    async for part in content:
+      yield part
 
-  @property
+  @functools.cached_property
   def key_prefix(self) -> str:
     """Prefix for key to avoid collisions from different Processors.
 
@@ -212,6 +210,7 @@ class Processor(abc.ABC):
     elif isinstance(other, _ChainProcessor):
       return _ChainProcessor([self.call] + other._processor_list)
     else:
+      other: Processor = other  # Make pytype happy.
       return _ChainProcessor([self.call, other.call])
 
 
@@ -225,9 +224,7 @@ class PartProcessorFn(Protocol):
   after another.
   """
 
-  def __call__(
-      self, part: ProcessorPart
-  ) -> AsyncIterable[content_api.ProcessorPartTypes]:
+  def __call__(self, part: ProcessorPart) -> AsyncIterable[ProcessorPartTypes]:
     ...
 
 
@@ -279,13 +276,16 @@ class PartProcessor(abc.ABC):
     Yields:
       the result of processing the input Part.
     """
+    if not self.match(part):
+      yield part
+      return
     async for result in _normalize_part_stream(self.call(part)):
       yield result
 
   @abc.abstractmethod
   async def call(
       self, part: ProcessorPart
-  ) -> AsyncIterable[content_api.ProcessorPartTypes]:
+  ) -> AsyncIterable[ProcessorPartTypes]:
     """Implements the Processor logic.
 
     Do not invoke this method directly:
@@ -304,8 +304,9 @@ class PartProcessor(abc.ABC):
     del part
     return True
 
-  @property
+  @functools.cached_property
   def key_prefix(self) -> str:
+    """Prefix for key to avoid collisions from different Processors."""
     return self.__class__.__qualname__
 
   @overload
@@ -372,18 +373,12 @@ class PartProcessor(abc.ABC):
     )
 
 
-def debug(
-    content: content_api.ProcessorPartTypes, **kwargs
-) -> content_api.ProcessorPart:
+def debug(content: ProcessorPartTypes, **kwargs) -> ProcessorPart:
   """Returns a ProcessorPart with the debug substream."""
-  return content_api.ProcessorPart(
-      content, substream_name=DEBUG_STREAM, **kwargs
-  )
+  return ProcessorPart(content, substream_name=DEBUG_STREAM, **kwargs)
 
 
-def status(
-    content: content_api.ProcessorPartTypes, **kwargs
-) -> content_api.ProcessorPart:
+def status(content: ProcessorPartTypes, **kwargs) -> ProcessorPart:
   """Returns a ProcessorPart with the status substream."""
   return ProcessorPart(content, substream_name=STATUS_STREAM, **kwargs)
 
@@ -410,7 +405,8 @@ async def apply_async(
 
 
 def apply_sync(
-    processor: Processor | PartProcessor, content: Iterable[ProcessorPart]
+    processor: Processor | PartProcessor,
+    content: Iterable[ProcessorPartTypes],
 ) -> list[ProcessorPart]:
   """Applies a Processor synchronously.
 
@@ -600,12 +596,10 @@ def _is_part_processor_protocol(obj: Any) -> bool:
   # in typing or collections.abc, and both should be recognized.
   if return_type.__qualname__ != 'AsyncIterable' or _full_name(
       typing.get_args(return_type)[0]
-  ) != _full_name(content_api.ProcessorPart):
+  ) != _full_name(ProcessorPart):
     return False
   # Type hints contains the input type only.
-  if _full_name(next(iter(type_hint.values()))) != _full_name(
-      content_api.ProcessorPart
-  ):
+  if _full_name(next(iter(type_hint.values()))) != _full_name(ProcessorPart):
     return False
   return True
 
@@ -635,6 +629,10 @@ class _PartProcessorWrapper(PartProcessor):
   def match(self, part: ProcessorPart) -> bool:
     return self._match_fn(part)
 
+  @functools.cached_property
+  def key_prefix(self) -> str:
+    return '_PartProcessorWrapper:' + _key_prefix(self._fn)
+
   def __repr__(self):
     return f'{self.__class__.__name__}({self._fn})'
 
@@ -648,7 +646,7 @@ class _ChainPartProcessor(PartProcessor):
   ):
     self._processor_list = list(processor_list)
 
-  @property
+  @functools.cached_property
   def key_prefix(self) -> str:
     return '_ChainPartProcessor:' + _combined_key_prefix(self._processor_list)
 
@@ -662,7 +660,8 @@ class _ChainPartProcessor(PartProcessor):
           *self._processor_list,
           other,
       ])
-    elif isinstance(other, _ChainProcessor):
+    other: Processor = other  # Make pytype happy.
+    if isinstance(other, _ChainProcessor):
       return _ChainProcessor([self.to_processor().call, *other._processor_list])
     elif not self._processor_list:
       return _ChainProcessor([other.call])
@@ -672,7 +671,9 @@ class _ChainPartProcessor(PartProcessor):
   def match(self, part: ProcessorPart) -> bool:
     return any(p.match(part) for p in self._processor_list)
 
-  async def call(self, part: ProcessorPart) -> AsyncIterable[ProcessorPart]:
+  async def call(
+      self, part: ProcessorPart
+  ) -> AsyncIterable[ProcessorPartTypes]:
     if not self._processor_list:
       # Empty chain = passthrough processor
       yield part
@@ -703,10 +704,10 @@ class _ProcessorWrapper(Processor):
   async def call(
       self, content: AsyncIterable[ProcessorPart]
   ) -> AsyncIterable[ProcessorPart]:
-    # This method is overriden in the __init__.
-    yield ProcessorPart(text='')
+    # This method is overridden in the __init__.
+    yield ProcessorPart('')
 
-  @property
+  @functools.cached_property
   def key_prefix(self) -> str:
     return _key_prefix(self.call)
 
@@ -729,7 +730,7 @@ class _ChainProcessor(Processor):
 
   async def call(
       self, content: AsyncIterable[ProcessorPart]
-  ) -> AsyncIterable[ProcessorPart]:
+  ) -> AsyncIterable[ProcessorPartTypes]:
     if not self._processor_list:
       # Empty chain = passthrough processor
       async for part in content:
@@ -741,7 +742,7 @@ class _ChainProcessor(Processor):
     ):
       yield result
 
-  @property
+  @functools.cached_property
   def key_prefix(self) -> str:
     return '_ChainProcessor:' + _combined_key_prefix(self._processor_list)
 
@@ -830,7 +831,11 @@ class _CaptureReservedSubstreams(PartProcessor):
         yield part
 
   def match(self, part: ProcessorPart) -> bool:
-    return context_lib.is_reserved_substream(part.substream_name)
+    return (
+        context_lib.is_reserved_substream(part.substream_name)
+        or not hasattr(self._part_processor_fn, 'match')
+        or self._part_processor_fn.match(part)
+    )
 
 
 def _chain_part_processors(
@@ -922,7 +927,7 @@ class _ParallelProcessor(Processor):
       yield part
       output_queue.task_done()
 
-  @property
+  @functools.cached_property
   def key_prefix(self) -> str:
     return '_ParallelProcessor:' + _combined_key_prefix(self._processor_list)
 
@@ -953,7 +958,9 @@ class _ParallelPartProcessor(PartProcessor):
     else:
       return _ParallelPartProcessor(self._processor_list + [processor])
 
-  async def call(self, part: ProcessorPart) -> AsyncIterable[ProcessorPart]:
+  async def call(
+      self, part: ProcessorPart
+  ) -> AsyncIterable[ProcessorPartTypes]:
     async for result in _parallel_part_processors(self._processor_list)(part):
       yield result
 
@@ -971,7 +978,7 @@ class _ParallelPartProcessor(PartProcessor):
       # it.
       return True
 
-  @property
+  @functools.cached_property
   def key_prefix(self) -> str:
     return '_ParallelPartProcessor:' + _combined_key_prefix(
         self._processor_list
@@ -1072,40 +1079,4 @@ async def process_streams_parallel(
 ) -> AsyncIterable[ProcessorPart]:
   """Processes a sequence of content streams using the specified processor."""
   async for c in streams.concat(*[processor(s) for s in content_streams]):
-    yield c
-
-
-def to_genai_part(
-    part_content: content_api.ProcessorPartTypes,
-    mimetype: str | None = None,
-) -> genai_types.Part:
-  """Converts object of type `ProcessorPartTypes` to a Genai Part.
-
-  Args:
-    part_content: The content to convert.
-    mimetype: (Optional) The mimetype of the content. Must be specified if
-      part_content is bytes.
-
-  Returns:
-    The Genai Part representation of the content.
-  """
-  if isinstance(part_content, str):
-    return genai_types.Part(text=part_content)
-  elif isinstance(part_content, bytes):
-    if mimetype is None:
-      raise ValueError(
-          'Mimetype must be specified for bytes to_genai_part conversion.'
-      )
-    p = ProcessorPart(part_content, mimetype=mimetype)
-    return p.part
-  elif isinstance(part_content, Image.Image):
-    p = ProcessorPart(part_content)
-    return p.part
-  elif isinstance(part_content, ProcessorPart):
-    return part_content.part
-  elif isinstance(part_content, genai_types.Part):
-    return part_content
-  else:
-    raise ValueError(
-        f'Unsupported type for to_genai_part: {type(part_content)}'
-    )
+    yield ProcessorPart(c)

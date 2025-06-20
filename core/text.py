@@ -16,6 +16,7 @@
 
 from collections.abc import AsyncIterable, Callable
 import re
+from typing import Type
 from genai_processors import content_api
 from genai_processors import processor
 
@@ -87,6 +88,10 @@ class MatchProcessor(processor.Processor):
       substream_output: str = '',
       flush_fn: Callable[[content_api.ProcessorPart], bool] | None = (None),
       remove_from_input_stream: bool = True,
+      transform: (
+          Callable[[content_api.ProcessorPart], content_api.ProcessorPart]
+          | None
+      ) = None,
   ):
     """Extracts text parts from the input stream that match the pattern.
 
@@ -139,6 +144,7 @@ class MatchProcessor(processor.Processor):
         parts from the input stream. If False, the input stream will be
         preserved and the parts will be returned as is quickly. The processor
         will output into its `substream_output` substream once a match is found.
+      transform: A transformation to be applied to the matched Parts.
     """
     self._word_start = word_start
     self._pattern = re.compile(pattern, re.DOTALL)
@@ -146,6 +152,10 @@ class MatchProcessor(processor.Processor):
     self._substream_output = substream_output
     self._flush_fn = flush_fn or (lambda _: False)
     self._remove_from_input_stream = remove_from_input_stream
+    if transform:
+      self._transform = transform
+    else:
+      self._transform = lambda part: part
 
   def _extract_part(
       self, text_buffer: str, part_buffer: list[content_api.ProcessorPart]
@@ -186,11 +196,13 @@ class MatchProcessor(processor.Processor):
         )
       if match.start() < offset + len(c.text) and match.start() >= offset:
         to_yield.append(
-            content_api.ProcessorPart(
-                match.group(0),
-                metadata=c.metadata,
-                substream_name=self._substream_output,
-                mimetype=c.mimetype,
+            self._transform(
+                content_api.ProcessorPart(
+                    match.group(0),
+                    metadata=c.metadata,
+                    substream_name=self._substream_output,
+                    mimetype=c.mimetype,
+                )
             )
         )
 
@@ -278,3 +290,79 @@ class MatchProcessor(processor.Processor):
           'Max loop count reached, the pattern or the input stream is probably'
           ' malformed.'
       )
+
+
+class UrlExtractor(MatchProcessor):
+  """Replaces encountered text URLs with strongly typed Parts.
+
+  In some scenarios it is useful to replace URLs mentioned in the prompt with
+  the content they point to. In many cases it can be handled by tool calls, but
+  if we want to avoid additional roundtrip or the underlying model does not
+  support tools, hardwired logic might be preferrable.
+
+  We recommend splitting detecting the URLs and fetching them into separate
+  processors. The processor that does the fetching should act on Parts with a
+  special MIME type to avoid fetching them unintentionally. And a separate
+  processor should decide which URLs should be processed.
+
+  This processor turns each URL in the prompt text in-to that Part with a
+  special MIME type. Define a dataclass for each URL:
+
+    @dataclasses_json.dataclass_json
+    @dataclasses.dataclass(frozen=True)
+    class YouTubeUrl:
+      url: str
+
+  And then tell UrlExtractor to extract them:
+
+    UrlExtractor({
+        'https://youtube.': YouTubeUrl,
+        'https://github.com': GithubUrl
+    })
+
+  Note that all URLs must have the same scheme to allow efficient matching.
+  """
+
+  def __init__(
+      self,
+      urls: dict[str, Type],  # pylint: disable=g-bare-generic
+      *,
+      substream_input: str = '',
+      substream_output: str = '',
+  ):
+    """Initiallizes the extractor.
+
+    Args:
+      urls: A map from URL prefix (e.g. 'https://github.com') to a Dataclass)
+      substream_input: name of the substream to use for the input part.
+      substream_output: name of the substream to use for the extracted part.
+    """
+    scheme = None
+    for prefix in urls.keys():
+      next_scheme = prefix.split(':')[0]
+      if scheme and scheme != next_scheme:
+        raise ValueError(
+            'All URL prefixes must have the same scheme e.g. https. Got'
+            f' {scheme!r} and {next_scheme!r}'
+        )
+      scheme = next_scheme
+
+    def transform(part: content_api.ProcessorPart):
+      for prefix, dataclass in urls.items():
+        if part.text.startswith(prefix):
+          return content_api.ProcessorPart.from_dataclass(
+              dataclass=dataclass(part.text),
+              metadata=part.metadata,
+              substream_name=part.substream_name,
+          )
+
+    super().__init__(
+        pattern='('
+        + '|'.join(urls.keys())
+        + ")[0-9a-zA-Z$\\-_\\.\\+!*'\\(\\);/\\?:@=&]*",
+        word_start=scheme,
+        substream_input=substream_input,
+        substream_output=substream_output,
+        remove_from_input_stream=True,
+        transform=transform,
+    )

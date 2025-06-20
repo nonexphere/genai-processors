@@ -22,6 +22,8 @@ https://www.iana.org/assignments/media-types/media-types.xhtml
 or define a custom */x-*.
 """
 
+from typing import Any
+
 IMAGE_PNG = 'image/png'
 IMAGE_JPEG = 'image/jpeg'
 IMAGE_WEBP = 'image/webp'
@@ -123,9 +125,10 @@ def is_json(mime: str) -> bool:
   return mime == TEXT_JSON or mime.startswith(TEXT_JSON)
 
 
-def is_dataclass(mime: str) -> bool:
+def is_dataclass(mime: str, json_dataclass: type[Any] | None = None) -> bool:
   """Returns whether the content is a dataclass."""
-  return mime.startswith('application/json; type=')
+  type_name = json_dataclass.__name__ if json_dataclass else ''
+  return mime.startswith(f'application/json; type={type_name}')
 
 
 def is_image(mime: str) -> bool:

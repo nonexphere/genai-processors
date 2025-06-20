@@ -17,9 +17,9 @@
 import asyncio
 from collections.abc import AsyncIterable, Iterable
 import copy
-from typing import TypeVar
+from typing import Any, TypeVar
 
-from . import context
+from genai_processors import context
 
 _T = TypeVar('_T')
 
@@ -57,7 +57,7 @@ def split(
     return (content,)
   queues = [asyncio.Queue() for _ in range(n)]
 
-  async def enqueue() -> None:
+  async def enqueue_parts() -> None:
     async for part in content:
       for queue in queues:
         if with_copy:
@@ -67,15 +67,15 @@ def split(
     for queue in queues:
       queue.put_nowait(None)
 
-  async def dequeue(
+  async def dequeue_parts(
       queue: asyncio.Queue[_T],
   ) -> AsyncIterable[_T]:
     while (part := await queue.get()) is not None:
       yield part
 
-  context.create_task(enqueue())
+  context.create_task(enqueue_parts())
 
-  return tuple(dequeue(queue) for queue in queues)
+  return tuple(dequeue_parts(queue) for queue in queues)
 
 
 async def concat(*contents: AsyncIterable[_T]) -> AsyncIterable[_T]:
@@ -242,3 +242,22 @@ async def aenumerate(
   async for x in aiterable:
     yield (i, x)
     i += 1
+
+
+async def endless_stream() -> AsyncIterable[Any]:
+  """Empty input stream for the live agents.
+
+  The Live API and VideoIn / PyAudioIn processors lifetime is bound to the
+  incoming Part stream. More complex setups would use the stream to send
+  additional data such as the initial context or text entered in the terminal.
+
+  For simpler use cases this is an empty never-ending stream to keep such
+  processors alive.
+
+  Yields:
+    Nothing. The stream keeps waiting and will never end unless cancelled.
+  """
+  while True:
+    await asyncio.sleep(1)
+  # Unreachable. Needed to make the function a generator.
+  yield None

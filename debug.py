@@ -20,8 +20,8 @@ import time
 
 from absl import logging
 
-from . import content_api
-from . import processor
+from genai_processors import content_api
+from genai_processors import processor
 
 ProcessorPart = content_api.ProcessorPart
 

@@ -58,8 +58,8 @@ from collections.abc import AsyncIterable, Callable, Iterable, Sequence
 import functools
 from typing import TypeAlias, TypeVar
 
-from . import context
-from . import streams
+from genai_processors import context
+from genai_processors import streams
 
 
 _T = TypeVar('_T')

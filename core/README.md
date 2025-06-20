@@ -15,8 +15,11 @@ The library includes several pre-built processors:
 *   **`timestamp.Timestamp`**: Adds `ProcessorPart` objects containing
     timestamps to a stream, commonly used with image or video frames.
 *   **`audio_io.PyAudioIn` / `audio_io.PyAudioOut`**: For capturing audio from a
-    microphone (`PyAudioIn`) and playing audio to speakers (`PyAudioOut`) using PyAudio.
+    microphone (`PyAudioIn`) and playing audio to speakers (`PyAudioOut`) using
+    PyAudio.
 *   **`video.VideoIn`**: Generates a stream of image `ProcessorPart` objects
     from a camera or screen capture source.
 *   **`preamble.Preamble` / `preamble.Suffix`**: Adds fixed content to the
     beginning (`Preamble`) or end (`Suffix`) of a full content stream.
+*   **`drive.Docs` / `drive.Sheets` / `drive.Slides`**: Downloads Google
+    Docs / Sheets / Slides, which can be passed to a `GenaiModel` for grounding.

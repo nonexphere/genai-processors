@@ -145,7 +145,10 @@ class GenaiModel(processor.Processor):
   ) -> AsyncIterable[content_api.ProcessorPartTypes]:
     contents = []
     async for content_part in content:
-      contents.append(processor.to_genai_part(content_part))
+      contents.append(content_api.to_genai_part(content_part))
+
+    if not contents:
+      return
 
     async for res in await self._client.aio.models.generate_content_stream(
         model=self._model_name,
@@ -160,4 +163,5 @@ class GenaiModel(processor.Processor):
             yield processor.ProcessorPart(
                 part,
                 metadata=genai_response_to_metadata(res),
+                role=content.role or "model",
             )

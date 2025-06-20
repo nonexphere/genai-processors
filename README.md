@@ -1,5 +1,8 @@
 # GenAI Processors Library 📚
 
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+[![PyPI version](https://img.shields.io/pypi/v/genai-processors.svg)](https://pypi.org/project/genai-processors/)
+
 **Build Modular, Asynchronous, and Composable AI Pipelines for Generative AI.**
 
 GenAI Processors is a lightweight Python library that enables efficient,
@@ -11,26 +14,33 @@ At the core of the GenAI Processors library lies the concept of a `Processor`. A
 compatible types) as output.
 
 ```python
+# Any class inheriting from processor.Processor and
+# implementing this function is a processor.
 async def call(
   content: AsyncIterable[ProcessorPart]
 ) -> AsyncIterable[ProcessorPartTypes]
 ```
 
-By processing diverse input modalities in a bidirectional streaming fashion,
-Processors are helpful for streamlining agent development, particularly for
-building agents using the
-[Gemini Live API](https://ai.google.dev/gemini-api/docs/live).
+A `Processor` can then be applied on any input stream and to be iterated on
+easily:
+
+```python
+from genai_processors import content_api
+from genai_processors import streams
+
+# Create an input stream (strings are automatically cast into Parts).
+input_parts = ["Hello", content_api.ProcessorPart("World")]
+input_stream = streams.stream_content(input_parts)
+
+# Apply a processor to a stream of parts and iterate over the result
+async for part in simple_text_processor(input_stream):
+  print(part.text)
+...
+```
 
 The concept of `Processor` provides a common abstraction for Gemini model calls
 and increasingly complex behaviors built around them, accommodating both
 turn-based interactions and live streaming.
-
-The GenAI Processors library offers an easy and intuitive way to create and
-combine these processors and arranges for their async execution in the most
-efficient way.
-
-[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
-<!-- Add badges for PyPI version once available -->
 
 ## ✨ Key Features
 
@@ -83,12 +93,18 @@ following them in order):
 
 Explore the [examples/](examples/) directory for practical demonstrations:
 
+*   [Real-Time Live Example](examples/realtime_simple_cli.py) - an Audio-in
+    Audio-out Live agent with google search as a tool. It is a client-side
+    implementation of a Live processor (built with the turn-based
+    [Gemini API](https://ai.google.dev/gemini-api/docs)) and demonstrates the
+    streaming and orchestration capabilities of GenAI Processors.
 *   [Research Agent Example](examples/research/README.md) - a research agent
     built with Processors, comprising 3 sub-processors, chaining, creating
     `ProcessorPart`s, etc.
 *   [Live Commentary Example](examples/live/README.md) - a description of a live
-    commentary agent built with the Gemini Live API, composed of two agents: one
-    for event detection and one for managing the conversation.
+    commentary agent built with the
+    [Gemini Live API](https://ai.google.dev/gemini-api/docs/live), composed of
+    two agents: one for event detection and one for managing the conversation.
 
 ## 🧩 Built-in Processors
 
@@ -110,3 +126,8 @@ guidelines on how to contribute to this project.
 
 This project is licensed under the Apache License, Version 2.0. See the
 [LICENSE](LICENSE) file for details.
+
+## Gemini Terms of Services
+
+If you make use of Gemini via the Genai Processors framework, please ensure you
+review the [Terms of Service](https://ai.google.dev/gemini-api/terms).

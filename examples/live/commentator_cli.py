@@ -45,7 +45,7 @@ The script takes a video-mode flag `--mode`, this can be "camera", "screen". The
 default is "camera". To share your screen run:
 
 ```shell
-pytho3n ./commentator_cli.py --mode=screen
+python3 ./commentator_cli.py --mode=screen
 ```
 """
 
@@ -79,7 +79,7 @@ async def run_commentator(video_mode: str) -> None:
   video_mode_enum = video.VideoMode(video_mode)
   input_processor = video.VideoIn(
       video_mode=video_mode_enum
-  ) + audio_io.PyAudioIn(pya)
+  ) + audio_io.PyAudioIn(pya, use_pcm_mimetype=True)
 
   async def input_stream():
     """Empty input stream for the live commentary agent."""

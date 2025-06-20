@@ -22,10 +22,9 @@ import json
 from typing import Any, TypeVar
 
 from absl import logging
+from genai_processors import mime_types
 from google.genai import types as genai_types
 import PIL.Image
-
-from . import mime_types
 
 
 class ProcessorPart:
@@ -502,6 +501,16 @@ class ProcessorContent:
     return sum(1 for _ in self)
 
 
+END_OF_TURN = ProcessorPart('', role='user', metadata={'end_of_turn': True})
+
+
+def is_end_of_turn(part: ProcessorPart) -> bool:
+  """Returns the end of turn event if the part is an end of turn event."""
+  if part.role == 'user' and part.get_metadata('end_of_turn'):
+    return True
+  return False
+
+
 # Types that can be converted to a ProcessorPart.
 ProcessorPartTypes = (
     genai_types.Part | ProcessorPart | str | bytes | PIL.Image.Image
@@ -531,6 +540,39 @@ is_source_code = mime_types.is_source_code
 is_pdf = mime_types.is_pdf
 is_csv = mime_types.is_csv
 is_python = mime_types.is_python
+
+
+def mime_type(part: ProcessorPart) -> str:
+  """Returns the mimetype of the part."""
+  return part.mimetype
+
+
+def get_substream_name(
+    part: ProcessorPart,
+) -> str:
+  """Returns the substream name of the part."""
+  return part.substream_name
+
+
+def group_by_mimetype(content: ProcessorContent) -> dict[str, ProcessorContent]:
+  """Groups content by mimetype.
+
+  The order of parts within each mimetype grouping is preserved, maintaining the
+  same order as they appeared in the original input `content`.
+
+  Args:
+    content: The content to group.
+
+  Returns:
+    A dictionary mapping mimetypes to ProcessorContent objects, with the same
+    order as in the original input `content`.
+  """
+  grouped_content = {}
+  for mimetype, part in content.items():
+    if mimetype not in grouped_content:
+      grouped_content[mimetype] = ProcessorContent()
+    grouped_content[mimetype] += part
+  return grouped_content
 
 
 # Functions that reduce ProcessorContent to well known formats.
@@ -658,22 +700,37 @@ def as_videos(
   )
 
 
-def group_by_mimetype(content: ProcessorContent) -> dict[str, ProcessorContent]:
-  """Groups content by mimetype.
-
-  The order of parts within each mimetype grouping is preserved, maintaining the
-  same order as they appeared in the original input `content`.
+def to_genai_part(
+    part_content: ProcessorPartTypes,
+    mimetype: str | None = None,
+) -> genai_types.Part:
+  """Converts object of type `ProcessorPartTypes` to a Genai Part.
 
   Args:
-    content: The content to group.
+    part_content: The content to convert.
+    mimetype: (Optional) The mimetype of the content. Must be specified if
+      part_content is bytes.
 
   Returns:
-    A dictionary mapping mimetypes to ProcessorContent objects, with the same
-    order as in the original input `content`.
+    The Genai Part representation of the content.
   """
-  grouped_content = {}
-  for mimetype, part in content.items():
-    if mimetype not in grouped_content:
-      grouped_content[mimetype] = ProcessorContent()
-    grouped_content[mimetype] += part
-  return grouped_content
+  if isinstance(part_content, str):
+    return genai_types.Part(text=part_content)
+  elif isinstance(part_content, bytes):
+    if mimetype is None:
+      raise ValueError(
+          'Mimetype must be specified for bytes to_genai_part conversion.'
+      )
+    p = ProcessorPart(part_content, mimetype=mimetype)
+    return p.part
+  elif isinstance(part_content, PIL.Image.Image):
+    p = ProcessorPart(part_content)
+    return p.part
+  elif isinstance(part_content, ProcessorPart):
+    return part_content.part
+  elif isinstance(part_content, genai_types.Part):
+    return part_content
+  else:
+    raise ValueError(
+        f'Unsupported type for to_genai_part: {type(part_content)}'
+    )
