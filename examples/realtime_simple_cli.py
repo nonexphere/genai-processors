@@ -52,6 +52,7 @@ from absl import logging
 from genai_processors import content_api
 from genai_processors import context
 from genai_processors import processor
+from genai_processors import streams
 from genai_processors.core import audio_io
 from genai_processors.core import genai_model
 from genai_processors.core import rate_limit_audio
@@ -110,22 +111,6 @@ async def run_conversation() -> None:
   and output devices.
   """
 
-  async def input_stream() -> AsyncIterable[content_api.ProcessorPart]:
-    """Empty input stream for the conversation agent.
-
-    The PyAudioIn processor lifetime is bound to the incoming Part stream. This
-    is an empty never-ending stream to keep it alive. In a more complex setup it
-    can be used to send additional data such as the initial context or text
-    entered in the terminal.
-
-    Yields:
-      Nothing. The stream keeps waiting and will never end unless cancelled.
-    """
-    while True:
-      await asyncio.sleep(1)
-    # Unreachable. Needed to make the function a generator.
-    yield content_api.ProcessorPart("")
-
   # input processor = audio stream from the default input device/mic + STT
   # The STT processor is used to convert the audio stream to text. This will
   # be used to store the conversation history in the prompt.
@@ -176,7 +161,7 @@ async def run_conversation() -> None:
       + play_output
   )
 
-  async for part in conversation_agent(input_stream()):
+  async for part in conversation_agent(streams.endless_stream()):
     # Print the transcription and the output of the model (should include status
     # parts and other metadata parts)
     match part.role:
