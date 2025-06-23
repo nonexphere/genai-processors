@@ -59,27 +59,22 @@ class VideoIn(processor.Processor):
   async def call(
       self, content: AsyncIterable[ProcessorPart]
   ) -> AsyncIterable[ProcessorPart]:
-    output_queue = asyncio.Queue[Optional[ProcessorPart]]()
     if self._video_mode == VideoMode.CAMERA:
-      video_task = processor.create_task(self.get_frames(output_queue))
+      video_task = self.get_frames()
     elif self._video_mode == VideoMode.SCREEN:
-      video_task = processor.create_task(self.get_screen(output_queue))
+      video_task = self.get_screen()
     else:
       raise ValueError(f"Unsupported video mode: {self._video_mode}")
-    input_stream = streams.merge(
-        [content, streams.dequeue(output_queue)], stop_on_first=True
-    )
-    async for part in input_stream:
+
+    async for part in streams.merge([content, video_task], stop_on_first=True):
       yield part
 
-    video_task.cancel()
-
-  def _get_single_camera_frame(self, cap) -> Optional[ProcessorPart]:
+  def _get_single_camera_frame(self, cap) -> ProcessorPart:
     """Get a single frame from the camera."""
     # Read the frame queue
     ret, frame = cap.read()
     if not ret:
-      return None
+      raise RuntimeError("Couldn't captrue a frame.")
     # Fix: Convert BGR to RGB color space
     # OpenCV captures in BGR but PIL expects RGB format
     # This prevents the blue tint in the video feed
@@ -89,30 +84,24 @@ class VideoIn(processor.Processor):
 
     return ProcessorPart(img, substream_name=self._substream_name, role="USER")
 
-  async def get_frames(
-      self, output_queue: asyncio.Queue[Optional[ProcessorPart]]
-  ):
-    """Send frames from the camera to the output queue, 1 FPS."""
+  async def get_frames(self) -> AsyncIterable[ProcessorPart]:
+    """Yields frames from the camera, 1 FPS."""
     # This takes about a second, and will block the whole program
     # causing the audio pipeline to overflow if you don't to_thread it.
     cap = await asyncio.to_thread(
         cv2.VideoCapture, 0
     )  # 0 represents the default camera
 
-    while True:
-      frame = await asyncio.to_thread(self._get_single_camera_frame, cap)
-      if frame is None:
-        print("No frame")
-        output_queue.put_nowait(None)
-        break
+    try:
+      # The coroutine will be cancelled when we are done, breaking the loop.
+      while True:
+        yield await asyncio.to_thread(self._get_single_camera_frame, cap)
+        await asyncio.sleep(1.0)
+    finally:
+      # Release the VideoCapture object
+      cap.release()
 
-      output_queue.put_nowait(frame)
-      await asyncio.sleep(1.0)
-
-    # Release the VideoCapture object
-    cap.release()
-
-  def _get_single_screen_frame(self):
+  def _get_single_screen_frame(self) -> ProcessorPart:
     """Get a single frame from the screen."""
     try:
       from mss import mss  # pytype: disable=import-error # pylint: disable=g-import-not-at-top
@@ -127,17 +116,9 @@ class VideoIn(processor.Processor):
 
     return ProcessorPart(img, substream_name=self._substream_name, role="USER")
 
-  async def get_screen(
-      self, output_queue: asyncio.Queue[Optional[ProcessorPart]]
-  ):
-    """Send frames from the screen to the output queue, 1 FPS."""
-
+  async def get_screen(self) -> AsyncIterable[ProcessorPart]:
+    """Yield frames from the screen, 1 FPS."""
+    # The coroutine will be cancelled when we are done, breaking the loop.
     while True:
-      frame = await asyncio.to_thread(self._get_single_screen_frame)
-      if frame is None:
-        output_queue.put_nowait(None)
-        break
-
+      yield await asyncio.to_thread(self._get_single_screen_frame)
       await asyncio.sleep(1.0)
-
-      output_queue.put_nowait(frame)
