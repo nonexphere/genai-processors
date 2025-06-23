@@ -16,7 +16,6 @@
 
 import asyncio
 import enum
-import io
 from typing import AsyncIterable, Optional
 import cv2
 from genai_processors import content_api
@@ -86,19 +85,9 @@ class VideoIn(processor.Processor):
     # This prevents the blue tint in the video feed
     frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     img = PIL.Image.fromarray(frame_rgb)  # Now using RGB frame
+    img.format = "JPEG"
 
-    image_io = io.BytesIO()
-    img.save(image_io, format="jpeg")
-    image_io.seek(0)
-
-    mime_type = "image/jpeg"
-    image_bytes = image_io.read()
-    return ProcessorPart(
-        image_bytes,
-        mimetype=mime_type,
-        substream_name=self._substream_name,
-        role="USER",
-    )
+    return ProcessorPart(img, substream_name=self._substream_name, role="USER")
 
   async def get_frames(
       self, output_queue: asyncio.Queue[Optional[ProcessorPart]]
@@ -133,22 +122,10 @@ class VideoIn(processor.Processor):
     monitor = sct.monitors[0]
 
     i = sct.grab(monitor)
+    img = PIL.Image.frombuffer("RGB", i.size, i.rgb)
+    img.format = "JPEG"
 
-    mime_type = "image/jpeg"
-    image_bytes = mss.tools.to_png(i.rgb, i.size)
-    img = PIL.Image.open(io.BytesIO(image_bytes))
-
-    image_io = io.BytesIO()
-    img.save(image_io, format="jpeg")
-    image_io.seek(0)
-
-    image_bytes = image_io.read()
-    return ProcessorPart(
-        image_bytes,
-        mimetype=mime_type,
-        substream_name=self._substream_name,
-        role="USER",
-    )
+    return ProcessorPart(img, substream_name=self._substream_name, role="USER")
 
   async def get_screen(
       self, output_queue: asyncio.Queue[Optional[ProcessorPart]]
