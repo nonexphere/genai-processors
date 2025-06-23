@@ -21,8 +21,8 @@ async def call(
 ) -> AsyncIterable[ProcessorPartTypes]
 ```
 
-A `Processor` can then be applied on any input stream and to be iterated on
-easily:
+You can apply a `Processor` to any input stream and easily iterate through its
+output stream:
 
 ```python
 from genai_processors import content_api
@@ -95,9 +95,10 @@ Explore the [examples/](examples/) directory for practical demonstrations:
 
 *   [Real-Time Live Example](examples/realtime_simple_cli.py) - an Audio-in
     Audio-out Live agent with google search as a tool. It is a client-side
-    implementation of a Live processor (built with the turn-based
-    [Gemini API](https://ai.google.dev/gemini-api/docs)) and demonstrates the
-    streaming and orchestration capabilities of GenAI Processors.
+    implementation of a Live processor (built with text-based
+    [Gemini API](https://ai.google.dev/gemini-api/docs) models) that
+    demonstrates the streaming and orchestration capabilities of GenAI
+    Processors.
 *   [Research Agent Example](examples/research/README.md) - a research agent
     built with Processors, comprising 3 sub-processors, chaining, creating
     `ProcessorPart`s, etc.
