@@ -86,6 +86,7 @@ import os
 import time
 
 from genai_processors import content_api
+from genai_processors import streams
 from genai_processors.core import audio_io
 from genai_processors.core import speech_to_text
 import pyaudio
@@ -98,22 +99,13 @@ GOOGLE_PROJECT_ID = os.environ["GOOGLE_PROJECT_ID"]
 
 async def run_stt() -> None:
   """Runs speech-to-text in a CLI environment."""
-
-  async def input_stream():
-    """Empty input stream for the speech-to-text processor."""
-    try:
-      while True:
-        await asyncio.sleep(1)
-    finally:
-      yield content_api.ProcessorPart("Ending the stream")
-
   pya = pyaudio.PyAudio()
   stt_processor = audio_io.PyAudioIn(pya) + speech_to_text.SpeechToText(
       project_id=GOOGLE_PROJECT_ID, with_interim_results=True
   )
 
   print(f"{time.perf_counter()} - STT Processor ready: start talking anytime.")
-  async for parts in stt_processor(input_stream()):
+  async for parts in stt_processor(streams.endless_stream()):
     print(f"{time.perf_counter()} - STT Parts: {parts}")
 
 

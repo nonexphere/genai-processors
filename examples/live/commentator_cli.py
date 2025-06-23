@@ -55,6 +55,7 @@ import os
 
 from absl import logging
 from genai_processors import content_api
+from genai_processors import streams
 from genai_processors.core import audio_io
 from genai_processors.core import video
 import commentator
@@ -81,14 +82,6 @@ async def run_commentator(video_mode: str) -> None:
       video_mode=video_mode_enum
   ) + audio_io.PyAudioIn(pya, use_pcm_mimetype=True)
 
-  async def input_stream():
-    """Empty input stream for the live commentary agent."""
-    try:
-      while True:
-        await asyncio.sleep(1)
-    finally:
-      yield content_api.ProcessorPart("Ending the stream")
-
   commentator_processor = commentator.create_live_commentator(API_KEY)
 
   consume_output = audio_io.PyAudioOut(pya)
@@ -99,7 +92,7 @@ async def run_commentator(video_mode: str) -> None:
       + consume_output
   )
 
-  async for _ in live_commentary_agent(input_stream()):
+  async for _ in live_commentary_agent(streams.endless_stream()):
     pass
 
 
