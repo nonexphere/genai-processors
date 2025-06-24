@@ -82,9 +82,6 @@ The Research Agent follows a structured pipeline:
     information on each topic using tools.
     *   `topic_verbalizer.py`: Implements `TopicVerbalizer` for formatting
     `Topic` objects into readable text.
-*   **`genai_research_api.ipynb`**:
-    *   A notebook providing an interactive walkthrough of the agent, its
-    components, and an example of its multimodal application.
 
 ## 🛠️ Configuration
 
@@ -98,6 +95,10 @@ The behavior of the `ResearchAgent` can be customized through the
 *   `excluded_topics` (list of topics to avoid)
 *   `enabled_research_tools` (list of GenAI tools for the researcher, e.g.,
     Google Search)
+
+## 📚 Example Notebook
+
+An example notebook can be found [here](https://colab.research.google.com/github/google/genai-processors/blob/main/notebooks/research_example.ipynb).
 
 ## 📜 License
 
