@@ -13,7 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 
-"""Google DeepMind genai processors library."""
+"""Google DeepMind GenAI processors library."""
 
 __version__ = '1.0.1'
 

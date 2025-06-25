@@ -77,15 +77,15 @@ pip install genai-processors
 Check the following colabs to get familiar with GenAI processors (we recommend
 following them in order):
 
-*   [Content API Colab](https://colab.research.google.com/github/google/genai-processors/blob/main/notebooks/content_api_intro.ipynb) -
+*   [Content API Colab](https://colab.research.google.com/github/gemini-google/genai-processors/blob/main/notebooks/content_api_intro.ipynb) -
     explains the basics of `ProcessorPart`, `ProcessorContent`, and how to
     create them.
-*   [Processor Intro Colab](https://colab.research.google.com/github/google/genai-processors/blob/main/notebooks/processor_intro.ipynb) -
+*   [Processor Intro Colab](https://colab.research.google.com/github/gemini-google/genai-processors/blob/main/notebooks/processor_intro.ipynb) -
     an introduction to the core concepts of GenAI Processors.
-*   [Create Your Own Processor](https://colab.research.google.com/github/google/genai-processors/blob/main/notebooks/create_your_own_processor.ipynb) -
+*   [Create Your Own Processor](https://colab.research.google.com/github/gemini-google/genai-processors/blob/main/notebooks/create_your_own_processor.ipynb) -
     a walkthrough of the typical steps to create a `Processor` or a
     `PartProcessor`.
-*   [Work with the Live API](https://colab.research.google.com/github/google/genai-processors/blob/main/notebooks/live_processor_intro.ipynb) -
+*   [Work with the Live API](https://colab.research.google.com/github/gemini-google/genai-processors/blob/main/notebooks/live_processor_intro.ipynb) -
     a couple of examples of real-time processors built from the Gemini Live API
     using the `LiveProcessor` class.
 

@@ -30,7 +30,7 @@ To run the server locally:
 
  * Install the dependencies with `pip install genai-processors`.
  * Access the applet at
- https://aistudio.google.com/app/apps/github/google/genai-processors/tree/main/examples/live/ais_app.
+ https://aistudio.google.com/app/apps/github/google-gemini/genai-processors/tree/main/examples/live/ais_app.
 * Define a GOOGLE_API_KEY environment variable with your API key.
  * Launch the commentator agent: `python3 ./commentator_ais.py`.
  * Allow the applet to use a camera and enable one of the video sources.
