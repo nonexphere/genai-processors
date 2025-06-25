@@ -10,8 +10,8 @@ parallel content processing.
 
 At the core of the GenAI Processors library lies the concept of a `Processor`. A
 `Processor` encapsulates a unit of work with a simple API: it takes a stream of
-`ProcessorPart`s as input and returns a stream of `ProcessorPart`s (or
-compatible types) as output.
+`ProcessorPart`s (i.e. a data part representing a text, image, etc.) as input
+and returns a stream of `ProcessorPart`s (or compatible types) as output.
 
 ```python
 # Any class inheriting from processor.Processor and
