@@ -16,11 +16,10 @@
 
 import asyncio
 import enum
-from typing import AsyncIterable, Optional
+from typing import AsyncIterable
 import cv2
 from genai_processors import content_api
 from genai_processors import processor
-from genai_processors import streams
 import PIL.Image
 
 ProcessorPart = content_api.ProcessorPart
@@ -33,59 +32,51 @@ class VideoMode(enum.Enum):
   SCREEN = "screen"
 
 
-class VideoIn(processor.Processor):
-  """Generates image parts from a camera or a computer screen.
+def _get_single_camera_frame(
+    cap: cv2.VideoCapture, substream_name: str
+) -> ProcessorPart:
+  """Get a single frame from the camera."""
+  # Read the frame queue
+  ret, frame = cap.read()
+  if not ret:
+    raise RuntimeError("Couldn't captrue a frame.")
+  # Fix: Convert BGR to RGB color space
+  # OpenCV captures in BGR but PIL expects RGB format
+  # This prevents the blue tint in the video feed
+  frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+  img = PIL.Image.fromarray(frame_rgb)  # Now using RGB frame
+  img.format = "JPEG"
 
-  This processor inserts the generated image parts into the input stream.
+  return ProcessorPart(img, substream_name=substream_name, role="USER")
 
-  The image parts are tagged with a substream name (default "realtime") that can
-  be used to distinguish them from other parts.
+
+def _get_single_screen_frame(substream_name: str) -> ProcessorPart:
+  """Get a single frame from the screen."""
+  try:
+    from mss import mss  # pytype: disable=import-error # pylint: disable=g-import-not-at-top
+  except ImportError:
+    raise ImportError("Please install mss package using 'pip install mss'")
+  sct = mss.mss()
+  monitor = sct.monitors[0]
+
+  i = sct.grab(monitor)
+  img = PIL.Image.frombuffer("RGB", i.size, i.rgb)
+  img.format = "JPEG"
+
+  return ProcessorPart(img, substream_name=substream_name, role="USER")
+
+
+@processor.source
+async def VideoIn(  # pylint: disable=invalid-name
+    substream_name: str = "realtime", video_mode: VideoMode = VideoMode.CAMERA
+) -> AsyncIterable[ProcessorPart]:
+  """Yields image parts from a camera or a computer screen.
+
+  Args:
+    substream_name: The name of the substream to use for the generated images.
+    video_mode: The video mode to use for the video. Can be CAMERA or SCREEN.
   """
-
-  def __init__(
-      self,
-      substream_name: str = "realtime",
-      video_mode: VideoMode = VideoMode.CAMERA,
-  ):
-    """Initializes the processor.
-
-    Args:
-      substream_name: The name of the substream to use for the generated images.
-      video_mode: The video mode to use for the video. Can be CAMERA or SCREEN.
-    """
-    self._video_mode = video_mode
-    self._substream_name = substream_name
-
-  async def call(
-      self, content: AsyncIterable[ProcessorPart]
-  ) -> AsyncIterable[ProcessorPart]:
-    if self._video_mode == VideoMode.CAMERA:
-      video_task = self.get_frames()
-    elif self._video_mode == VideoMode.SCREEN:
-      video_task = self.get_screen()
-    else:
-      raise ValueError(f"Unsupported video mode: {self._video_mode}")
-
-    async for part in streams.merge([content, video_task], stop_on_first=True):
-      yield part
-
-  def _get_single_camera_frame(self, cap) -> ProcessorPart:
-    """Get a single frame from the camera."""
-    # Read the frame queue
-    ret, frame = cap.read()
-    if not ret:
-      raise RuntimeError("Couldn't captrue a frame.")
-    # Fix: Convert BGR to RGB color space
-    # OpenCV captures in BGR but PIL expects RGB format
-    # This prevents the blue tint in the video feed
-    frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    img = PIL.Image.fromarray(frame_rgb)  # Now using RGB frame
-    img.format = "JPEG"
-
-    return ProcessorPart(img, substream_name=self._substream_name, role="USER")
-
-  async def get_frames(self) -> AsyncIterable[ProcessorPart]:
-    """Yields frames from the camera, 1 FPS."""
+  if video_mode == VideoMode.CAMERA:
     # This takes about a second, and will block the whole program
     # causing the audio pipeline to overflow if you don't to_thread it.
     cap = await asyncio.to_thread(
@@ -95,30 +86,16 @@ class VideoIn(processor.Processor):
     try:
       # The coroutine will be cancelled when we are done, breaking the loop.
       while True:
-        yield await asyncio.to_thread(self._get_single_camera_frame, cap)
+        yield await asyncio.to_thread(
+            _get_single_camera_frame, cap, substream_name
+        )
         await asyncio.sleep(1.0)
     finally:
       # Release the VideoCapture object
       cap.release()
-
-  def _get_single_screen_frame(self) -> ProcessorPart:
-    """Get a single frame from the screen."""
-    try:
-      from mss import mss  # pytype: disable=import-error # pylint: disable=g-import-not-at-top
-    except ImportError:
-      raise ImportError("Please install mss package using 'pip install mss'")
-    sct = mss.mss()
-    monitor = sct.monitors[0]
-
-    i = sct.grab(monitor)
-    img = PIL.Image.frombuffer("RGB", i.size, i.rgb)
-    img.format = "JPEG"
-
-    return ProcessorPart(img, substream_name=self._substream_name, role="USER")
-
-  async def get_screen(self) -> AsyncIterable[ProcessorPart]:
-    """Yield frames from the screen, 1 FPS."""
-    # The coroutine will be cancelled when we are done, breaking the loop.
+  elif video_mode == VideoMode.SCREEN:
     while True:
-      yield await asyncio.to_thread(self._get_single_screen_frame)
+      yield await asyncio.to_thread(_get_single_screen_frame, substream_name)
       await asyncio.sleep(1.0)
+  else:
+    raise ValueError(f"Unsupported video mode: {video_mode}")

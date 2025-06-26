@@ -39,8 +39,10 @@ Enter the text you want to synthesize and press enter.
 import asyncio
 import os
 import time
+from typing import AsyncIterable
 
 from genai_processors import content_api
+from genai_processors import processor
 from genai_processors.core import audio_io
 from genai_processors.core import text_to_speech
 import pyaudio
@@ -51,16 +53,18 @@ import pyaudio
 GOOGLE_PROJECT_ID = os.environ["GOOGLE_PROJECT_ID"]
 
 
+@processor.source
+async def terminal_input() -> AsyncIterable[content_api.ProcessorPartTypes]:
+  print("Enter `q` to quit.")
+  while True:
+    text = await asyncio.to_thread(input, "message > ")
+    if text.lower() == "q":
+      break
+    yield text
+
+
 async def run_tts() -> None:
   """Runs speech-to-text in a CLI environment."""
-
-  async def input_stream():
-    """Text input stream entered by the user."""
-    while True:
-      text = await asyncio.to_thread(input, "message > ")
-      if text.lower() == "q":
-        break
-      yield content_api.ProcessorPart(text)
 
   pya = pyaudio.PyAudio()
   tts_processor = text_to_speech.TextToSpeech(
@@ -73,7 +77,7 @@ async def run_tts() -> None:
       " sentence. E.g.: 'Hello, world!' or 'hi.'\nIMPORTANT: after 5 seconds"
       " without activity (after the first sentence), the TTS will stop."
   )
-  async for _ in tts_processor(input_stream()):
+  async for _ in tts_processor(terminal_input()):
     pass
 
 

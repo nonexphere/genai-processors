@@ -18,12 +18,12 @@ from __future__ import annotations
 
 import abc
 import asyncio
-from collections.abc import AsyncIterable, Callable, Iterable, Sequence
+from collections.abc import AsyncIterable, AsyncIterator, Callable, Iterable, Sequence
 import functools
 import inspect
 import types
 import typing
-from typing import Any, Protocol, Self, TypeAlias, overload
+from typing import Any, ParamSpec, Protocol, Self, TypeAlias, overload
 
 import dataclasses_json
 from genai_processors import content_api
@@ -1080,3 +1080,81 @@ async def process_streams_parallel(
   """Processes a sequence of content streams using the specified processor."""
   async for c in streams.concat(*[processor(s) for s in content_streams]):
     yield ProcessorPart(c)
+
+
+_ProcessorParamSpec = ParamSpec('_ProcessorParamSpec')
+
+
+class Source(Processor):
+  """A Processor that produces ProcessorParts from some external source.
+
+  Use @processor.source decorator to construct this class. Please see its
+  docstring below for details.
+  """
+
+  @abc.abstractmethod
+  def __aiter__(self) -> AsyncIterator[ProcessorPart]:
+    """Maintains the original signature of the wrapped source function."""
+
+
+def source(
+    source_fn: Callable[_ProcessorParamSpec, AsyncIterable[ProcessorPartTypes]],
+) -> Callable[_ProcessorParamSpec, Source]:
+  """A Processor that produces ProcessorParts from some external source.
+
+  Writing a source is as easy as writing a generator that yields the Parts.
+  For example here is one reading input from stdin:
+
+  ```py
+  @processor.source
+  async def TerminalInput(prompt: str) -> AsyncIterable[ProcessorPartTypes]:
+    # We rely on asyncio task cancellation to exit the loop.
+    while True:
+      yield await asyncio.to_thread(input, prompt)
+  ```
+
+  The wrapped source implements the Processor interface: it accepts an input
+  stream and merges it with the generated parts. So multiple sources can be
+  chained:
+
+  ```py
+  p = TerminalInput('>') + audio_io.AudioIn(...) + live_model.LiveModel(...)
+  async for part in p(streams.endless_stream())
+  ```
+
+  Here the input stream of the first processor source is usually the
+  `streams.endless_stream()` stream, that is, an open-ended stream that never
+  ends. But Source can still be used as AsyncIterator directly:
+
+  ```py
+  p = live_model.LiveModel(...)
+  async for part in p(TerminalInput('>'))
+  ```
+
+
+  Args:
+    source_fn: The source function to turn into processor.
+
+  Returns:
+    The source function wrapped as a Processor.
+  """
+
+  class SourceImpl(Source):
+    """Adapter from the source function to a Processor."""
+
+    def __init__(self, *args, **kwargs):
+      self._source = _normalize_part_stream(source_fn(*args, **kwargs))
+
+    async def call(
+        self, content: AsyncIterable[ProcessorPart]
+    ) -> AsyncIterable[ProcessorPart]:
+      async for part in streams.merge(
+          [content, self._source], stop_on_first=True
+      ):
+        yield part
+
+    def __aiter__(self) -> AsyncIterator[ProcessorPart]:
+      # This maintains the original signature of the wrapped function.
+      return self._source
+
+  return SourceImpl
