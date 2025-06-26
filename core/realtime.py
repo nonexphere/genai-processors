@@ -57,74 +57,46 @@ DIRECT_OUTPUT_IN_PROMPT = 'is_final'
 class _RollingPrompt:
   """Rolling prompt (aka iterator of prompts) for conversation processors.
 
-  A real-time prompt can be seen as an infinite stream of multimodal parts.
-  Calling an LLM requires transforming this stream into a finite prompt
-  representing the world state at the user's request time.
+  This class acts as a buffer and organizer for a continuous, "infinite" stream
+  of multimodal parts (e.g., from a real-time camera feed). It transforms this
+  stream into finite, time-segmented prompts suitable for turn-based models.
 
-  This is achieved through this RollingPrompt class, an object storing all
-  parts from the real-time stream. This object can be converted into a finite
-  sequence of parts at any given time when a model call is required. The process
-  works as follows:
+  Adding Parts:
+    add_part(part): Immediately appends a multimodal part to the current prompt.
+    stash_part(part): Temporarily stores a part to be appended later. This is
+      useful when it's not the client's "turn" to send parts (e.g., while a
+      model is generating a response) and you want to delay its inclusion in the
+      active prompt.
+    apply_stash(): Appends all currently stashed parts to the active prompt.
 
-  Create a rolling prompt and begin adding parts using `add_part`:
+  Accessing prompts:
+    pending() -> `AsyncIterable[ProcessorPart]`: Returns an asynchronous
+      iterator representing the current prompt state. This iterator first yields
+      the compressed conversation history, then *continues* to stream any new
+      parts added via `add_part` or `apply_stash`. This streaming behavior
+      allows models to begin processing the current turn *before it is fully
+      completed*, significantly minimizing Time To First Token (TTFT).
+   finalize_pending(): This method should be called when it is time for the
+     underlying model to make the turn.
+     * The `AsyncIterable` previously returned by `pending()` will cease
+       yielding parts after all current parts have been delivered, signaling the
+       model to generate its response.
+     * The history compression is applied to accumulated conversation (which
+       does not include the ongoing model response, as it has not arrived yet).
+     * A new `pending` iterator is then implicitly created for the *next* turn.
+     * The compressed history is written to this new iterator, and any parts
+       added subsequently will be directed to this new turn's pendig prompt.
 
-  ```python
-  rolling_prompt = _RollingPrompt()
-  async for part in realtime_stream:
-    rolling_prompt.add_part(part)
-  ```
+  Consider a scenario where a model is actively generating a response, but the
+  real-time stream (e.g., a video feed) continues to produce new parts (e.g.,
+  image frames). Directly using `add_part` for these new frames would
+  incorrectly place them *within* or before the ongoing model response, falsely
+  suggesting the model considered these new images during its computation for
+  the *current* response.
 
-  `realtime_stream` represents an infinite stream. The loop should never block,
-  ensuring continuous processing of incoming parts. The rolling prompt will
-  constantly receive and add incoming parts, even while the model computes an
-  answer. This has implications as explained further.
-
-  As soon as the prompt is created, you can get access to its content via
-  `pending()`. This returns a queue for feeding a model early on. This
-  approach minimizes Time To First Token (TTFT) by processing parts upon
-  arrival. In the example below, input_processor processes input parts eagerly
-  before the model call:
-
-  ```python
-  model_prompt = rolling_prompt.pending()  # This is an asyncio.Queue
-
-  # Some processors that need to run before calling the model.
-  input_processor = speech_to_text + ...
-  # Some processors that need to run after calling the model.
-  output_processor = text_to_speech + ...
-  your_agent = (
-    input_processor + genai_model.GenaiModel(...) + output_processor
-  )
-
-  # Call agent in a separate asyncio task so that it will start processing
-  # all parts concurrently. This task will be cancelled when the user starts
-  # talking.
-  async def run_agent():
-    async for output in your_agent(streams.dequeue(model_prompt)):
-    ...
-  processor.create_task(run_agent())
-
-  # Eventually, finalize the rolling_prompt, this will trigger the model call.
-  rolling_prompt.finalize_pending()
-  ```
-
-  This action cuts the prompt and closes the previously used pending prompt.
-  Consequently, the concurrently running model call will eventually complete,
-  allowing processing of the output parts. These can be sent back to the user
-  and added to the prompt, reflecting both user and model turns.
-
-  During the interval between prompt finalization and the first user-received
-  output part (potentially several seconds), the real-time stream continues,
-  adding new parts to the prompt. Consider image frames from a video stream
-  arriving at the stream's FPS rate (1 per second at least), directly adding
-  these parts using `add_part` could incorrectly place model turns. For
-  example, while the model is computing on previous video frames, new images
-  appear and precede the model's answer in the prompt, falsely suggesting the
-  model considered the new images during computation.
-
-  To address this, use `add_part_when_model_outputting`. This method ensures
-  parts are placed after the model's response, maintaining prompt consistency.
-  This method should only be used while the model actively generates output.
+  To address this, such parts coming from the application should be added using
+  `stash_part` and appended to the prompt after the model turn is completed
+  using `apply_stash`.
   """
 
   def __init__(
@@ -146,20 +118,10 @@ class _RollingPrompt:
     # Time of parts in the conversation history. This deque should be kept in
     # sync with the conversation history.
     self._time_conversation_history_sec = collections.deque(maxlen=10_000)
-    # parts sent to the model while the model is outputing.
-    self._parts_while_outputting: list[ProcessorPart] = []
+    # stashed parts to be added to the prompt later.
+    self._stash: list[ProcessorPart] = []
     # max time to keep the parts in the prompt
     self._duration_prompt_sec = duration_prompt_sec
-
-  def add_part_when_model_outputting(self, part: ProcessorPart):
-    """Adds a part to the prompt once the model is done."""
-    self._parts_while_outputting.append(part)
-
-  def model_done(self):
-    """Adds all parts that were sent to the model while it was outputing."""
-    for part in self._parts_while_outputting:
-      self.add_part(part)
-    self._parts_while_outputting = []
 
   def add_part(
       self,
@@ -170,30 +132,50 @@ class _RollingPrompt:
     self._time_conversation_history_sec.append(time.perf_counter())
     self._pending.put_nowait(part)
 
-  def pending(self) -> asyncio.Queue[ProcessorPart | None]:
-    """Get current pending prompt.
+  def stash_part(self, part: ProcessorPart):
+    """Stashes the part to be appended to the prompt later using `apply_stash`.
 
-    Note that the returned queue can be empty as it might be consumed by a
-    model to generate output. If you need to get a new pending prompt queue to
-    check the current content of the prompt, call `new_pending()` instead.
+    If it is not our turn to send parts (e.g. model is currently generating),
+    we can stash them and append to the prompt when we get the turn (after the
+    model generation is done).
 
-    Returns:
-      The current pending prompt as a queue that can be consumed or turned into
-      an AsyncIterable using streams.dequeue() to feed a model or another
-      processor.
+    Args:
+      part: The part to stash.
     """
-    return self._pending
+    self._stash.append(part)
+
+  def apply_stash(self):
+    """Append all parts from the stash to the prompt."""
+    for part in self._stash:
+      self.add_part(part)
+    self._stash = []
+
+  def pending(self) -> AsyncIterable[ProcessorPart]:
+    """Returns the current pending prompt.
+
+    Note that the same AsyncIterable is returned unless `finalize_pending` is
+    called which creates a new pending prompt. So consuming Parts from it will
+    affect all callers of `pending`.
+    """
+    return streams.dequeue(self._pending)
 
   def finalize_pending(self) -> None:
-    """Close the current pending prompt.
+    """Close the current pending prompt and starts a new one.
 
-    This must be called eventually to ensure that the pending prompt is finite.
-    When called, it adds a None part to the end of the queue to signal the end
-    of the prompt. Any model or processor using the pending prompt as input
-    would then receive a signal that the prompt is finished and includes all
-    input parts.
+    * The iterator previously returned from `pending` will stop after all Parts
+      added so far.
+    * Then history compression is applied.
+    * At last, a new `pending` iterator is created and the compressed history
+      is written to it.
+    * Any parts added afterwards will go to the new iterator.
     """
+    # Close the current queue.
     self._pending.put_nowait(None)
+    # And create a new one.
+    self._pending = asyncio.Queue[ProcessorPart | None]()
+    self._cut_conversation_history()
+    for part in self._conversation_history:
+      self._pending.put_nowait(part)
 
   def _cut_conversation_history(self):
     """Removes old parts from the conversation history."""
@@ -206,22 +188,6 @@ class _RollingPrompt:
     ):
       self._conversation_history.popleft()
       self._time_conversation_history_sec.popleft()
-
-  def new_pending(self) -> asyncio.Queue[ProcessorPart | None]:
-    """After finalize_pending(), prep the prompt for the next model call.
-
-    This method must be called everytime a model is called with a new prompt.
-    It creates a new pending prompt queue that can be fed to a model or a
-    processor.
-
-    Returns:
-      A new pending prompt queue that can be fed to a model or a processor.
-    """
-    self._pending = asyncio.Queue[ProcessorPart | None]()
-    self._cut_conversation_history()
-    for part in self._conversation_history:
-      self._pending.put_nowait(part)
-    return self._pending
 
 
 class AudioTriggerMode(enum.StrEnum):
@@ -389,7 +355,7 @@ class _RealTimeConversationModel:
     p = debug.TTFTSingleStream('Model Generate', self._generation)
     self._pending_generate_output = asyncio.create_task(
         context.context_cancel_coro(
-            self._generate_output(p(streams.dequeue(self._prompt.pending()))),
+            self._generate_output(p(self._prompt.pending())),
         )
     )
     self._current_generate_output = None
@@ -403,7 +369,7 @@ class _RealTimeConversationModel:
   def user_input(self, part: ProcessorPart):
     """Callback for when the user has a new input."""
     if not self._model_done.is_set():
-      self._prompt.add_part_when_model_outputting(part)
+      self._prompt.stash_part(part)
     else:
       self._prompt.add_part(part)
 
@@ -432,7 +398,7 @@ class _RealTimeConversationModel:
       # current generate output is done.
       if not done_task.done() or not done_task.cancelled():
         self._model_done.set()
-        self._prompt.model_done()
+        self._prompt.apply_stash()
 
   async def finish(self):
     """Cancels the current model call and finishes all pending work.
@@ -463,11 +429,10 @@ class _RealTimeConversationModel:
     # This is a model turn. Finish the current prompt and start a new one.
     self._current_generate_output = self._pending_generate_output
     self._prompt.finalize_pending()
-    self._prompt.new_pending()
     # Prepare a new pending task for the next turn. This will do all the
     # pre-processing ahead of time whenever possible.
     p = debug.TTFTSingleStream('Model Generate', self._generation)
-    stream_content = p(streams.dequeue(self._prompt.pending()))
+    stream_content = p(self._prompt.pending())
     self._pending_generate_output = processor.create_task(
         context.context_cancel_coro(
             self._generate_output(stream_content),
@@ -483,7 +448,7 @@ class _RealTimeConversationModel:
       raise
     finally:
       self._model_done.set()
-      self._prompt.model_done()
+      self._prompt.apply_stash()
 
   async def _read_model_output(self, content: AsyncIterable[ProcessorPart]):
     """Sends the model output to the user, context buffer, and pending queue."""
