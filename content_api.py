@@ -113,7 +113,7 @@ class ProcessorPart:
 
     self._role = role
     self._substream_name = substream_name
-    self._metadata = metadata
+    self._metadata = metadata or {}
 
     # Set the MIME type.
     if mimetype:
@@ -225,20 +225,18 @@ class ProcessorPart:
     self._part = genai_types.Part(text=value)
 
   @property
-  def metadata(self) -> dict[str, Any] | None:
+  def metadata(self) -> dict[str, Any]:
     """Returns metadata."""
     return self._metadata
 
   @metadata.setter
-  def metadata(self, value: dict[str, Any] | None) -> None:
+  def metadata(self, value: dict[str, Any]) -> None:
     """Sets metadata."""
     self._metadata = value
 
   def get_metadata(self, key: str, default=None) -> Any:
     """Returns metadata for a given key."""
-    if self._metadata:
-      return self._metadata.get(key, default)
-    return None
+    return self._metadata.get(key, default)
 
   @property
   def function_call(self) -> genai_types.FunctionCall | None:
