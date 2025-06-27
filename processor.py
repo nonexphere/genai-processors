@@ -722,6 +722,8 @@ class _ChainProcessor(Processor):
   def __add__(self, other: Processor | PartProcessor) -> Processor:
     if isinstance(other, _ChainProcessor):
       return _ChainProcessor(self._processor_list + other._processor_list)
+    elif isinstance(other, _ChainPartProcessor) and not other._processor_list:
+      return _ChainProcessor(self._processor_list)
     elif isinstance(other, PartProcessor):
       return _ChainProcessor([*self._processor_list, other.to_processor().call])
     return _ChainProcessor([*self._processor_list, other.call])
