@@ -38,13 +38,11 @@ from . import agent
 from . import interfaces
 from .processors import topic_generator
 from .processors import topic_researcher
-from .processors import topic_verbalizer
 
 ResearchAgent = agent.ResearchAgent
 Config = interfaces.Config
 
 TopicGenerator = topic_generator.TopicGenerator
 TopicResearcher = topic_researcher.TopicResearcher
-TopicVerbalizer = topic_verbalizer.TopicVerbalizer
 
 Topic = interfaces.Topic
