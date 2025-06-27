@@ -35,13 +35,13 @@ from typing import AsyncIterable
 
 from genai_processors import processor
 from genai_processors.core import genai_model
+from genai_processors.core import jinja_template
 from genai_processors.core import preamble
 
 from . import interfaces
 from . import prompts
 from .processors import topic_generator
 from .processors import topic_researcher
-from .processors import topic_verbalizer
 
 ProcessorPart = processor.ProcessorPart
 
@@ -84,8 +84,15 @@ class ResearchAgent(processor.Processor):
         api_key=api_key,
         config=config,
     )
-    p_topic_verbalizer = topic_verbalizer.TopicVerbalizer(
-        config=config,
+    p_topic_verbalizer = jinja_template.RenderDataClass(
+        template_str=(
+            "## {{ data.topic }}\n"
+            "*{{ data.relationship_to_user_content }}*"
+            "{% if data.research_text|trim != '' %}"
+            "\n\n### Research\n\n{{ data.research_text }}"
+            "{% endif %}"
+        ),
+        data_class=interfaces.Topic,
     )
     p_genai_model = genai_model.GenaiModel(
         api_key=api_key, model_name=self._config.research_synthesizer_model_name
@@ -93,12 +100,12 @@ class ResearchAgent(processor.Processor):
     p_preamble = preamble.Preamble(
         content=[
             ProcessorPart(prompts.SYNTHESIS_PREAMBLE),
-            ProcessorPart('Research text: '),
+            ProcessorPart("Research text: "),
         ]
     )
     p_suffix = preamble.Suffix(
         content=[
-            ProcessorPart('Your synthesized research: '),
+            ProcessorPart("Your synthesized research: "),
         ]
     )
     self._pipeline = (
@@ -115,4 +122,4 @@ class ResearchAgent(processor.Processor):
   ) -> AsyncIterable[ProcessorPart]:
     async for content_part in self._pipeline(content):
       yield content_part
-    yield processor.status('Produced research synthesis!')
+    yield processor.status("Produced research synthesis!")

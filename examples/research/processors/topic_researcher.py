@@ -19,12 +19,12 @@ from typing import AsyncIterable
 from genai_processors import content_api
 from genai_processors import processor
 from genai_processors.core import genai_model
+from genai_processors.core import jinja_template
 from genai_processors.core import preamble
 from google.genai import types
 
 from .. import interfaces
 from .. import prompts
-from . import topic_verbalizer
 
 ProcessorPart = processor.ProcessorPart
 
@@ -61,19 +61,28 @@ class TopicResearcher(processor.PartProcessor):
             ProcessorPart("Topic to research: "),
         ]
     )
-    p_verbalizer = topic_verbalizer.TopicVerbalizer(config=self._config)
+    p_verbalizer = jinja_template.RenderDataClass(
+        template_str=(
+            "## {{ data.topic }}\n"
+            "*{{ data.relationship_to_user_content }}*"
+            "{% if data.research_text|trim != '' %}"
+            "\n\n### Research\n\n{{ data.research_text }}"
+            "{% endif %}"
+        ),
+        data_class=interfaces.Topic,
+    )
     p_suffix = preamble.Suffix(content=[ProcessorPart("Your research: ")])
     self._pipeline = (
         p_verbalizer + p_preamble + p_suffix + self._genai_processor
     )
 
+  def match(self, part: ProcessorPart) -> bool:
+    return content_api.is_dataclass(part.mimetype, interfaces.Topic)
+
   async def call(
       self,
       part: ProcessorPart,
   ) -> AsyncIterable[ProcessorPart]:
-    if not self.match(part):
-      yield part
-      return
 
     input_topic = part.get_dataclass(interfaces.Topic)
     input_stream = processor.stream_content([part])

@@ -538,6 +538,7 @@ is_source_code = mime_types.is_source_code
 is_pdf = mime_types.is_pdf
 is_csv = mime_types.is_csv
 is_python = mime_types.is_python
+is_dataclass = mime_types.is_dataclass
 
 
 def mime_type(part: ProcessorPart) -> str:

@@ -15,6 +15,7 @@
 """Processor for rendering Jinja templates with multimodal contents."""
 
 from collections.abc import AsyncIterable
+from typing import Any
 import uuid
 
 from genai_processors import content_api
@@ -138,3 +139,83 @@ class JinjaTemplate(processor.Processor):
       if i < len(content_streams):
         async for part in content_streams[i]:
           yield part
+
+
+class RenderDataClass(processor.PartProcessor):
+  r"""PartProcessor for rendering a dataclass part using a Jinja template.
+
+  The dataclass object must be referenced by the name `data` in the jinja
+  template, i.e. `{{ data.first_name }}`.
+
+  Example usage:
+
+  ```python
+  @dataclasses_json.dataclass_json
+  @dataclasses.dataclass(frozen=True)
+  class ExampleDataClass:
+    first_name: str
+    last_name: str
+
+  shopping_list = ["A", "B", "C"]
+  p = jinja_template.RenderDataClass(
+      template_str=(
+          "Hello {{ data.first_name }},\n"
+          "This is your shopping list:\n"
+          "{% for item in your_list %}This is item: {{ item }}\n"
+          "{% endfor %}"
+      ),
+      data_class=ExampleDataClass,
+      your_list=shopping_list,
+  )
+  output = processor.apply_sync(
+      p,
+      [
+        content_api.ProcessorPart.from_dataclass(
+            dataclass=ExampleDataClass(first_name="John", last_name="Doe")
+        )
+      ],
+  )
+  print(content_api.as_text)
+  ```
+
+  The expected output is:
+  ```
+  Hello John Doe,
+  This is your shopping list:
+  This is item: A
+  This is item: B
+  This is item: C
+  ```
+  """
+
+  def __init__(
+      self,
+      template_str: str,
+      data_class: type[Any],
+      **kwargs,
+  ):
+    """Initializes the processor.
+
+    Args:
+      template_str: The Jinja template string.
+      data_class: The type of the dataclass to render.
+      **kwargs: Keyword arguments to pass to the Jinja template.
+    """
+    self._environment = jinja2.Environment()
+    self._environment.globals.update(**kwargs)
+    self._template = self._environment.from_string(template_str)
+    self._data_class = data_class
+
+  def match(self, part: content_api.ProcessorPart) -> bool:
+    return content_api.is_dataclass(part.mimetype, self._data_class)
+
+  async def call(
+      self, part: content_api.ProcessorPart
+  ) -> AsyncIterable[content_api.ProcessorPart]:
+    """Renders a dataclass part in a Jinja template."""
+    yield content_api.ProcessorPart(
+        self._template.render(data=part.get_dataclass(self._data_class)),
+        role=part.role,
+        metadata=part.metadata,
+        substream_name=part.substream_name,
+    )
