@@ -25,7 +25,6 @@ import types
 import typing
 from typing import Any, ParamSpec, Protocol, Self, TypeAlias, overload
 
-import dataclasses_json
 from genai_processors import content_api
 from genai_processors import context as context_lib
 from genai_processors import map_processor
@@ -42,7 +41,6 @@ ProcessorPart = content_api.ProcessorPart
 ProcessorPartTypes = content_api.ProcessorPartTypes
 MatchFn: TypeAlias = Callable[[ProcessorPart], bool]
 
-dataclass_json = dataclasses_json.dataclass_json
 stream_content = streams.stream_content
 gather_stream = streams.gather_stream
 
