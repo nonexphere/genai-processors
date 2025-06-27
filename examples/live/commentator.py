@@ -590,18 +590,16 @@ class LiveCommentator(processor.Processor):
     self._unsafe_string_list = unsafe_string_list
     if unsafe_string_list is not None:
       pattern = "|".join(re.escape(s) for s in unsafe_string_list)
-      self._processor = (
-          switch.Switch(content_api.get_substream_name)
-          .case(
-              "output_transcription",
-              text.MatchProcessor(
-                  pattern=pattern,
-                  substream_input="output_transcription",
-                  substream_output="unsafe_regex",
-                  remove_from_input_stream=False,
-              ),
-          )
-          .default(self._processor)
+      self._processor += text.MatchProcessor(
+          pattern=pattern,
+          substream_input="output_transcription",
+          substream_output="unsafe_regex",
+          remove_from_input_stream=False,
+          flush_fn=lambda part: part.get_metadata("generation_complete", False)
+          or part.get_metadata("interrupted")
+          or part.get_metadata("interrupt_request")
+          or part.get_metadata("turn_complete")
+          or part.get_metadata("go_away"),
       )
 
   def set_chattiness(self, chattiness: float):
@@ -617,8 +615,9 @@ class LiveCommentator(processor.Processor):
     """Triggers a comment from the model. Input queue is fed to the model."""
     if self._commentator.id is None:
       logging.debug(
-          "%s - No commentator id, ignoring start_commentating:"
-          " self._commentator"
+          "%s - No commentator id, ignoring start_commentating: %s",
+          time.perf_counter(),
+          self._commentator,
       )
     else:
       logging.debug(

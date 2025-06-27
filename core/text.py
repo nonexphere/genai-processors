@@ -232,9 +232,10 @@ class MatchProcessor(processor.Processor):
       if not self._remove_from_input_stream:
         yield part
       part_buffer.append(part)
-      if self._flush_fn(part) and self._remove_from_input_stream:
-        for part_b in part_buffer:
-          yield part_b
+      if self._flush_fn(part):
+        if self._remove_from_input_stream:
+          for part_b in part_buffer:
+            yield part_b
         part_buffer = []
       text_buffer = content_api.as_text(
           part_buffer, substream_name=self._substream_input
