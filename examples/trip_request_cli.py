@@ -174,7 +174,7 @@ async def run_trip_request() -> None:
     input_stream = streams.stream_content([text])
     async for part in trip_request_agent(input_stream):
       if content_api.is_text(part.mimetype):
-        print(part.text)
+        print(part.text, end="", flush=True)
 
 
 if __name__ == "__main__":
