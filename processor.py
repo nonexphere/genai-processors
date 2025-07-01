@@ -28,6 +28,7 @@ from typing import Any, ParamSpec, Protocol, Self, TypeAlias, overload
 from genai_processors import content_api
 from genai_processors import context as context_lib
 from genai_processors import map_processor
+from genai_processors import mime_types
 from genai_processors import streams
 
 # Aliases
@@ -1158,3 +1159,68 @@ def source(
       return self._source
 
   return SourceImpl
+
+
+def yield_exceptions_as_parts(
+    func: Callable[
+        [PartProcessor, ProcessorPart], AsyncIterable[ProcessorPartTypes]
+    ],
+) -> Callable[
+    [PartProcessor, ProcessorPart], AsyncIterable[ProcessorPartTypes]
+]:
+  """Decorates `PartProcessor.call` to yield exceptions instead of raising them.
+
+    For the Processor pipeline to succeed each processor in it needs to succeed,
+    and if there are many of them the probability of failure increases
+    exponentially.
+
+    To mitigate that we may want to let the model work with the partial results
+    by interpreting exceptions as valid results.
+
+    This decorator wraps the `PartProcessor.call` method in a try...except
+    block. If the method raises an exception it is yielded as a special `status`
+    `ProcessorPart` that the next processors in the pipeline can interpret.
+
+    To be model-friendly, we format the exception as a text/x-exception part
+    with a machine-readable representation in the part metadata.
+
+    ### Example usage:
+
+    ```py
+    class FetchWebPageProcessor(processor.PartProcessor):
+
+      @processor.yield_exceptions_as_parts
+      async def call(
+          self, part: processor.ProcessorPart
+      ) -> AsyncIterable[processor.ProcessorPart]:
+      ...
+    ```
+
+  Args:
+    func: The `call` method to wrap.
+
+  Returns:
+    The wrapped `call` method.
+  """
+
+  @functools.wraps(func)
+  async def wrapper(
+      self: 'PartProcessor', part: ProcessorPart
+  ) -> AsyncIterable[ProcessorPartTypes]:
+    try:
+      async for item in func(self, part):
+        yield item
+    except Exception as e:  # pylint: disable=broad-except
+      yield ProcessorPart(
+          # NOTE: The exact formatting might change, please use
+          # mime_types.is_exception to detect exception parts.
+          f'An unexpected error occurred: {e}',
+          mimetype=mime_types.TEXT_EXCEPTION,
+          substream_name=STATUS_STREAM,
+          metadata={
+              'original_exception': str(e),
+              'exception_type': type(e).__name__,
+          },
+      )
+
+  return wrapper

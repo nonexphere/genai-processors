@@ -114,6 +114,8 @@ ALL_SUPPORTED_INPUT_TYPES = (
     INPUT_IMAGE_TYPES + INPUT_AUDIO_TYPES + INPUT_VIDEO_TYPES + INPUT_TEXT_TYPES
 )
 
+TEXT_EXCEPTION = 'text/x-exception'
+
 
 def is_text(mime: str) -> bool:
   """Returns whether the content is a human-readable text."""
@@ -186,3 +188,8 @@ def is_csv(mime: str) -> bool:
 def is_python(mime: str) -> bool:
   """Returns whether the content is python code."""
   return mime in [TEXT_PYTHON, TEXT_SCRIPT_PYTHON]
+
+
+def is_exception(mime: str) -> bool:
+  """Returns whether the content is an exception."""
+  return mime == TEXT_EXCEPTION
