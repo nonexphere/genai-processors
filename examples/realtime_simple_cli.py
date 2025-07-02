@@ -38,7 +38,7 @@ the model from interrupting itself it is important to use headphones.
 To run the script:
 
 ```shell
-python3 ./live_simple_stt_cli.py
+python3 ./realtime_simple_cli.py
 ```
 """
 

@@ -141,7 +141,7 @@ async def run_trip_request() -> None:
 
   # Returns a preamble part with a message to the user.
   msg_to_user = preamble.Preamble(
-      content="OK, preparing a trip for the following request:",
+      content="OK, preparing a trip for the following request:\n",
   )
 
   # Plumb everything together with a logical switch that lets us handle errors.
@@ -166,7 +166,7 @@ async def run_trip_request() -> None:
       " your request from scratch each time."
   )
   while True:
-    text = await asyncio.to_thread(input, "message > ")
+    text = await asyncio.to_thread(input, "\nmessage > ")
     if text.lower() == "q":
       break
     # For each user input, we run a new trip request agent. No re-use of
