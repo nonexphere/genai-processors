@@ -98,6 +98,7 @@ TEXT_XML = 'text/xml'
 TEXT_PYTHON = 'text/x-python'
 TEXT_SCRIPT_PYTHON = 'text/x-script.python'
 TEXT_JSON = 'application/json'
+TEXT_ENUM = 'text/x.enum'
 
 INPUT_TEXT_TYPES = [
     TEXT_PDF,
