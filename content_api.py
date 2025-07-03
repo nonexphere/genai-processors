@@ -66,6 +66,7 @@ class ProcessorPart:
         this argument.
     """
     super().__init__()
+    self._metadata = {}
 
     match value:
       case genai_types.Part():
@@ -75,7 +76,7 @@ class ProcessorPart:
         role = role or value.role
         substream_name = substream_name or value.substream_name
         mimetype = mimetype or value.mimetype
-        metadata = metadata or value.metadata
+        self._metadata.update(value.metadata)
       case str():
         self._part = genai_types.Part(text=value)
       case bytes():
@@ -113,7 +114,7 @@ class ProcessorPart:
 
     self._role = role
     self._substream_name = substream_name
-    self._metadata = metadata or {}
+    self._metadata.update(metadata or {})
 
     # Set the MIME type.
     if mimetype:
@@ -242,6 +243,11 @@ class ProcessorPart:
   def function_call(self) -> genai_types.FunctionCall | None:
     """Returns function call."""
     return self.part.function_call
+
+  @property
+  def function_response(self) -> genai_types.FunctionResponse | None:
+    """Returns function response."""
+    return self.part.function_response
 
   @property
   def tool_cancellation(self) -> str | None:
@@ -590,7 +596,11 @@ def is_end_of_turn(part: ProcessorPart) -> bool:
 
 # Types that can be converted to a ProcessorPart.
 ProcessorPartTypes = (
-    genai_types.Part | ProcessorPart | str | bytes | PIL.Image.Image
+    genai_types.Part
+    | ProcessorPart
+    | str
+    | bytes
+    | PIL.Image.Image
 )
 
 # Types that can be appended to ProcessorContent.
