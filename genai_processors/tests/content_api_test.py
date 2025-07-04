@@ -25,7 +25,7 @@ def _png_image_pil() -> PIL.Image.Image:
 
 @dataclasses_json.dataclass_json
 @dataclasses.dataclass
-class TestDataclass:
+class Dataclass:
   foo: str
   bar: int
 
@@ -296,12 +296,12 @@ class ProcessorContentTest(parameterized.TestCase):
     self.assertEqual(image_part.pil_image.format, image_format)
 
   def test_to_and_from_dataclass(self):
-    test_dataclass = TestDataclass(foo='foo', bar=1)
+    test_dataclass = Dataclass(foo='foo', bar=1)
     part = content_api.ProcessorPart.from_dataclass(
         dataclass=test_dataclass, substream_name='foo'
     )
     self.assertEqual(part.substream_name, 'foo')
-    self.assertEqual(part.get_dataclass(TestDataclass), test_dataclass)
+    self.assertEqual(part.get_dataclass(Dataclass), test_dataclass)
     self.assertTrue(mime_types.is_json(part.mimetype))
     self.assertTrue(mime_types.is_dataclass(part.mimetype))
 
@@ -310,7 +310,7 @@ class ProcessorContentTest(parameterized.TestCase):
         '{"foo": "hello", "bar": 1}', mimetype='application/json'
     )
     with self.assertRaises(ValueError):
-      test_part.get_dataclass(TestDataclass)
+      test_part.get_dataclass(Dataclass)
 
   def test_is_text(self):
     text_part = content_api.ProcessorPart('hello')
@@ -357,7 +357,7 @@ class ProcessorContentTest(parameterized.TestCase):
       dict(
           testcase_name='dataclass_part',
           original_part=content_api.ProcessorPart.from_dataclass(
-              dataclass=TestDataclass(foo='foo', bar=1),
+              dataclass=Dataclass(foo='foo', bar=1),
               substream_name='foo',
           ),
       ),

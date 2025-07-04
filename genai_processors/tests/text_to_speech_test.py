@@ -1,4 +1,3 @@
-import asyncio
 from collections.abc import AsyncIterable
 import unittest
 from unittest import mock
