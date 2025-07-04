@@ -49,9 +49,8 @@ gather_stream = streams.gather_stream
 # Part queue size. It should be a big number to avoid blocking the processor.
 _MAX_QUEUE_SIZE = 10_000
 
-###
-### Interface Definition & util functions
-###
+# ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
+# Interface Definition & util functions
 
 
 # This is needed because in some placess we pass async instead of ProcessorFn.
@@ -552,11 +551,10 @@ def create_filter(condition: Callable[[ProcessorPart], bool]) -> PartProcessor:
   return _PartProcessorWrapper(filter_with_condition)
 
 
-###
-### Internal chaining mechanism for processors including concurrent execution.
-### These methods should stay internal to this file. Use '+' or processor.chain
-### to combine processors together.
-###
+# ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
+# Internal chaining mechanism for processors including concurrent execution.
+# These methods should stay internal to this file. Use '+' or processor.chain
+# to combine processors together.
 
 
 def _is_part_processor_protocol(obj: Any) -> bool:
@@ -1184,7 +1182,7 @@ def yield_exceptions_as_parts(
     To be model-friendly, we format the exception as a text/x-exception part
     with a machine-readable representation in the part metadata.
 
-    ### Example usage:
+    Example usage:
 
     ```py
     class FetchWebPageProcessor(processor.PartProcessor):

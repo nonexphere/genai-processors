@@ -221,7 +221,7 @@ class MatchProcessor(processor.Processor):
         ]
         break
       offset += len(c.text)
-    to_process = left_over + part_buffer[part_idx + 1 :]
+    to_process = left_over + part_buffer[part_idx + 1:]
     return to_yield, to_process
 
   async def call(
