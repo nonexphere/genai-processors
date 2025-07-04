@@ -26,7 +26,6 @@ class PreambleTest(parameterized.TestCase):
     global_state = 'a'
 
     def preamble_factory():
-      nonlocal global_state
       return global_state
 
     # global_state = 'a' at time of creating the processor.
@@ -66,7 +65,6 @@ class SuffixTest(parameterized.TestCase):
     global_state = 'a'
 
     def suffix_factory():
-      nonlocal global_state
       return global_state
 
     # global_state = 'a' at time of creating the processor.

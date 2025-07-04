@@ -222,7 +222,6 @@ class PartSwitchProcessorTest(
     async def p(
         part: content_api.ProcessorPart,
     ) -> AsyncIterable[content_api.ProcessorPart]:
-      nonlocal max_active_tasks
       max_active_tasks.append(
           len([
               task
