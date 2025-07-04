@@ -50,7 +50,7 @@ from google.genai import types as genai_types
 from pydantic import dataclasses
 
 # You need to define the API key in the environment variables.
-API_KEY = os.environ["GOOGLE_API_KEY"]
+API_KEY = os.environ['GOOGLE_API_KEY']
 
 
 @dataclasses_json.dataclass_json
@@ -66,10 +66,10 @@ class TripRequest:
   def info(self) -> str:
     """Returns a string representation to be used in prompts."""
     return (
-        "\nTrip information:\n"
-        f"Start date: {self.start_date}\n"
-        f"End date: {self.end_date}\n"
-        f"Destination: {self.destination}\n"
+        '\nTrip information:\n'
+        f'Start date: {self.start_date}\n'
+        f'End date: {self.end_date}\n'
+        f'Destination: {self.destination}\n'
     )
 
 
@@ -87,7 +87,7 @@ async def process_json_output(
   if trip_request.error:
     yield content_api.ProcessorPart(
         trip_request.error,
-        substream_name="error",
+        substream_name='error',
     )
   else:
     yield content_api.ProcessorPart(trip_request.info())
@@ -101,21 +101,21 @@ async def run_trip_request() -> None:
   # json output of the model. We add the current date to the prompt to make
   # sure the model uses the current date.
   extract_trip_request = preamble.Suffix(
-      content_factory=lambda: f"Today is: {datetime.date.today()}"
+      content_factory=lambda: f'Today is: {datetime.date.today()}'
   ) + genai_model.GenaiModel(
       api_key=API_KEY,
-      model_name="gemini-2.0-flash-lite",
+      model_name='gemini-2.0-flash-lite',
       generate_content_config=genai_types.GenerateContentConfig(
           system_instruction=(
-              "You are a travel agent. You are given a trip request from a"
-              " user. You need to check if the user provided all necessary"
-              " information. If the user request is missing any"
-              " information, you need to return an error message. If the"
-              " user request is complete, you need to return the user"
-              " request with the start date, end date and the destination."
+              'You are a travel agent. You are given a trip request from a'
+              ' user. You need to check if the user provided all necessary'
+              ' information. If the user request is missing any'
+              ' information, you need to return an error message. If the'
+              ' user request is complete, you need to return the user'
+              ' request with the start date, end date and the destination.'
           ),
           response_schema=TripRequest,
-          response_mime_type="application/json",
+          response_mime_type='application/json',
       ),
   )
   # Second processor generates a trip itinerary based on a valid trip request.
@@ -126,13 +126,13 @@ async def run_trip_request() -> None:
       # The perceived latency of that model would be hidden by the fast answer
       # from extract_trip_request and acknowledging to the user that we've
       # started planning the trip.
-      model_name="gemini-2.0-flash-lite",
+      model_name='gemini-2.0-flash-lite',
       generate_content_config=genai_types.GenerateContentConfig(
           system_instruction=(
-              "You are a travel agent. You are given a trip request from a user"
-              " with dates and destination. Plan a trip with hotels and"
-              " activities. Split the plan into daily section. Plan one"
-              " activity per 1/2 day max."
+              'You are a travel agent. You are given a trip request from a user'
+              ' with dates and destination. Plan a trip with hotels and'
+              ' activities. Split the plan into daily section. Plan one'
+              ' activity per 1/2 day max.'
           ),
           # Ground with Google Search
           tools=[genai_types.Tool(google_search=genai_types.GoogleSearch())],
@@ -141,7 +141,7 @@ async def run_trip_request() -> None:
 
   # Returns a preamble part with a message to the user.
   msg_to_user = preamble.Preamble(
-      content="OK, preparing a trip for the following request:\n",
+      content='OK, preparing a trip for the following request:\n',
   )
 
   # Plumb everything together with a logical switch that lets us handle errors.
@@ -150,7 +150,7 @@ async def run_trip_request() -> None:
       + process_json_output
       + switch.Switch(content_api.get_substream_name).case(
           # default substream name, no error.
-          "",
+          '',
           # For processors, the `parallel_concat` is a way to run them
           # concurrently while specify how their results should be merged, here
           # they should be concatenated.
@@ -162,25 +162,25 @@ async def run_trip_request() -> None:
   )
 
   print(
-      "Enter a trip request or q to quit:\nNOTE: there is no history, rewrite"
-      " your request from scratch each time."
+      'Enter a trip request or q to quit:\nNOTE: there is no history, rewrite'
+      ' your request from scratch each time.'
   )
   while True:
-    text = await asyncio.to_thread(input, "\nmessage > ")
-    if text.lower() == "q":
+    text = await asyncio.to_thread(input, '\nmessage > ')
+    if text.lower() == 'q':
       break
     # For each user input, we run a new trip request agent. No re-use of
     # previous user inputs here.
     input_stream = streams.stream_content([text])
     async for part in trip_request_agent(input_stream):
       if content_api.is_text(part.mimetype):
-        print(part.text, end="", flush=True)
+        print(part.text, end='', flush=True)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
   if not API_KEY:
     raise ValueError(
-        "API key is not set. Define a GOOGLE_API_KEY environment variable with"
-        " a key obtained from AI Studio."
+        'API key is not set. Define a GOOGLE_API_KEY environment variable with'
+        ' a key obtained from AI Studio.'
     )
   asyncio.run(run_trip_request())

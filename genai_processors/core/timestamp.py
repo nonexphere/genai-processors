@@ -31,9 +31,9 @@ def to_timestamp(seconds: float | int, with_ms: bool = False) -> str:
   minutes = seconds // 60
   seconds = seconds % 60
   if with_ms:
-    return f"{minutes:02.0f}:{seconds:06.3f}"
+    return f'{minutes:02.0f}:{seconds:06.3f}'
   else:
-    return f"{minutes:02.0f}:{seconds:02.0f}"
+    return f'{minutes:02.0f}:{seconds:02.0f}'
 
 
 async def _add_timestamps(
@@ -49,7 +49,7 @@ async def _add_timestamps(
           to_timestamp(time.perf_counter() - start, with_ms=with_ms),
           substream_name=substream_name,
           # Do not trigger a model generate call when the timestamp is added.
-          metadata={"turn_complete": False},
+          metadata={'turn_complete': False},
       )
     yield part
 
@@ -73,7 +73,7 @@ def add_timestamps(
     A processor that adds timestamps after each image chunk.
   """
   if substream_name is None:
-    substream_name = ""
+    substream_name = ''
   return processor.processor_function(
       functools.partial(
           _add_timestamps,

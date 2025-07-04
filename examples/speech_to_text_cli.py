@@ -94,7 +94,7 @@ import pyaudio
 
 # You need to define the project id in the environment variables.
 # export GOOGLE_PROJECT_ID=...
-GOOGLE_PROJECT_ID = os.environ["GOOGLE_PROJECT_ID"]
+GOOGLE_PROJECT_ID = os.environ['GOOGLE_PROJECT_ID']
 
 
 async def run_stt() -> None:
@@ -104,10 +104,10 @@ async def run_stt() -> None:
       project_id=GOOGLE_PROJECT_ID, with_interim_results=True
   )
 
-  print(f"{time.perf_counter()} - STT Processor ready: start talking anytime.")
+  print(f'{time.perf_counter()} - STT Processor ready: start talking anytime.')
   async for parts in stt_processor(streams.endless_stream()):
-    print(f"{time.perf_counter()} - STT Parts: {parts}")
+    print(f'{time.perf_counter()} - STT Parts: {parts}')
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
   asyncio.run(run_stt())

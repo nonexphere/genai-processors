@@ -64,19 +64,19 @@ import pyaudio
 import termcolor
 
 # You need to define the API key in the environment variables.
-API_KEY = os.environ["GOOGLE_API_KEY"]
+API_KEY = os.environ['GOOGLE_API_KEY']
 
 # You need to define the project id in the environment variables.
-GOOGLE_PROJECT_ID = os.environ["GOOGLE_PROJECT_ID"]
+GOOGLE_PROJECT_ID = os.environ['GOOGLE_PROJECT_ID']
 
 INSTRUCTION_PARTS = [
-    "You are an agent that interacts with the user in a conversation. Make"
-    " the conversation lively and interesting for the user. You can make jokes,"
-    " explain interesting facts related to what you see and hear, predict what"
-    " could happen, judge some actions or reactions, etc. Respond to the"
-    " user in a few sentences maximum: keep it short and engaging. Avoid"
-    " long monologues. You can use Google search to add extra inforamtion to"
-    " the user questions or to come up with interesting news or facts."
+    'You are an agent that interacts with the user in a conversation. Make'
+    ' the conversation lively and interesting for the user. You can make jokes,'
+    ' explain interesting facts related to what you see and hear, predict what'
+    ' could happen, judge some actions or reactions, etc. Respond to the'
+    ' user in a few sentences maximum: keep it short and engaging. Avoid'
+    ' long monologues. You can use Google search to add extra inforamtion to'
+    ' the user questions or to come up with interesting news or facts.'
 ]
 
 
@@ -99,7 +99,7 @@ def _filter_parts(part: content_api.ProcessorPart) -> bool:
   if context.is_reserved_substream(part.substream_name):
     return False
   # Filters out audio responses from previous turns (model only)
-  if content_api.is_audio(part.mimetype) and part.role.lower() == "model":
+  if content_api.is_audio(part.mimetype) and part.role.lower() == 'model':
     return False
   return True
 
@@ -125,16 +125,16 @@ async def run_conversation() -> None:
   # only text is sent to the model.
   genai_processor = _filter_parts + genai_model.GenaiModel(
       api_key=API_KEY,
-      model_name="gemini-2.0-flash-lite",
+      model_name='gemini-2.0-flash-lite',
       generate_content_config=genai_types.GenerateContentConfig(
           system_instruction=INSTRUCTION_PARTS,
-          response_modalities=["TEXT"],
+          response_modalities=['TEXT'],
           # Adds google search as a tool. This is not needed for the model to
           # work but it is useful to ask questions that can be answered by
           # google search.
           tools=[genai_types.Tool(google_search=genai_types.GoogleSearch())],
       ),
-      http_options=genai_types.HttpOptions(api_version="v1alpha"),
+      http_options=genai_types.HttpOptions(api_version='v1alpha'),
   )
 
   # TTS processor that will be used to convert the text response to audio. Note
@@ -165,38 +165,38 @@ async def run_conversation() -> None:
     # Print the transcription and the output of the model (should include status
     # parts and other metadata parts)
     match part.role:
-      case "user":
-        color = "green"
-      case "model":
-        color = "red"
+      case 'user':
+        color = 'green'
+      case 'model':
+        color = 'red'
       case _:
-        color = "yellow"
-    part_role = part.role or "default"
+        color = 'yellow'
+    part_role = part.role or 'default'
     print(
         termcolor.colored(
-            f"{part_role}: {part.text}", color, "on_grey", attrs=["bold"]
+            f'{part_role}: {part.text}', color, 'on_grey', attrs=['bold']
         )
     )
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
   parser = argparse.ArgumentParser()
   parser.add_argument(
-      "--debug",
+      '--debug',
       type=bool,
       default=False,
-      help="Enable debug logging.",
+      help='Enable debug logging.',
   )
   args = parser.parse_args()
   if not API_KEY:
     raise ValueError(
-        "API key is not set. Define a GOOGLE_API_KEY environment variable with"
-        " a key obtained from AI Studio."
+        'API key is not set. Define a GOOGLE_API_KEY environment variable with'
+        ' a key obtained from AI Studio.'
     )
   if not GOOGLE_PROJECT_ID:
     raise ValueError(
-        "Project ID is not set. Define a GOOGLE_PROJECT_ID environment variable"
-        " obtained from your Cloud project."
+        'Project ID is not set. Define a GOOGLE_PROJECT_ID environment variable'
+        ' obtained from your Cloud project.'
     )
   if args.debug:
     logging.set_verbosity(logging.DEBUG)

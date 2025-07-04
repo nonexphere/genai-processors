@@ -111,10 +111,10 @@ import numpy as np
 
 
 # Model to use for the live api processor.
-MODEL_LIVE = "gemini-2.0-flash-live-001"
+MODEL_LIVE = 'gemini-2.0-flash-live-001'
 
 # Model to use for the event detection processor.
-MODEL_DETECTION = "gemini-2.0-flash-lite"
+MODEL_DETECTION = 'gemini-2.0-flash-lite'
 
 # Number of times the detection should detect a "no detection" in a row before
 # stopping the commentator.
@@ -133,42 +133,42 @@ NO_COMMENT_DELAY_SEC = 3
 
 # User message when the agent detects it should continue commentating.
 COMMENT_MSG = (
-    "Continue commentating on what you see, do not repeat the same comments."
-    " Always address the persons in the camera as 'you' and assume they can"
-    " hear you and are in the same room. Remember this is a conversation."
-    " Do not cancel the commentating unless the user explicitly asks you to."
+    'Continue commentating on what you see, do not repeat the same comments.'
+    ' Always address the persons in the camera as "you" and assume they can'
+    ' hear you and are in the same room. Remember this is a conversation.'
+    ' Do not cancel the commentating unless the user explicitly asks you to.'
 )
 # Response when the agent detects something special that should interrupt the
 # commentating while it is ongoing.
 INTERRUPT_COMMENT_MSG = (
-    "Interrupt the current commentary to comment what you see now. If there is"
-    " no commentary going on, start a new one. Start your comment as if you"
-    " were interrupting yourself or interrupting a silence. Then commentate on"
-    " the new event that just triggered this interruption. If this event is"
-    " related to what you asked the user to do, continue the previous comment"
-    " or instructions. Do not cancel the commentary."
+    'Interrupt the current commentary to comment what you see now. If there is'
+    ' no commentary going on, start a new one. Start your comment as if you'
+    ' were interrupting yourself or interrupting a silence. Then commentate on'
+    ' the new event that just triggered this interruption. If this event is'
+    ' related to what you asked the user to do, continue the previous comment'
+    ' or instructions. Do not cancel the commentary.'
 )
 
 # Response when the agent has waited too long for the user to respond.
 WAIT_FOR_USER_MSG = (
-    "Resume commentating. Do not repeat the same comments but check if anything"
-    " explains why the user is not responding."
+    'Resume commentating. Do not repeat the same comments but check if anything'
+    ' explains why the user is not responding.'
 )
 
 # Response when the agent is waiting for a user signal and receives an interrupt
 # from the event detection processor.
 INTERRUPT_WAIT_FOR_USER_MSG = (
-    "Check if you need to make a `wait_for_user` call to wait for something to"
-    " happen. If you make a `wait_for_user` call, stay silent, do not output"
-    " anything but this call. Otherwise, start commentating, or answer the user"
-    " request or move to the next steps of your instructions or of the"
-    " conversation."
+    'Check if you need to make a `wait_for_user` call to wait for something to'
+    ' happen. If you make a `wait_for_user` call, stay silent, do not output'
+    ' anything but this call. Otherwise, start commentating, or answer the user'
+    ' request or move to the next steps of your instructions or of the'
+    ' conversation.'
 )
 
 # Response when the agent is saying something wrong or unsafe.
 START_AGAIN_MSG = (
-    "There was a glitch, I could not get your last message, what were you"
-    " saying?"
+    'There was a glitch, I could not get your last message, what were you'
+    ' saying?'
 )
 
 # Async function declarations.
@@ -182,34 +182,34 @@ TOOLS = [
             # `scheduling` field in the function response) and to make the model
             # include the latest observations in its prompt before generation.
             genai_types.FunctionDeclaration(
-                name="start_commentating",
+                name='start_commentating',
                 description=(
-                    "Starts commentating on the video feed. The model should"
-                    " continue commentating until the user asks to stop. Caller"
-                    " must print() the result for this to work. Do not cancel"
-                    " the commentating unless the user asks you to."
+                    'Starts commentating on the video feed. The model should'
+                    ' continue commentating until the user asks to stop. Caller'
+                    ' must print() the result for this to work. Do not cancel'
+                    ' the commentating unless the user asks you to.'
                 ),
-                behavior="NON_BLOCKING",
+                behavior='NON_BLOCKING',
             )
         ]
     ),
     genai_types.Tool(
         function_declarations=[
             genai_types.FunctionDeclaration(
-                name="wait_for_user",
+                name='wait_for_user',
                 description=(
-                    "Waits for the user to respond to your question or to do"
-                    " something special on the video stream, e.g. user picks up"
-                    " a pen & a piece of paper. This function will return"
-                    " quickly with an empty response. The next user request"
-                    " implies there has been a user response. It is up to the"
-                    " caller of this function to decide then whether to wait"
-                    " for the user again."
+                    'Waits for the user to respond to your question or to do'
+                    ' something special on the video stream, e.g. user picks up'
+                    ' a pen & a piece of paper. This function will return'
+                    ' quickly with an empty response. The next user request'
+                    ' implies there has been a user response. It is up to the'
+                    ' caller of this function to decide then whether to wait'
+                    ' for the user again.'
                 ),
                 # We use the non-blocking behavior to ensure the model will not
                 # output anything when receiving the function response:
                 # scheduling is set to `SILENT`.
-                behavior="NON_BLOCKING",
+                behavior='NON_BLOCKING',
             )
         ]
     ),
@@ -218,56 +218,56 @@ TOOLS = [
 # Prompt for the live api processor.
 PROMPT_PARTS = [
     (
-        "You are an agent that commentates on a video feed and"
-        " interacts with the user in a conversation. Commentate"
-        " highlighting the most important things and making it lively"
-        " and interesting for the user. Approach the commentating as if"
-        " you were on TV commentating and interviewing at the same"
-        " time. You can make jokes, explain interesting facts related"
-        " to what you see and hear, predict what could happen, judge"
-        " some actions or reactions, etc."
+        'You are an agent that commentates on a video feed and'
+        ' interacts with the user in a conversation. Commentate'
+        ' highlighting the most important things and making it lively'
+        ' and interesting for the user. Approach the commentating as if'
+        ' you were on TV commentating and interviewing at the same'
+        ' time. You can make jokes, explain interesting facts related'
+        ' to what you see and hear, predict what could happen, judge'
+        ' some actions or reactions, etc.'
     ),
     (
-        "You can be interrupted in the middle of a commentary. If this"
-        " happens, you should answer the question from the user first."
-        " Then you can continue commentating. If the user asks you to"
-        " adjust your style or tone, you should do so."
+        'You can be interrupted in the middle of a commentary. If this'
+        ' happens, you should answer the question from the user first.'
+        ' Then you can continue commentating. If the user asks you to'
+        ' adjust your style or tone, you should do so.'
     ),
     (
-        "You can be asked to do many different things, such as teaching a skill"
-        ", helping drawing something, explaing how to go into a yoga position,"
-        " or play a game like Simon says. You should do your best to help and"
-        " drive the conversation in that case, that is, be the coach or teacher"
-        " for the user in the video stream."
+        'You can be asked to do many different things, such as teaching a skill'
+        ', helping drawing something, explaing how to go into a yoga position,'
+        ' or play a game like Simon says. You should do your best to help and'
+        ' drive the conversation in that case, that is, be the coach or teacher'
+        ' for the user in the video stream.'
     ),
     (
-        "In some situations, you will need to wait for the user to do something"
-        " or to respond to your question or instructions. When this happens, be"
-        " silent and call `wait_for_user` to let the user respond or do what"
-        " they were instructed to do. Do not say `waiting for your answer` to"
-        " the user after or before you call `wait_for_user` and if you asked a"
-        " question."
+        'In some situations, you will need to wait for the user to do something'
+        ' or to respond to your question or instructions. When this happens, be'
+        ' silent and call `wait_for_user` to let the user respond or do what'
+        ' they were instructed to do. Do not say `waiting for your answer` to'
+        ' the user after or before you call `wait_for_user` and if you asked a'
+        ' question.'
     ),
     (
-        "When something changes in the image, video or audio, you"
-        " should commentate about it interrupting what you were saying"
-        " before. It is important to stay relevant to what is happening"
-        " recently and not in the images long before."
+        'When something changes in the image, video or audio, you'
+        ' should commentate about it interrupting what you were saying'
+        ' before. It is important to stay relevant to what is happening'
+        ' recently and not in the images long before.'
     ),
     (
-        "Always commentate assuming the persons in the video stream hear you"
-        " and are in the same room as you. You should always address"
-        " the persons in the video stream as in a normal conversation and not"
-        " say he or she when referring to them."
+        'Always commentate assuming the persons in the video stream hear you'
+        ' and are in the same room as you. You should always address'
+        ' the persons in the video stream as in a normal conversation and not'
+        ' say he or she when referring to them.'
     ),
     (
-        "Do not make long comments at each turn, just one or two sentences. You"
-        " should not repeat the same comments twice."
+        'Do not make long comments at each turn, just one or two sentences. You'
+        ' should not repeat the same comments twice.'
     ),
     (
-        "Remember to always address the persons in the video stream in the"
-        " first person, and not he or she. You can address them by their"
-        " location or how they are dressed."
+        'Remember to always address the persons in the video stream in the'
+        ' first person, and not he or she. You can address them by their'
+        ' location or how they are dressed.'
     ),
 ]
 
@@ -278,25 +278,25 @@ MEDIA_RESOLUTION = genai_types.MediaResolution.MEDIA_RESOLUTION_MEDIUM
 
 
 class EventTypes(enum.StrEnum):
-  DETECTION = "yes"
-  NO_DETECTION = "no"
-  INTERRUPTION = "interruption"
+  DETECTION = 'yes'
+  NO_DETECTION = 'no'
+  INTERRUPTION = 'interruption'
 
 
 EVENT_DETECTION_PROMPT = (
-    "You are an agent that detects events in the video feed. You receive images"
-    " from a camera. You must detect whenever a person or a group of people are"
-    " facing the camera and are close enough to engage in a conversation. You"
-    " must as well detect whenever the camera is pointing at a computer"
-    " screen.\n"  # Do not fold
-    "Whenever you see a person or a group of people close enough to the camera,"
+    'You are an agent that detects events in the video feed. You receive images'
+    ' from a camera. You must detect whenever a person or a group of people are'
+    ' facing the camera and are close enough to engage in a conversation. You'
+    ' must as well detect whenever the camera is pointing at a computer'
+    ' screen.\n'  # Do not fold
+    'Whenever you see a person or a group of people close enough to the camera,'
     f" respond with '{EventTypes.DETECTION}'.\n"  # Do not fold
     f"Whenever you see a computer screen, respond '{EventTypes.DETECTION}'.\n"
-    "Whenever you see something special, the user wanting to stop you, interact"
-    " with you or whenever you see something new that would change your"
+    'Whenever you see something special, the user wanting to stop you, interact'
+    ' with you or whenever you see something new that would change your'
     f" comment, respond with '{EventTypes.INTERRUPTION}'. Do not interrupt if"
-    " the user is talking to you, only when something related to the video feed"
-    "changes significantly.\n"
+    ' the user is talking to you, only when something related to the video feed'
+    'changes significantly.\n'
     f"In all other cases, respond with '{EventTypes.NO_DETECTION}'.\n"
 )
 
@@ -493,7 +493,7 @@ class CommentatorStateMachine:
             self.state = State.TALKING
     finally:
       logging.debug(
-          "%s - Update: %s + %s -> %s",
+          '%s - Update: %s + %s -> %s',
           time.perf_counter(),
           start_state,
           action,
@@ -502,7 +502,7 @@ class CommentatorStateMachine:
 
   def mark_start_generation(self, generation_type: GenerationType):
     logging.debug(
-        "%s - Start generation: %s", time.perf_counter(), generation_type
+        '%s - Start generation: %s', time.perf_counter(), generation_type
     )
     self.generation_request_info = GenerationRequestInfo(
         generation_start_sec=time.perf_counter(),
@@ -513,7 +513,7 @@ class CommentatorStateMachine:
     """Updates the generation request with the new media data."""
     if not self.generation_request_info:
       logging.debug(
-          "%s - No generation request to update.", time.perf_counter()
+          '%s - No generation request to update.', time.perf_counter()
       )
       return
     if self.generation_request_info.ttft_sec is None:
@@ -538,7 +538,7 @@ class CommentatorStateMachine:
   def tentative_trigger_time(self) -> Optional[float]:
     """Returns the tentative time when the commentator will trigger."""
     logging.debug(
-        "%s - generation_request_info: %s ttft: %s",
+        '%s - generation_request_info: %s ttft: %s',
         time.perf_counter(),
         self.generation_request_info,
         self.ttfts,
@@ -589,17 +589,17 @@ class LiveCommentator(processor.Processor):
     self.ttfts = collections.deque(maxlen=50)
     self._unsafe_string_list = unsafe_string_list
     if unsafe_string_list is not None:
-      pattern = "|".join(re.escape(s) for s in unsafe_string_list)
+      pattern = '|'.join(re.escape(s) for s in unsafe_string_list)
       self._processor += text.MatchProcessor(
           pattern=pattern,
-          substream_input="output_transcription",
-          substream_output="unsafe_regex",
+          substream_input='output_transcription',
+          substream_output='unsafe_regex',
           remove_from_input_stream=False,
-          flush_fn=lambda part: part.get_metadata("generation_complete", False)
-          or part.get_metadata("interrupted")
-          or part.get_metadata("interrupt_request")
-          or part.get_metadata("turn_complete")
-          or part.get_metadata("go_away"),
+          flush_fn=lambda part: part.get_metadata('generation_complete', False)
+          or part.get_metadata('interrupted')
+          or part.get_metadata('interrupt_request')
+          or part.get_metadata('turn_complete')
+          or part.get_metadata('go_away'),
       )
 
   def set_chattiness(self, chattiness: float):
@@ -615,21 +615,21 @@ class LiveCommentator(processor.Processor):
     """Triggers a comment from the model. Input queue is fed to the model."""
     if self._commentator.id is None:
       logging.debug(
-          "%s - No commentator id, ignoring start_commentating: %s",
+          '%s - No commentator id, ignoring start_commentating: %s',
           time.perf_counter(),
           self._commentator,
       )
     else:
       logging.debug(
-          "%s - Triggering start_commentating: %s",
+          '%s - Triggering start_commentating: %s',
           time.perf_counter(),
           self._commentator.id,
       )
       input_queue.put_nowait(
           content_api.ProcessorPart.from_function_response(
               function_call_id=self._commentator.id,
-              name="start_commentating",
-              response={"output": message},
+              name='start_commentating',
+              response={'output': message},
               will_continue=will_continue,
               scheduling=scheduling,
           )
@@ -642,7 +642,7 @@ class LiveCommentator(processor.Processor):
     input_queue.put_nowait(
         content_api.ProcessorPart.from_function_response(
             function_call_id=fn_id,
-            name="start_commentating",
+            name='start_commentating',
             response={},
             will_continue=False,
             scheduling=genai_types.FunctionResponseScheduling.SILENT,
@@ -656,7 +656,7 @@ class LiveCommentator(processor.Processor):
     input_queue.put_nowait(
         content_api.ProcessorPart.from_function_response(
             function_call_id=fn_id,
-            name="wait_for_user",
+            name='wait_for_user',
             response={},
             will_continue=False,
             scheduling=genai_types.FunctionResponseScheduling.SILENT,
@@ -679,7 +679,7 @@ class LiveCommentator(processor.Processor):
       chattiness_dice = random.uniform(0, 1)
       if chattiness_dice < self._chattiness:
         logging.debug(
-            "%s - Triggering comment: %s ", time.perf_counter(), message
+            '%s - Triggering comment: %s ', time.perf_counter(), message
         )
         self._commentator.update(Action.REQUEST_FROM_COMMENTATOR)
         self._start_commentating(
@@ -710,16 +710,16 @@ class LiveCommentator(processor.Processor):
     async for part in self._processor(input_stream):
       logging.log_every_n_seconds(
           logging.INFO,
-          "%s - commentator running for: %s",
+          '%s - commentator running for: %s',
           10,
           time.perf_counter(),
           timestamp.to_timestamp(time.perf_counter() - start_time),
       )
 
       # Handle unsafe content.
-      if part.substream_name == "unsafe_regex":
+      if part.substream_name == 'unsafe_regex':
         logging.info(
-            "%s - Unsafe content detected: %s",
+            '%s - Unsafe content detected: %s',
             time.perf_counter(),
             part,
         )
@@ -728,12 +728,12 @@ class LiveCommentator(processor.Processor):
             content_api.ProcessorPart(
                 START_AGAIN_MSG
                 + (
-                    " Do not mention the following expressions in your"
+                    ' Do not mention the following expressions in your'
                     " next response: '%s'"
                     % "', '".join(self._unsafe_string_list)
                 ),
-                role="USER",
-                substream_name="realtime",
+                role='USER',
+                substream_name='realtime',
             )
         )
         continue
@@ -741,26 +741,26 @@ class LiveCommentator(processor.Processor):
       # Handle function calls.
       if part.function_call:
         logging.info(
-            "%s - Received tool call: %s",
+            '%s - Received tool call: %s',
             time.perf_counter(),
             part,
         )
-        fn_id = part.get_metadata("id")
-        if part.part.function_call.name == "start_commentating":
+        fn_id = part.get_metadata('id')
+        if part.part.function_call.name == 'start_commentating':
           if self._commentator.state != State.OFF:
             # We already have a comment in progress, ignore this one.
             logging.info(
-                "%s - Ignoring start_commentating: %s",
+                '%s - Ignoring start_commentating: %s',
                 time.perf_counter(),
                 fn_id,
             )
             self._stop_commentating(input_queue, fn_id)
           else:
             self._commentator.update(Action.TURN_ON, fn_id)
-        elif part.part.function_call.name == "wait_for_user":
+        elif part.part.function_call.name == 'wait_for_user':
           if self._commentator.state != State.OFF:
             logging.debug(
-                "%s - Received wait_for_user: %s",
+                '%s - Received wait_for_user: %s',
                 time.perf_counter(),
                 fn_id,
             )
@@ -772,7 +772,7 @@ class LiveCommentator(processor.Processor):
             tentative_trigger_time = self._commentator.tentative_trigger_time()
             if tentative_trigger_time is None:
               logging.debug(
-                  "%s - No tentative trigger time, using current time",
+                  '%s - No tentative trigger time, using current time',
                   time.perf_counter(),
               )
               tentative_trigger_time = time.perf_counter()
@@ -787,7 +787,7 @@ class LiveCommentator(processor.Processor):
         continue
 
       # Handle start of turn, considered as a user request.
-      if part.get_metadata("start_of_user_turn"):
+      if part.get_metadata('start_of_user_turn'):
         self._commentator.update(Action.REQUEST_FROM_USER)
         continue
 
@@ -795,7 +795,7 @@ class LiveCommentator(processor.Processor):
       if part.tool_cancellation:
         if part.tool_cancellation == self._commentator.id:
           logging.debug(
-              "%s - Cancelling comment function call: %s",
+              '%s - Cancelling comment function call: %s',
               time.perf_counter(),
               self._commentator.id,
           )
@@ -805,12 +805,12 @@ class LiveCommentator(processor.Processor):
 
       # Handle when the model is done generating. All audios parts have
       # arrived at this point but they have not been all played back yet.
-      if part.get_metadata("generation_complete"):
-        logging.debug("%s - generation_complete", time.perf_counter())
+      if part.get_metadata('generation_complete'):
+        logging.debug('%s - generation_complete', time.perf_counter())
         yield processor.ProcessorPart(
-            "",
-            role="MODEL",
-            metadata={"generation_complete": True},
+            '',
+            role='MODEL',
+            metadata={'generation_complete': True},
         )
         if self._commentator.state != State.OFF:
           # We have received all audio parts, we reschedule the comment.
@@ -835,23 +835,23 @@ class LiveCommentator(processor.Processor):
             )
 
       # Handle interruption from the user.
-      if part.get_metadata("interrupted"):
+      if part.get_metadata('interrupted'):
         reset_schedule_task()
         self._commentator.update(Action.INTERRUPT)
         if self._commentator.state == State.USER_IS_TALKING:
-          logging.debug("%s - Turn interrupted - user", time.perf_counter())
+          logging.debug('%s - Turn interrupted - user', time.perf_counter())
           yield content_api.ProcessorPart(
-              "", role="MODEL", metadata={"interrupted": True}
+              '', role='MODEL', metadata={'interrupted': True}
           )
         else:
           logging.debug(
-              "%s - Turn interrupted - detection", time.perf_counter()
+              '%s - Turn interrupted - detection', time.perf_counter()
           )
         continue
 
       # Handle interrupt request from the event detection. Do not interrupt
       # yet, wait for the interruption to be confirmed by the model.
-      if part.get_metadata("interrupt_request"):
+      if part.get_metadata('interrupt_request'):
         if self._commentator.state == State.WAITING_FOR_USER:
           response = INTERRUPT_WAIT_FOR_USER_MSG
         else:
@@ -865,7 +865,7 @@ class LiveCommentator(processor.Processor):
               scheduling=genai_types.FunctionResponseScheduling.INTERRUPT,
           )
 
-      if part.get_metadata("go_away"):
+      if part.get_metadata('go_away'):
         reset_schedule_task()
         return
 
@@ -873,17 +873,17 @@ class LiveCommentator(processor.Processor):
       if part.part.inline_data:
         if self._commentator.state == State.INTERRUPTED_FROM_DETECTION:
           logging.debug(
-              "%s - Yield interrupt from interruption, audio should stop now",
+              '%s - Yield interrupt from interruption, audio should stop now',
               time.perf_counter(),
           )
           yield content_api.ProcessorPart(
-              "", role="MODEL", metadata={"interrupted": True}
+              '', role='MODEL', metadata={'interrupted': True}
           )
         self._commentator.update(
             Action.STREAM_MEDIA_PART, part.part.inline_data
         )
       else:
-        logging.debug("%s - non media part: %s", time.perf_counter(), part)
+        logging.debug('%s - non media part: %s', time.perf_counter(), part)
 
       yield part
 
@@ -923,35 +923,35 @@ def create_live_commentator(
       config=genai_types.GenerateContentConfig(
           system_instruction=EVENT_DETECTION_PROMPT,
           max_output_tokens=10,
-          response_mime_type="text/x.enum",
+          response_mime_type='text/x.enum',
           response_schema=EventTypes,
           media_resolution=MEDIA_RESOLUTION,
       ),
       output_dict={
-          ("*", EventTypes.DETECTION): [
+          ('*', EventTypes.DETECTION): [
               content_api.ProcessorPart(
-                  "start commentating",
-                  role="USER",
-                  substream_name="realtime",
-                  metadata={"end_of_turn": True},
+                  'start commentating',
+                  role='USER',
+                  substream_name='realtime',
+                  metadata={'end_of_turn': True},
               )
           ],
           (EventTypes.DETECTION, EventTypes.NO_DETECTION): [
               content_api.ProcessorPart(
-                  "stop commentating",
-                  role="USER",
-                  substream_name="realtime",
-                  metadata={"end_of_turn": True},
+                  'stop commentating',
+                  role='USER',
+                  substream_name='realtime',
+                  metadata={'end_of_turn': True},
               )
           ],
           (EventTypes.DETECTION, EventTypes.INTERRUPTION): [
               content_api.ProcessorPart(
-                  "",
-                  role="USER",
+                  '',
+                  role='USER',
                   # Setting up a substream name here will ensure this part will
                   # not be sent to the Live API.
-                  substream_name="event_detection",
-                  metadata={"interrupt_request": True},
+                  substream_name='event_detection',
+                  metadata={'interrupt_request': True},
               )
           ],
           (EventTypes.INTERRUPTION, EventTypes.DETECTION): None,
@@ -971,14 +971,14 @@ def create_live_commentator(
           system_instruction=PROMPT_PARTS,
           output_audio_transcription={},
           realtime_input_config=genai_types.RealtimeInputConfig(
-              turn_coverage="TURN_INCLUDES_ALL_INPUT"
+              turn_coverage='TURN_INCLUDES_ALL_INPUT'
           ),
-          response_modalities=["AUDIO"],
+          response_modalities=['AUDIO'],
           generation_config=genai_types.GenerationConfig(
               media_resolution=MEDIA_RESOLUTION
           ),
       ),
-      http_options=genai_types.HttpOptions(api_version="v1alpha"),
+      http_options=genai_types.HttpOptions(api_version='v1alpha'),
   )
   return (
       event_detection_processor

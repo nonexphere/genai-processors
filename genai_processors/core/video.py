@@ -28,8 +28,8 @@ ProcessorPart = content_api.ProcessorPart
 class VideoMode(enum.Enum):
   """Video mode for the VideoIn processor."""
 
-  CAMERA = "camera"
-  SCREEN = "screen"
+  CAMERA = 'camera'
+  SCREEN = 'screen'
 
 
 def _get_single_camera_frame(
@@ -45,9 +45,9 @@ def _get_single_camera_frame(
   # This prevents the blue tint in the video feed
   frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
   img = PIL.Image.fromarray(frame_rgb)  # Now using RGB frame
-  img.format = "JPEG"
+  img.format = 'JPEG'
 
-  return ProcessorPart(img, substream_name=substream_name, role="USER")
+  return ProcessorPart(img, substream_name=substream_name, role='USER')
 
 
 def _get_single_screen_frame(substream_name: str) -> ProcessorPart:
@@ -60,15 +60,15 @@ def _get_single_screen_frame(substream_name: str) -> ProcessorPart:
   monitor = sct.monitors[0]
 
   i = sct.grab(monitor)
-  img = PIL.Image.frombuffer("RGB", i.size, i.rgb)
-  img.format = "JPEG"
+  img = PIL.Image.frombuffer('RGB', i.size, i.rgb)
+  img.format = 'JPEG'
 
-  return ProcessorPart(img, substream_name=substream_name, role="USER")
+  return ProcessorPart(img, substream_name=substream_name, role='USER')
 
 
 @processor.source
 async def VideoIn(  # pylint: disable=invalid-name
-    substream_name: str = "realtime", video_mode: VideoMode = VideoMode.CAMERA
+    substream_name: str = 'realtime', video_mode: VideoMode = VideoMode.CAMERA
 ) -> AsyncIterable[ProcessorPart]:
   """Yields image parts from a camera or a computer screen.
 
@@ -98,4 +98,4 @@ async def VideoIn(  # pylint: disable=invalid-name
       yield await asyncio.to_thread(_get_single_screen_frame, substream_name)
       await asyncio.sleep(1.0)
   else:
-    raise ValueError(f"Unsupported video mode: {video_mode}")
+    raise ValueError(f'Unsupported video mode: {video_mode}')

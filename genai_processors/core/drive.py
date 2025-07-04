@@ -51,7 +51,7 @@ the `PDFExtract` processor.
 ```py
 from genai_processors.core import drive
 
-USER_PROMPT = "Describe the document in detail."
+USER_PROMPT = 'Describe the document in detail.'
 p_docs = drive.Docs()
 
 # Or, if you are using credentials:

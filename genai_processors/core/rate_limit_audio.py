@@ -118,9 +118,9 @@ class RateLimitAudio(processor.Processor):
               )
           else:
             audio_queue.put_nowait(part)
-        elif part.get_metadata("interrupted"):
+        elif part.get_metadata('interrupted'):
           logging.debug(
-              "%s - Interrupted - flush audio queue", time.perf_counter()
+              '%s - Interrupted - flush audio queue', time.perf_counter()
           )
           # Flush the audio queue - stop rate limiting audio asap.
           while not audio_queue.empty():

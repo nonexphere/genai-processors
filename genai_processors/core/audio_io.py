@@ -33,7 +33,7 @@ AudioFormats = pyaudio.paInt16 | pyaudio.paInt24
 @processor.source
 async def PyAudioIn(
     pya: pyaudio.PyAudio,
-    substream_name: str = "realtime",
+    substream_name: str = 'realtime',
     audio_format: AudioFormats = pyaudio.paInt16,  # 16-bit PCM.
     channels: int = 1,
     rate: int = 24000,
@@ -53,15 +53,15 @@ async def PyAudioIn(
     use_pcm_mimetype: Whether to use PCM mimetype instead of the more specific
       l16 or l24 mimetype.
   """
-  mimetype = "audio/"
+  mimetype = 'audio/'
   match audio_format:
     case pyaudio.paInt16:
-      mimetype += "pcm" if use_pcm_mimetype else "l16"
+      mimetype += 'pcm' if use_pcm_mimetype else 'l16'
     case pyaudio.paInt24:
-      mimetype += "pcm" if use_pcm_mimetype else "l24"
+      mimetype += 'pcm' if use_pcm_mimetype else 'l24'
     case _:
-      raise ValueError(f"Unsupported audio format: {format}")
-  mimetype = f"{mimetype};rate={rate}"
+      raise ValueError(f'Unsupported audio format: {format}')
+  mimetype = f'{mimetype};rate={rate}'
 
   mic_info = pya.get_default_input_device_info()
   audio_stream = await asyncio.to_thread(
@@ -70,11 +70,11 @@ async def PyAudioIn(
       channels=channels,
       rate=rate,
       input=True,
-      input_device_index=mic_info["index"],
+      input_device_index=mic_info['index'],
       frames_per_buffer=AUDIO_OUT_CHUNK_SIZE,
   )
   if __debug__:  # pylint: disable=undefined-variable
-    kwargs = {"exception_on_overflow": False}
+    kwargs = {'exception_on_overflow': False}
   else:
     kwargs = {}
 
@@ -83,7 +83,7 @@ async def PyAudioIn(
         audio_stream.read, AUDIO_OUT_CHUNK_SIZE, **kwargs
     )
     yield ProcessorPart(
-        data, mimetype=mimetype, substream_name=substream_name, role="USER"
+        data, mimetype=mimetype, substream_name=substream_name, role='USER'
     )
 
 

@@ -58,20 +58,20 @@ class TopicResearcher(processor.PartProcessor):
     p_preamble = preamble.Preamble(
         content=[
             ProcessorPart(prompts.TOPIC_RESEARCH_PREAMBLE),
-            ProcessorPart("Topic to research: "),
+            ProcessorPart('Topic to research: '),
         ]
     )
     p_verbalizer = jinja_template.RenderDataClass(
         template_str=(
-            "## {{ data.topic }}\n"
-            "*{{ data.relationship_to_user_content }}*"
-            "{% if data.research_text|trim != '' %}"
-            "\n\n### Research\n\n{{ data.research_text }}"
-            "{% endif %}"
+            '## {{ data.topic }}\n'
+            '*{{ data.relationship_to_user_content }}*'
+            '{% if data.research_text|trim != "" %}'
+            '\n\n### Research\n\n{{ data.research_text }}'
+            '{% endif %}'
         ),
         data_class=interfaces.Topic,
     )
-    p_suffix = preamble.Suffix(content=[ProcessorPart("Your research: ")])
+    p_suffix = preamble.Suffix(content=[ProcessorPart('Your research: ')])
     self._pipeline = (
         p_verbalizer + p_preamble + p_suffix + self._genai_processor
     )

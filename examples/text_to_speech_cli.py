@@ -50,15 +50,15 @@ import pyaudio
 
 # You need to define the project id in the environment variables.
 # export GOOGLE_PROJECT_ID=...
-GOOGLE_PROJECT_ID = os.environ["GOOGLE_PROJECT_ID"]
+GOOGLE_PROJECT_ID = os.environ['GOOGLE_PROJECT_ID']
 
 
 @processor.source
 async def terminal_input() -> AsyncIterable[content_api.ProcessorPartTypes]:
-  print("Enter `q` to quit.")
+  print('Enter `q` to quit.')
   while True:
-    text = await asyncio.to_thread(input, "message > ")
-    if text.lower() == "q":
+    text = await asyncio.to_thread(input, 'message > ')
+    if text.lower() == 'q':
       break
     yield text
 
@@ -72,14 +72,14 @@ async def run_tts() -> None:
   ) + audio_io.PyAudioOut(pya)
 
   print(
-      f"{time.perf_counter()} - TTS Processor ready. Enter q to quit.\nNOTE:"
-      " finish all your input with a punctuation to indicate an end of"
-      " sentence. E.g.: 'Hello, world!' or 'hi.'\nIMPORTANT: after 5 seconds"
-      " without activity (after the first sentence), the TTS will stop."
+      f'{time.perf_counter()} - TTS Processor ready. Enter q to quit.\nNOTE:'
+      ' finish all your input with a punctuation to indicate an end of'
+      ' sentence. E.g.: "Hello, world!" or "hi."\nIMPORTANT: after 5 seconds'
+      ' without activity (after the first sentence), the TTS will stop.'
   )
   async for _ in tts_processor(terminal_input()):
     pass
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
   asyncio.run(run_tts())

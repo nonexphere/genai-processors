@@ -86,11 +86,11 @@ class ResearchAgent(processor.Processor):
     )
     p_topic_verbalizer = jinja_template.RenderDataClass(
         template_str=(
-            "## {{ data.topic }}\n"
-            "*{{ data.relationship_to_user_content }}*"
-            "{% if data.research_text|trim != '' %}"
-            "\n\n### Research\n\n{{ data.research_text }}"
-            "{% endif %}"
+            '## {{ data.topic }}\n'
+            '*{{ data.relationship_to_user_content }}*'
+            '{% if data.research_text|trim != "" %}'
+            '\n\n### Research\n\n{{ data.research_text }}'
+            '{% endif %}'
         ),
         data_class=interfaces.Topic,
     )
@@ -100,12 +100,12 @@ class ResearchAgent(processor.Processor):
     p_preamble = preamble.Preamble(
         content=[
             ProcessorPart(prompts.SYNTHESIS_PREAMBLE),
-            ProcessorPart("Research text: "),
+            ProcessorPart('Research text: '),
         ]
     )
     p_suffix = preamble.Suffix(
         content=[
-            ProcessorPart("Your synthesized research: "),
+            ProcessorPart('Your synthesized research: '),
         ]
     )
     self._pipeline = (
@@ -122,4 +122,4 @@ class ResearchAgent(processor.Processor):
   ) -> AsyncIterable[ProcessorPart]:
     async for content_part in self._pipeline(content):
       yield content_part
-    yield processor.status("Produced research synthesis!")
+    yield processor.status('Produced research synthesis!')

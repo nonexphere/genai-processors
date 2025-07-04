@@ -65,15 +65,15 @@ def genai_response_to_metadata(
 ) -> dict[str, Any]:
   """Converts a Genai response to metadata, to be attached to a ProcessorPart."""
   return {
-      "create_time": response.create_time,
-      "response_id": response.response_id,
-      "model_version": response.model_version,
-      "prompt_feedback": response.prompt_feedback,
-      "usage_metadata": response.usage_metadata,
-      "automatic_function_calling_history": (
+      'create_time': response.create_time,
+      'response_id': response.response_id,
+      'model_version': response.model_version,
+      'prompt_feedback': response.prompt_feedback,
+      'usage_metadata': response.usage_metadata,
+      'automatic_function_calling_history': (
           response.automatic_function_calling_history
       ),
-      "parsed": response.parsed,
+      'parsed': response.parsed,
   }
 
 
@@ -163,5 +163,5 @@ class GenaiModel(processor.Processor):
             yield processor.ProcessorPart(
                 part,
                 metadata=genai_response_to_metadata(res),
-                role=content.role or "model",
+                role=content.role or 'model',
             )

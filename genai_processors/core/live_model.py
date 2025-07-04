@@ -65,8 +65,8 @@ def to_parts(
   """Converts a LiveServerMessage to a stream of ProcessorParts."""
   if msg.server_content:
     metadata = msg.server_content.to_json_dict()
-    if "model_turn" in metadata:
-      del metadata["model_turn"]
+    if 'model_turn' in metadata:
+      del metadata['model_turn']
     if msg.server_content.model_turn:
       for part in msg.server_content.model_turn.parts:
         yield content_api.ProcessorPart(
@@ -74,19 +74,19 @@ def to_parts(
             role=msg.server_content.model_turn.role,
         )
     for k, v in metadata.items():
-      value = ""
-      if k in ("input_transcription", "output_transcription"):
-        if "text" in v:
-          value = v["text"]
+      value = ''
+      if k in ('input_transcription', 'output_transcription'):
+        if 'text' in v:
+          value = v['text']
         yield content_api.ProcessorPart(
             value=value,
-            role="MODEL",
+            role='MODEL',
             substream_name=k,
         )
       else:
         yield content_api.ProcessorPart(
-            value="",
-            role="MODEL",
+            value='',
+            role='MODEL',
             metadata={k: v},
         )
   if msg.tool_call:
@@ -95,8 +95,8 @@ def to_parts(
       yield content_api.ProcessorPart.from_function_call(
           name=function_call.name,
           args=function_call.args,
-          role="MODEL",
-          metadata={"id": function_call.id},
+          role='MODEL',
+          metadata={'id': function_call.id},
       )
   if msg.tool_call_cancellation and msg.tool_call_cancellation.ids:
     for function_call_id in msg.tool_call_cancellation.ids:
@@ -105,24 +105,24 @@ def to_parts(
       )
   if msg.usage_metadata:
     yield content_api.ProcessorPart(
-        value="",
-        role="MODEL",
-        metadata={"usage_metadata": msg.usage_metadata.to_json_dict()},
+        value='',
+        role='MODEL',
+        metadata={'usage_metadata': msg.usage_metadata.to_json_dict()},
     )
 
   if msg.go_away:
     yield content_api.ProcessorPart(
-        value="",
-        role="MODEL",
-        metadata={"go_away": msg.go_away.to_json_dict()},
+        value='',
+        role='MODEL',
+        metadata={'go_away': msg.go_away.to_json_dict()},
     )
 
   if msg.session_resumption_update:
     yield content_api.ProcessorPart(
-        value="",
-        role="MODEL",
+        value='',
+        role='MODEL',
         metadata={
-            "session_resumption_update": (
+            'session_resumption_update': (
                 msg.session_resumption_update.to_json_dict()
             )
         },
@@ -194,7 +194,7 @@ class LiveProcessor(processor.Processor):
         async for chunk_part in content:
           if chunk_part.part.function_response:
             logging.debug(
-                "%s - Live Processor: sending tool response: %s",
+                '%s - Live Processor: sending tool response: %s',
                 time.perf_counter(),
                 chunk_part,
             )
@@ -202,24 +202,24 @@ class LiveProcessor(processor.Processor):
                 function_responses=chunk_part.part.function_response
             )
           elif (
-              chunk_part.substream_name == "realtime"
-              and chunk_part.get_metadata("audio_stream_end")
+              chunk_part.substream_name == 'realtime'
+              and chunk_part.get_metadata('audio_stream_end')
           ):
             logging.debug(
-                "%s - Live Processor: sending realtime audio_stream_end",
+                '%s - Live Processor: sending realtime audio_stream_end',
                 time.perf_counter(),
             )
             await session.send_realtime_input(audio_stream_end=True)
           elif (
-              chunk_part.substream_name == "realtime"
+              chunk_part.substream_name == 'realtime'
               and chunk_part.part.inline_data
           ):
             await session.send_realtime_input(media=chunk_part.part.inline_data)
-          elif chunk_part.substream_name == "realtime" and content_api.is_text(
+          elif chunk_part.substream_name == 'realtime' and content_api.is_text(
               chunk_part.mimetype
           ):
             logging.debug(
-                "%s - Live Processor: sending realtime input: %s",
+                '%s - Live Processor: sending realtime input: %s',
                 time.perf_counter(),
                 chunk_part.text,
             )
@@ -227,11 +227,11 @@ class LiveProcessor(processor.Processor):
           elif not chunk_part.substream_name:
             # Default substream.
             logging.debug(
-                "%s - Live Processor: sending client content: %s",
+                '%s - Live Processor: sending client content: %s',
                 time.perf_counter(),
                 chunk_part.part,
             )
-            turn_complete = chunk_part.get_metadata("turn_complete")
+            turn_complete = chunk_part.get_metadata('turn_complete')
             await session.send_client_content(
                 turns=genai_types.Content(
                     parts=[chunk_part.part], role=chunk_part.role
@@ -240,7 +240,7 @@ class LiveProcessor(processor.Processor):
             )
           else:
             logging.debug(
-                "%s - Live Processor: part passed through: %s",
+                '%s - Live Processor: part passed through: %s',
                 time.perf_counter(),
                 chunk_part,
             )
@@ -258,10 +258,10 @@ class LiveProcessor(processor.Processor):
                   and response.server_content.model_turn.parts[0].inline_data
               ):
                 logging.debug(
-                    "%s - Live Processor Response: %s",
+                    '%s - Live Processor Response: %s',
                     time.perf_counter(),
                     # Remove the None values from the response.
-                    re.sub(r"(,\s)?[^\(\s]+=None,?\s?", "", str(response)),
+                    re.sub(r'(,\s)?[^\(\s]+=None,?\s?', '', str(response)),
                 )
               for part in to_parts(response):
                 await output_queue.put(part)

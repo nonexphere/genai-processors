@@ -60,7 +60,7 @@ def default_processor_content_hash(
   raw_part_dicts = [part.to_dict() for part in content_obj.all_parts]
   canonical_representation_str = json.dumps(raw_part_dicts, sort_keys=True)
   hasher = xxhash.xxh128()
-  hasher.update(canonical_representation_str.encode("utf-8"))
+  hasher.update(canonical_representation_str.encode('utf-8'))
   return hasher.hexdigest()
 
 
@@ -68,12 +68,12 @@ def _serialize_content(value: ProcessorContent) -> bytes:
   """Serializes ProcessorContent to bytes (via JSON)."""
   list_of_part_dicts_val = [part.to_dict() for part in value.all_parts]
   json_string_val = json.dumps(list_of_part_dicts_val)
-  return json_string_val.encode("utf-8")
+  return json_string_val.encode('utf-8')
 
 
 def _deserialize_content(data_bytes: bytes) -> ProcessorContent:
   """Deserializer for ProcessorContent from bytes (via JSON)."""
-  json_string_val = data_bytes.decode("utf-8")
+  json_string_val = data_bytes.decode('utf-8')
   list_of_part_dicts_val = json.loads(json_string_val)
   return ProcessorContent([
       content_api.ProcessorPart.from_dict(data=pd)
@@ -104,7 +104,7 @@ class CacheBase(abc.ABC):
     pass
 
   @abc.abstractmethod
-  def with_key_prefix(self, prefix: str) -> "CacheBase":
+  def with_key_prefix(self, prefix: str) -> 'CacheBase':
     """Creates a new Cache instance where generated string keys are prefixed."""
     pass
 
@@ -128,7 +128,7 @@ class InMemoryCache(CacheBase):
         None, the item is considered not cacheable.
     """
     if max_items <= 0:
-      raise ValueError("max_items must be positive, got: %d" % max_items)
+      raise ValueError('max_items must be positive, got: %d' % max_items)
 
     self._hash_fn = (
         hash_fn if hash_fn is not None else default_processor_content_hash
@@ -139,13 +139,13 @@ class InMemoryCache(CacheBase):
     ttl_seconds = ttl_hours * 3600
     self._cache = cachetools.TTLCache(
         maxsize=max_items,
-        ttl=ttl_seconds if ttl_seconds > 0 else float("inf"),
+        ttl=ttl_seconds if ttl_seconds > 0 else float('inf'),
     )
     self._ttl_hours = ttl_hours
     self._max_items = max_items
 
   @override
-  def with_key_prefix(self, prefix: str) -> "InMemoryCache":
+  def with_key_prefix(self, prefix: str) -> 'InMemoryCache':
     """Creates a new InMemoryCache instance with its hash function wrapped to prepend the given prefix to generated string keys.
 
     The new instance uses the same TTL/max_items configuration but operates
@@ -161,7 +161,7 @@ class InMemoryCache(CacheBase):
 
     def prefixed_hash_fn(query: ProcessorContentTypes) -> str | None:
       key = original_hash_fn(query)
-      return f"{prefix}{key}" if key is not None else None
+      return f'{prefix}{key}' if key is not None else None
 
     return InMemoryCache(
         ttl_hours=self._ttl_hours,

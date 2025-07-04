@@ -35,21 +35,21 @@ class JinjaTemplate(processor.Processor):
   from genai_processors.core import jinja_template
 
   p = jinja_template.JinjaTemplate(
-      template_str="Hello {{ name }}, answer this question: {{ content }}",
-      content_varname="content",
+      template_str='Hello {{ name }}, answer this question: {{ content }}',
+      content_varname='content',
       role=content_api.Roles.USER,
-      name="World",
+      name='World',
   )
   output = processor.apply_sync(
       p,
       [
           content_api.ProcessorPart(
-              "What is this landmark?",
-              mimetype="text/plain",
+              'What is this landmark?',
+              mimetype='text/plain',
           ),
           content_api.ProcessorPart(
               <image_bytes>,
-              mimetype="image/png",
+              mimetype='image/png',
           ),
       ],
   )
@@ -60,8 +60,8 @@ class JinjaTemplate(processor.Processor):
   def __init__(
       self,
       template_str: str,
-      content_varname: str = "content",
-      role: str = "user",
+      content_varname: str = 'content',
+      role: str = 'user',
       *args,
       **kwargs,
   ) -> None:
@@ -82,8 +82,8 @@ class JinjaTemplate(processor.Processor):
     """
     if content_varname in kwargs:
       raise ValueError(
-          f"'{content_varname}' is set to render the processor's content and"
-          " must not be passed as a variable to the Jinja template."
+          f"{content_varname!r} is set to render the processor's content and"
+          ' must not be passed as a variable to the Jinja template.'
       )
 
     # Render the template using a placeholder value for the processor's content
@@ -156,13 +156,13 @@ class RenderDataClass(processor.PartProcessor):
     first_name: str
     last_name: str
 
-  shopping_list = ["A", "B", "C"]
+  shopping_list = ['A', 'B', 'C']
   p = jinja_template.RenderDataClass(
       template_str=(
-          "Hello {{ data.first_name }},\n"
-          "This is your shopping list:\n"
-          "{% for item in your_list %}This is item: {{ item }}\n"
-          "{% endfor %}"
+          'Hello {{ data.first_name }},\n'
+          'This is your shopping list:\n'
+          '{% for item in your_list %}This is item: {{ item }}\n'
+          '{% endfor %}'
       ),
       data_class=ExampleDataClass,
       your_list=shopping_list,
@@ -171,7 +171,7 @@ class RenderDataClass(processor.PartProcessor):
       p,
       [
         content_api.ProcessorPart.from_dataclass(
-            dataclass=ExampleDataClass(first_name="John", last_name="Doe")
+            dataclass=ExampleDataClass(first_name='John', last_name='Doe')
         )
       ],
   )

@@ -33,24 +33,24 @@ from genai_processors.core import pdf
 async def run_pdf(content: bytes, filename: str) -> None:
   """Extracts PDF content."""
   p = pdf.PDFExtract()
-  metadata = {"original_file_name": filename}
+  metadata = {'original_file_name': filename}
   async for part in p(
       content_api.ProcessorPart(
           content, mimetype=pdf.PDF_MIMETYPE, metadata=metadata
       )
   ):
-    print(f"{time.perf_counter()} - {part}")
+    print(f'{time.perf_counter()} - {part}')
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
   parser = argparse.ArgumentParser()
-  parser.add_argument("pdf_file")
+  parser.add_argument('pdf_file')
   args = parser.parse_args()
   pdf_file = args.pdf_file
-  with open(pdf_file, "rb") as f:
+  with open(pdf_file, 'rb') as f:
     pdf_bytes = f.read()
     print(
-        f"{time.perf_counter()} - PDF Processor start extracting PDF:"
-        f" {pdf_file}"
+        f'{time.perf_counter()} - PDF Processor start extracting PDF:'
+        f' {pdf_file}'
     )
     asyncio.run(run_pdf(content=pdf_bytes, filename=pdf_file))

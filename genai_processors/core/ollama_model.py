@@ -44,7 +44,7 @@ from pydantic import json_schema
 from typing_extensions import TypedDict
 
 
-_DEFAULT_HOST = "http://127.0.0.1:11434"
+_DEFAULT_HOST = 'http://127.0.0.1:11434'
 # Ollama connection timeout. It may take some time for Ollama to load the model.
 _DEFAULT_TIMEOUT = 300
 
@@ -60,7 +60,7 @@ class GenerateContentConfig(TypedDict, total=False):
   """
 
   response_mime_type: (
-      Literal["text/plain", "application/json", "text/x.enum"] | None
+      Literal['text/plain', 'application/json', 'text/x.enum'] | None
   )
   """Output response mimetype of the generated candidate text."""
 
@@ -108,7 +108,7 @@ class OllamaModel(processor.Processor):
   def __init__(
       self,
       *,
-      model_name: str = "",
+      model_name: str = '',
       host: str | None = None,
       generate_content_config: GenerateContentConfig | None = None,
       keep_alive: float | str | None = None,
@@ -141,51 +141,51 @@ class OllamaModel(processor.Processor):
     self._client = httpx.AsyncClient(
         follow_redirects=True,
         headers={
-            "Content-Type": mime_types.TEXT_JSON,
-            "Accept": mime_types.TEXT_JSON,
-            "User-Agent": "genai-processors",
+            'Content-Type': mime_types.TEXT_JSON,
+            'Accept': mime_types.TEXT_JSON,
+            'User-Agent': 'genai-processors',
         },
         timeout=_DEFAULT_TIMEOUT,
     )
 
-    response_mime_type = generate_content_config.get("response_mime_type")
+    response_mime_type = generate_content_config.get('response_mime_type')
     if response_mime_type == mime_types.TEXT_JSON:
-      self._format = "json"
+      self._format = 'json'
     elif response_mime_type == mime_types.TEXT_ENUM:
       # Ollama only supports JSON schema constrained decoding. So for enum names
       # it will return strings enclosed in quotes.
       self._strip_quotes = True
 
     # Render response_schema in-to a JSON schema.
-    if generate_content_config.get("response_schema") is not None:
+    if generate_content_config.get('response_schema') is not None:
       self._format = _transformers.t_schema(  # pytype: disable=wrong-arg-types
-          _FakeClient(), generate_content_config["response_schema"]
-      ).json_schema.model_dump(mode="json", exclude_unset=True)
-    elif generate_content_config.get("response_json_schema"):
-      self._format = generate_content_config["response_json_schema"]
+          _FakeClient(), generate_content_config['response_schema']
+      ).json_schema.model_dump(mode='json', exclude_unset=True)
+    elif generate_content_config.get('response_json_schema'):
+      self._format = generate_content_config['response_json_schema']
 
     # Populate system instructions.
     self._system_instruction = []
     for part in content_api.ProcessorContent(
-        generate_content_config.get("system_instruction", ())
+        generate_content_config.get('system_instruction', ())
     ):
       self._system_instruction.append(
-          _to_ollama_message(part, default_role="system")
+          _to_ollama_message(part, default_role='system')
       )
 
     self._options = {}
-    for field in ("seed", "temperature", "top_k", "top_p"):
+    for field in ('seed', 'temperature', 'top_k', 'top_p'):
       if generate_content_config.get(field) is not None:
         self._options[field] = generate_content_config[field]
-    if generate_content_config.get("stop_sequences"):
-      self._options["stop"] = generate_content_config["stop_sequences"]
+    if generate_content_config.get('stop_sequences'):
+      self._options['stop'] = generate_content_config['stop_sequences']
 
   async def call(
       self, content: AsyncIterable[content_api.ProcessorPartTypes]
   ) -> AsyncIterable[content_api.ProcessorPartTypes]:
     messages = []
     async for part in content:
-      messages.append(_to_ollama_message(part, default_role="user"))
+      messages.append(_to_ollama_message(part, default_role='user'))
     if not messages:
       return
 
@@ -199,40 +199,40 @@ class OllamaModel(processor.Processor):
     )
 
     async with self._client.stream(
-        "POST", self._host + "/api/chat", json=request
+        'POST', self._host + '/api/chat', json=request
     ) as r:
       r.raise_for_status()
       async for line in r.aiter_lines():
         part = json.loads(line)
-        if err := part.get("error"):
+        if err := part.get('error'):
           raise RuntimeError(err)
-        message = part["message"]
+        message = part['message']
 
-        if message.get("content"):
+        if message.get('content'):
           if self._strip_quotes:
-            message["content"] = message["content"].replace('"', "")
+            message['content'] = message['content'].replace('"', '')
           yield content_api.ProcessorPart(
-              message["content"], role=message["role"].upper()
+              message['content'], role=message['role'].upper()
           )
-        for image in message.get("images", ()):
+        for image in message.get('images', ()):
           yield content_api.ProcessorPart(
-              image, mimetype="image/*", role=message.role.upper()
+              image, mimetype='image/*', role=message.role.upper()
           )
 
 
 def _to_ollama_message(
-    part: content_api.ProcessorPart, default_role: str = ""
+    part: content_api.ProcessorPart, default_role: str = ''
 ) -> dict[str, Any]:
   """Returns Ollama message JSON."""
   # Gemini API uses upper case for roles, while Ollama uses lower case.
-  message = {"role": part.role.lower() or default_role.lower()}
+  message = {'role': part.role.lower() or default_role.lower()}
 
   if content_api.is_text(part.mimetype):
-    message["content"] = part.text
+    message['content'] = part.text
   elif content_api.is_image(part.mimetype):
-    message["images"] = [base64.b64encode(part.bytes).decode("utf8")]
+    message['images'] = [base64.b64encode(part.bytes).decode('utf8')]
   else:
-    raise ValueError(f"Unsupported Part type: {part.mimetype}")
+    raise ValueError(f'Unsupported Part type: {part.mimetype}')
 
   return message
 

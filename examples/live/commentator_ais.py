@@ -54,17 +54,17 @@ from websockets.exceptions import ConnectionClosed
 
 # You need to define the API key in the environment variables.
 # export GOOGLE_API_KEY=...
-API_KEY = os.environ["GOOGLE_API_KEY"]
+API_KEY = os.environ['GOOGLE_API_KEY']
 
 # Mimetype for a command part. A command represents a specific instruction for
 # the server to trigger actions or modify its state.
-_COMMAND_MIMETYPE = "application/x-command"
+_COMMAND_MIMETYPE = 'application/x-command'
 
 # Config parts can be sent to this server to configure the live commentator.
-_CONFIG_MIMETYPE = "application/x-config"
+_CONFIG_MIMETYPE = 'application/x-config'
 
 # Mimetype to represent the state of either the client or the server.
-_STATE_MIMETYPE = "application/x-state"
+_STATE_MIMETYPE = 'application/x-state'
 
 
 @dataclasses.dataclass(frozen=True)
@@ -75,25 +75,25 @@ class MediaPart:
   mime_type: str
 
   @classmethod
-  def from_json(cls, json_part: str) -> "MediaPart":
+  def from_json(cls, json_part: str) -> 'MediaPart':
     """Creates a Media Part from a JSON part."""
     json_dict = json.loads(json_part)
     return MediaPart(
-        base64data=json_dict["data"],
-        mime_type=json_dict["mime_type"],
+        base64data=json_dict['data'],
+        mime_type=json_dict['mime_type'],
     )
 
   def is_image(self) -> bool:
     """Returns whether the part is an image."""
-    return self.mime_type.startswith("image/")
+    return self.mime_type.startswith('image/')
 
   def is_audio(self) -> bool:
     """Returns whether the part is audio."""
-    return self.mime_type.startswith("audio/")
+    return self.mime_type.startswith('audio/')
 
   def is_reset_command(self) -> bool:
     """Returns whether the part is a reset command."""
-    return self.mime_type == _COMMAND_MIMETYPE and self.base64data == "RESET"
+    return self.mime_type == _COMMAND_MIMETYPE and self.base64data == 'RESET'
 
   def is_config(self) -> bool:
     """Returns whether the part is a config."""
@@ -101,7 +101,7 @@ class MediaPart:
 
   def is_mic_off(self) -> bool:
     """Returns whether the part indicates the client has turned off the mic."""
-    return self.mime_type == _STATE_MIMETYPE and self.base64data == "MIC_OFF"
+    return self.mime_type == _STATE_MIMETYPE and self.base64data == 'MIC_OFF'
 
 
 @dataclasses.dataclass
@@ -111,11 +111,11 @@ class LiveCommentatorConfig:
   chattiness: float = 0.5
 
   @classmethod
-  def from_json(cls, json_config: str) -> "LiveCommentatorConfig":
+  def from_json(cls, json_config: str) -> 'LiveCommentatorConfig':
     """Creates a LiveCommentatorConfig from a JSON config."""
     json_dict = json.loads(json_config)
     config = LiveCommentatorConfig()
-    if (chattiness := json_dict.get("chattiness", None)) is not None:
+    if (chattiness := json_dict.get('chattiness', None)) is not None:
       config.chattiness = chattiness
     return config
 
@@ -140,34 +140,34 @@ class AIStudioConnection:
       if content_api.is_audio(part.mimetype):
         await self._ais_ws.send(
             json.dumps({
-                "data": base64.b64encode(part.part.inline_data.data).decode(),
-                "mime_type": part.mimetype,
+                'data': base64.b64encode(part.part.inline_data.data).decode(),
+                'mime_type': part.mimetype,
             })
         )
       elif part.text:
         await self._ais_ws.send(
             json.dumps({
-                "data": part.text,
-                "mime_type": "text/plain",
+                'data': part.text,
+                'mime_type': 'text/plain',
             })
         )
-      elif part.get_metadata("generation_complete", False):
+      elif part.get_metadata('generation_complete', False):
         await self._ais_ws.send(
             json.dumps({
-                "data": "GENERATION_COMPLETE",
-                "mime_type": _STATE_MIMETYPE,
+                'data': 'GENERATION_COMPLETE',
+                'mime_type': _STATE_MIMETYPE,
             })
         )
-      elif part.get_metadata("interrupted", False):
+      elif part.get_metadata('interrupted', False):
         await self._ais_ws.send(
             json.dumps({
-                "data": "INTERRUPTED",
-                "mime_type": _STATE_MIMETYPE,
+                'data': 'INTERRUPTED',
+                'mime_type': _STATE_MIMETYPE,
             })
         )
       else:
         logging.debug(
-            "%s - Chunk not sent to AIS: %s", time.perf_counter(), part
+            '%s - Chunk not sent to AIS: %s', time.perf_counter(), part
         )
 
   async def receive(self) -> AsyncIterable[content_api.ProcessorPart]:
@@ -178,15 +178,15 @@ class AIStudioConnection:
         yield content_api.ProcessorPart(
             base64.b64decode(part.base64data),
             mimetype=part.mime_type,
-            substream_name="realtime",
-            role="USER",
+            substream_name='realtime',
+            role='USER',
         )
       elif part.is_mic_off():
         yield content_api.ProcessorPart(
-            "",
-            substream_name="realtime",
-            role="USER",
-            metadata={"audio_stream_end": True},
+            '',
+            substream_name='realtime',
+            role='USER',
+            metadata={'audio_stream_end': True},
         )
       elif part.is_reset_command():
         # Stop reading from the WebSocket until the agent has been reset.
@@ -201,14 +201,14 @@ class AIStudioConnection:
             part.base64data
         )
         logging.debug(
-            "%s - Config received: %s",
+            '%s - Config received: %s',
             time.perf_counter(),
             self.live_commentator_config,
         )
         self.is_resetting = True
         return
       else:
-        logging.warning("Unknown input type: %s", part.mime_type)
+        logging.warning('Unknown input type: %s', part.mime_type)
 
 
 async def live_commentary(ais_websocket: ServerConnection):
@@ -227,7 +227,7 @@ async def live_commentary(ais_websocket: ServerConnection):
       await ais.send(commentator_processor(ais.receive()))
     except Exception as e:  # pylint: disable=broad-exception-caught
       logging.debug(
-          "%s - Resetting live commentary after receiving error : %s",
+          '%s - Resetting live commentary after receiving error : %s',
           time.perf_counter(),
           e,
       )
@@ -238,12 +238,12 @@ async def live_commentary(ais_websocket: ServerConnection):
     try:
       await ais_websocket.send(
           json.dumps({
-              "data": "HEALTH_CHECK",
-              "mime_type": _STATE_MIMETYPE,
+              'data': 'HEALTH_CHECK',
+              'mime_type': _STATE_MIMETYPE,
           })
       )
     except ConnectionClosed:
-      logging.debug("Connection between AIS and agent has been closed.")
+      logging.debug('Connection between AIS and agent has been closed.')
       break
 
 
@@ -251,27 +251,27 @@ async def run_server(port: int) -> None:
   """Starts the WebSocket server."""
   async with serve(
       handler=live_commentary,
-      host="localhost",
+      host='localhost',
       port=port,
       max_size=2 * 1024 * 1024,  # 2 MiB
   ) as server:
-    print(f"Server started on port {port}")
+    print(f'Server started on port {port}')
     await server.serve_forever()
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
   parser = argparse.ArgumentParser()
   parser.add_argument(
-      "--port",
+      '--port',
       type=int,
       default=8765,
-      help="Port to run this WebSocket server on.",
+      help='Port to run this WebSocket server on.',
   )
   parser.add_argument(
-      "--debug",
+      '--debug',
       type=bool,
       default=False,
-      help="Enable debug logging.",
+      help='Enable debug logging.',
   )
   args = parser.parse_args()
   if args.debug:

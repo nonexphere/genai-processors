@@ -63,7 +63,7 @@ import pyaudio
 
 # You need to define the API key in the environment variables.
 # export GOOGLE_API_KEY=...
-API_KEY = os.environ["GOOGLE_API_KEY"]
+API_KEY = os.environ['GOOGLE_API_KEY']
 
 
 async def run_commentator(video_mode: str) -> None:
@@ -96,20 +96,20 @@ async def run_commentator(video_mode: str) -> None:
     pass
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
   parser = argparse.ArgumentParser()
   parser.add_argument(
-      "--mode",
+      '--mode',
       type=str,
-      default="camera",
-      help="pixels to stream from",
-      choices=["camera", "screen"],
+      default='camera',
+      help='pixels to stream from',
+      choices=['camera', 'screen'],
   )
   parser.add_argument(
-      "--debug",
+      '--debug',
       type=bool,
       default=False,
-      help="Enable debug logging.",
+      help='Enable debug logging.',
   )
   args = parser.parse_args()
   if args.debug:

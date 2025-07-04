@@ -58,13 +58,13 @@ the event detection model.
 ```python
 config = {
     system_instruction=(
-        "Determine the weather conditions under which these images have been"
-        f" taken. Respond with '{EventName.SUNNY}' if the sun is shining, "
-        f"'{EventName.RAINING}' if it is raining and"
-        f"'{EventName.RAINING_WITH_MEATBALLS}' if the rain contains \meatballs."
-        " You can classify any edible objects as meatballs.",
-    "response_mime_type": "text/x.enum",
-    "response_schema": EventName
+        'Determine the weather conditions under which these images have been'
+        f' taken. Respond with "{EventName.SUNNY}" if the sun is shining, '
+        f'"{EventName.RAINING}" if it is raining and'
+        f'"{EventName.RAINING_WITH_MEATBALLS}" if the rain contains meatballs.'
+        ' You can classify any edible objects as meatballs.',
+    'response_mime_type': 'text/x.enum',
+    'response_schema': EventName
     ...
 }
 ```
@@ -80,16 +80,16 @@ transition is from a state to the same state, no output will be generated.
 
 ```python
 output_dict = {
-    # The "*" wild card can be used to define all states, i.e. transitions from
+    # The '*' wild card can be used to define all states, i.e. transitions from
     # any state (including the start state) to the event state.
-    ("*", EventState.EVENT_1): ProcessorPart(
-        text="event_1 is detected",
-        role="USER",
+    ('*', EventState.EVENT_1): ProcessorPart(
+        text='event_1 is detected',
+        role='USER',
         end_of_turn=True,
     ),
     (EventState.EVENT_1, EventSate.EVENT_2): ProcessorPart(
-        text="event_2 is detected",
-        role="USER",
+        text='event_2 is detected',
+        role='USER',
         end_of_turn=True,
     ),
     # No output for this transition.
@@ -127,7 +127,7 @@ from google.genai import types as genai_types
 ProcessorPart = content_api.ProcessorPart
 
 # Name of the default start state, i.e. no event detected.
-START_STATE = ""
+START_STATE = ''
 # A transition between two events. A state is represented here by a string,
 # which is the name of the event (events should be defined by an enum.StrEnum).
 EventTransition: TypeAlias = tuple[str, str]
@@ -158,10 +158,10 @@ class EventDetection(processor.Processor):
       output_dict: A dictionary of transitions between events to the output to
         return when the transition is detected. A transition is a pair of event
         names `(from_event_state, to_event_state)`, where `from_event_state` can
-        be the start state `START_STATE`, an event name, or the wild card `"*"`
-        to define all transitions from any state (including the start state) to
-        the event state. When the output is None, the transition is detected but
-        no output is returned.
+        be the start state `START_STATE`, an event name, or the wild card `*` to
+        define all transitions from any state (including the start state) to the
+        event state. When the output is None, the transition is detected but no
+        output is returned.
       sensitivity: A dictionary of transitions to the number of detection in a
         row that should happen before the event detection processor sends a
         detection output. By default, the sensitivity is 1 for a transition.
@@ -172,7 +172,7 @@ class EventDetection(processor.Processor):
     self._config = config
 
     if not config.response_schema:
-      raise ValueError("Response schema is required for event detection.")
+      raise ValueError('Response schema is required for event detection.')
 
     self._sensitivity = sensitivity
     self._output_dict = {}
@@ -197,13 +197,13 @@ class EventDetection(processor.Processor):
       event_states.append(transition[1])
     # Add all wild card transitions.
     for transition, output in output_dict.items():
-      if transition[0] == "*":
+      if transition[0] == '*':
         for event_state in event_states:
           self._output_dict[(event_state, transition[1])] = output
     # Add the other transitions: it will override the wild card transitions by
     # more specific transitions.
     for transition, output in output_dict.items():
-      if transition[0] != "*":
+      if transition[0] != '*':
         self._output_dict[transition] = output
 
   async def detect_event(
@@ -226,8 +226,8 @@ class EventDetection(processor.Processor):
         contents=images_with_timestamp,
     )
     logging.debug(
-        "%s - Event detection response: %s / last transition: %s / transition"
-        " counter: %s",
+        '%s - Event detection response: %s / last transition: %s / transition'
+        ' counter: %s',
         time.perf_counter(),
         response.text,
         self._last_transition,
@@ -235,7 +235,7 @@ class EventDetection(processor.Processor):
     )
     if not response.text:
       logging.debug(
-          "%s - No text response from the event detection model",
+          '%s - No text response from the event detection model',
           time.perf_counter(),
       )
       return
@@ -263,7 +263,7 @@ class EventDetection(processor.Processor):
     )
     if is_valid_transition and is_sensitivity_reached:
       logging.debug(
-          "%s - New event transition: %s",
+          '%s - New event transition: %s',
           time.perf_counter(),
           current_transition,
       )

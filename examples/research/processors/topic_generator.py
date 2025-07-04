@@ -73,7 +73,8 @@ class TopicGenerator(processor.Processor):
     if self._config.excluded_topics:
       preamble_content.append(
           ProcessorPart(
-              f"""Here is a list of topics that should be excluded: {self._config.excluded_topics}"""
+              'Here is a list of topics that should be excluded:'
+              f' {self._config.excluded_topics}'
           )
       )
     preamble_content.append(

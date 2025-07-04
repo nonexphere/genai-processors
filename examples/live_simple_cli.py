@@ -59,20 +59,20 @@ from google.genai import types as genai_types
 import pyaudio
 
 # You need to define the API key in the environment variables.
-API_KEY = os.environ["GOOGLE_API_KEY"]
+API_KEY = os.environ['GOOGLE_API_KEY']
 
 INSTRUCTION_PARTS = [
-    "You are an agent that interacts with the user in a conversation. Make"
-    " the conversation lively and interesting for the user. Approach the"
-    " conversation as if you were on TV anchor. You can make jokes, explain"
-    " interesting facts related to what you see and hear, predict what"
-    " could happen, judge some actions or reactions, etc. Respond to the"
-    " user in a few sentences maximum: keep it short and engaging. Avoid"
-    " long monologues. Feel free to commentate on anything you see. It is"
-    " up to you to decide to commentate or not. You can also ask questions"
-    " to the user. If you do not get any answer, you can ask again after a "
-    " while as in a normal conversation when the counterpart does not"
-    " listen or is distracted by something else."
+    'You are an agent that interacts with the user in a conversation. Make'
+    ' the conversation lively and interesting for the user. Approach the'
+    ' conversation as if you were on TV anchor. You can make jokes, explain'
+    ' interesting facts related to what you see and hear, predict what'
+    ' could happen, judge some actions or reactions, etc. Respond to the'
+    ' user in a few sentences maximum: keep it short and engaging. Avoid'
+    ' long monologues. Feel free to commentate on anything you see. It is'
+    ' up to you to decide to commentate or not. You can also ask questions'
+    ' to the user. If you do not get any answer, you can ask again after a '
+    ' while as in a normal conversation when the counterpart does not'
+    ' listen or is distracted by something else.'
 ]
 
 
@@ -98,7 +98,7 @@ async def run_live(video_mode: str) -> None:
   # advanced example.
   live_processor = live_model.LiveProcessor(
       api_key=API_KEY,
-      model_name="gemini-2.5-flash-preview-native-audio-dialog",
+      model_name='gemini-2.5-flash-preview-native-audio-dialog',
       realtime_config=genai_types.LiveConnectConfig(
           system_instruction=INSTRUCTION_PARTS,
           # Ground with Google Search
@@ -107,11 +107,11 @@ async def run_live(video_mode: str) -> None:
           output_audio_transcription={},
           # Enable affective dialog (only available for native audio out models)
           enable_affective_dialog=True,
-          response_modalities=["AUDIO"],
+          response_modalities=['AUDIO'],
           # Set the language for the Live API.
-          speech_config={"language_code": "en-US"},
+          speech_config={'language_code': 'en-US'},
       ),
-      http_options=genai_types.HttpOptions(api_version="v1alpha"),
+      http_options=genai_types.HttpOptions(api_version='v1alpha'),
   )
 
   # Plays the audio parts. This processor also handles interruptions and makes
@@ -127,26 +127,26 @@ async def run_live(video_mode: str) -> None:
     print(part)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
   parser = argparse.ArgumentParser()
   parser.add_argument(
-      "--mode",
+      '--mode',
       type=str,
-      default="camera",
-      help="pixels to stream from",
-      choices=["camera", "screen"],
+      default='camera',
+      help='pixels to stream from',
+      choices=['camera', 'screen'],
   )
   parser.add_argument(
-      "--debug",
+      '--debug',
       type=bool,
       default=False,
-      help="Enable debug logging.",
+      help='Enable debug logging.',
   )
   args = parser.parse_args()
   if not API_KEY:
     raise ValueError(
-        "API key is not set. Define a GOOGLE_API_KEY environment variable with"
-        " a key obtained from AI Studio."
+        'API key is not set. Define a GOOGLE_API_KEY environment variable with'
+        ' a key obtained from AI Studio.'
     )
   if args.debug:
     logging.set_verbosity(logging.DEBUG)
