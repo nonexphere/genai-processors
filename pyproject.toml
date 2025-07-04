@@ -1,7 +1,7 @@
 [project]
 name = "genai_processors"
 description = "GenAI Processors Library"
-readme = "README.public.md"
+readme = "README.pypi.md"
 license = {file = "LICENSE"}
 requires-python = ">=3.10"
 authors = [{name = "Google DeepMind", email="noreply@google.com"}]
