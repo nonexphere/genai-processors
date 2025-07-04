@@ -3,7 +3,6 @@ from collections.abc import AsyncIterable
 import traceback
 from typing import Sequence, cast
 import unittest
-import unittest
 
 from absl.testing import parameterized
 from genai_processors import content_api
@@ -1261,7 +1260,7 @@ class YieldExceptionsAsPartsTest(
     results = await processor.apply_async(failing_processor, parts)
 
     # We expect three parts back: 'a', 'c', and one error part for 'b'.
-    self.assertEqual(len(results), 3)
+    self.assertEqual(len(results), 3)  # pylint: disable=g-generic-assert
 
     error_parts = [p for p in results if mime_types.is_exception(p.mimetype)]
     successful_parts = [
@@ -1269,9 +1268,9 @@ class YieldExceptionsAsPartsTest(
     ]
 
     self.assertEqual(len(successful_parts), 2)
-    self.assertEqual({p.text for p in successful_parts}, {'a', 'c'})
+    self.assertEqual({p.text for p in successful_parts}, {'a', 'c'})  # pylint: disable=g-generic-assert
 
-    self.assertEqual(len(error_parts), 1)
+    self.assertEqual(len(error_parts), 1)  # pylint: disable=g-generic-assert
     error_part = error_parts[0]
 
     self.assertEqual(error_part.substream_name, processor.STATUS_STREAM)
@@ -1300,7 +1299,7 @@ class YieldExceptionsAsPartsTest(
     parts = get_processor_parts(['a', 'b'])
     results = await processor.apply_async(doubling_processor, parts)
 
-    self.assertEqual(len(results), 4)
+    self.assertEqual(len(results), 4)  # pylint: disable=g-generic-assert
     result_texts = sorted([p.text for p in results])
     self.assertEqual(result_texts, ['a', 'a', 'b', 'b'])
 

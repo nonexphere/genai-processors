@@ -201,7 +201,7 @@ class MapProcessorTest(parameterized.TestCase):
         ),
         content,
     )
-    self.assertEqual(len(output), len(content) * 2)
+    self.assertEqual(len(output), len(content) * 2)  # pylint: disable=g-generic-assert
     self.assertEqual(execution_order, [2, 2, 2, 1, 1, 1])
 
   def test_parallel_with_part_processor(self):

@@ -54,8 +54,8 @@ def _get_single_screen_frame(substream_name: str) -> ProcessorPart:
   """Get a single frame from the screen."""
   try:
     from mss import mss  # pytype: disable=import-error # pylint: disable=g-import-not-at-top
-  except ImportError:
-    raise ImportError("Please install mss package using 'pip install mss'")
+  except ImportError as e:
+    raise ImportError("Please install mss package using 'pip install mss'") from e
   sct = mss.mss()
   monitor = sct.monitors[0]
 

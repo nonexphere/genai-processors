@@ -1,7 +1,6 @@
 import dataclasses
 import unittest
 
-from absl.testing import parameterized
 import dataclasses_json
 from genai_processors import content_api
 from genai_processors import processor

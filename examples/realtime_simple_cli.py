@@ -46,7 +46,6 @@ python3 ./realtime_simple_cli.py
 import argparse
 import asyncio
 import os
-from typing import AsyncIterable
 
 from absl import logging
 from genai_processors import content_api

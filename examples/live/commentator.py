@@ -100,7 +100,6 @@ from absl import logging
 from genai_processors import content_api
 from genai_processors import processor
 from genai_processors import streams
-from genai_processors import switch
 from genai_processors.core import event_detection
 from genai_processors.core import live_model
 from genai_processors.core import rate_limit_audio

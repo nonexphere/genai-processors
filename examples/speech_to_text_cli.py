@@ -85,7 +85,6 @@ import asyncio
 import os
 import time
 
-from genai_processors import content_api
 from genai_processors import streams
 from genai_processors.core import audio_io
 from genai_processors.core import speech_to_text
