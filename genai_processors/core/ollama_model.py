@@ -201,7 +201,14 @@ class OllamaModel(processor.Processor):
     async with self._client.stream(
         'POST', self._host + '/api/chat', json=request
     ) as r:
-      r.raise_for_status()
+      try:
+        r.raise_for_status()
+      except httpx.HTTPStatusError as e:
+        await r.aread()
+        raise httpx.HTTPStatusError(
+            f'{e}: {r.json()["error"]}', request=e.request, response=e.response
+        )
+
       async for line in r.aiter_lines():
         part = json.loads(line)
         if err := part.get('error'):
