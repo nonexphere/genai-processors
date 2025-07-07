@@ -89,24 +89,20 @@ class CacheBase(abc.ABC):
       self, query: ProcessorContentTypes
   ) -> ProcessorContent | CacheMissT:
     """Looks up a ProcessorContent-like value in the cache for a given query."""
-    pass
 
   @abc.abstractmethod
   async def put(
-      self, query: ProcessorContentTypes, value: ProcessorContent
+      self, query: ProcessorContentTypes, value: ProcessorContentTypes
   ) -> None:
     """Puts a ProcessorContent value into the cache for a given query."""
-    pass
 
   @abc.abstractmethod
   async def remove(self, query: ProcessorContentTypes) -> None:
     """Removes a value from the cache for a given query."""
-    pass
 
   @abc.abstractmethod
   def with_key_prefix(self, prefix: str) -> 'CacheBase':
     """Creates a new Cache instance where generated string keys are prefixed."""
-    pass
 
 
 class InMemoryCache(CacheBase):
@@ -202,7 +198,7 @@ class InMemoryCache(CacheBase):
 
   @override
   async def put(
-      self, query: ProcessorContentTypes, value: ProcessorContent
+      self, query: ProcessorContentTypes, value: ProcessorContentTypes
   ) -> None:
     if self._cache.maxsize == 0:
       return
