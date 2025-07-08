@@ -51,9 +51,9 @@ import asyncio
 import os
 
 from absl import logging
-from genai_processors import streams
 from genai_processors.core import audio_io
 from genai_processors.core import live_model
+from genai_processors.core import text
 from genai_processors.core import video
 from google.genai import types as genai_types
 import pyaudio
@@ -121,7 +121,8 @@ async def run_live(video_mode: str) -> None:
   # Creates an agent as: mic+camera -> Live API -> play audio
   live_agent = input_processor + live_processor + play_output
 
-  async for part in live_agent(streams.endless_stream()):
+  print('Use ctrl+D to quit.')
+  async for part in live_agent(text.terminal_input()):
     # Print the transcription and the output of the model (should include status
     # parts and other metadata parts)
     print(part)

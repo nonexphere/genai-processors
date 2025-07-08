@@ -51,12 +51,12 @@ from absl import logging
 from genai_processors import content_api
 from genai_processors import context
 from genai_processors import processor
-from genai_processors import streams
 from genai_processors.core import audio_io
 from genai_processors.core import genai_model
 from genai_processors.core import rate_limit_audio
 from genai_processors.core import realtime
 from genai_processors.core import speech_to_text
+from genai_processors.core import text
 from genai_processors.core import text_to_speech
 from google.genai import types as genai_types
 import pyaudio
@@ -160,7 +160,7 @@ async def run_conversation() -> None:
       + play_output
   )
 
-  async for part in conversation_agent(streams.endless_stream()):
+  async for part in conversation_agent(text.terminal_input()):
     # Print the transcription and the output of the model (should include status
     # parts and other metadata parts)
     match part.role:

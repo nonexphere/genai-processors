@@ -54,8 +54,8 @@ import asyncio
 import os
 
 from absl import logging
-from genai_processors import streams
 from genai_processors.core import audio_io
+from genai_processors.core import text
 from genai_processors.core import video
 import commentator
 import pyaudio
@@ -91,7 +91,8 @@ async def run_commentator(video_mode: str) -> None:
       + consume_output
   )
 
-  async for _ in live_commentary_agent(streams.endless_stream()):
+  print('Use ctrl+D to quit.')
+  async for _ in live_commentary_agent(text.terminal_input()):
     pass
 
 

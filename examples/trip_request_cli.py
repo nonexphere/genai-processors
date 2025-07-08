@@ -161,14 +161,17 @@ async def run_trip_request() -> None:
       .default(processor.passthrough())
   )
 
+  print('Enter a trip request. Use ctrl+D to quit.')
   print(
-      'Enter a trip request or q to quit:\nNOTE: there is no history, rewrite'
-      ' your request from scratch each time.'
+      'NOTE: there is no history, rewrite your request from scratch each time.'
   )
   while True:
-    text = await asyncio.to_thread(input, '\nmessage > ')
-    if text.lower() == 'q':
-      break
+    try:
+      text = await asyncio.to_thread(input, '\nmessage > ')
+    except EOFError:
+      # Exit on ctrl+D.
+      return
+
     # For each user input, we run a new trip request agent. No re-use of
     # previous user inputs here.
     input_stream = streams.stream_content([text])

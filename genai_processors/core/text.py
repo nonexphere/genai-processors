@@ -14,6 +14,7 @@
 # ==============================================================================
 """Processors operating on text and regular expressions."""
 
+import asyncio
 from collections.abc import AsyncIterable, Callable
 import re
 from typing import Type
@@ -367,3 +368,16 @@ class UrlExtractor(MatchProcessor):
         remove_from_input_stream=True,
         transform=transform,
     )
+
+
+@processor.source
+async def terminal_input(
+    prompt: str = '',
+) -> AsyncIterable[content_api.ProcessorPartTypes]:
+  """Yields lines from the terminal, exits on ctrl+D."""
+  while True:
+    try:
+      yield await asyncio.to_thread(input, prompt)
+    except EOFError:
+      # Exit on ctrl+D.
+      return

@@ -84,20 +84,11 @@ ProcessorPart(
 import asyncio
 import os
 import time
-from typing import AsyncIterable
 
-from genai_processors import content_api
-from genai_processors import processor
 from genai_processors.core import audio_io
 from genai_processors.core import speech_to_text
+from genai_processors.core import text
 import pyaudio
-
-
-@processor.source
-async def terminal_input() -> AsyncIterable[content_api.ProcessorPartTypes]:
-  print('Press enter to quit.')
-  await asyncio.to_thread(input, 'message > ')
-  yield ''
 
 
 # You need to define the project id in the environment variables.
@@ -113,7 +104,7 @@ async def run_stt() -> None:
   )
 
   print(f'{time.perf_counter()} - STT Processor ready: start talking anytime.')
-  async for parts in stt_processor(terminal_input()):
+  async for parts in stt_processor(text.terminal_input()):
     print(f'{time.perf_counter()} - STT Parts: {parts}')
 
 
