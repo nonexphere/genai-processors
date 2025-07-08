@@ -98,6 +98,9 @@ class GenerateContentConfig(TypedDict, total=False):
   top_p: float | None
   """If specified, nucleus sampling will be used."""
 
+  tools: list[genai_types.Tool] | None
+  """Tools the model may call."""
+
 
 class OllamaModel(processor.Processor):
   """`Processor` that calls the Ollama in turn-based fashion.
@@ -135,8 +138,43 @@ class OllamaModel(processor.Processor):
     self._format = None
     self._strip_quotes = False
     self._keep_alive = keep_alive
-    # Tools are not implemented yet.
-    self._tools = None
+
+    if tools := generate_content_config.get('tools'):
+      self._tools = []
+      for tool in tools:
+        for tool_name in (
+            'retrieval',
+            'google_search',
+            'google_search_retrieval',
+            'enterprise_web_search',
+            'google_maps',
+            'url_context',
+            'code_execution',
+            'computer_use',
+        ):
+          if getattr(tool, tool_name) is not None:
+            raise ValueError(f'Tool {tool_name} is not supported.')
+
+        for fdecl in tool.function_declarations or ():
+          if fdecl.parameters:
+            parameters = _transformers.t_schema(  # pytype: disable=wrong-arg-types
+                _FakeClient(), fdecl.parameters
+            ).json_schema.model_dump(
+                mode='json', exclude_unset=True
+            )
+          else:
+            parameters = None
+
+          self._tools.append({
+              'type': 'function',
+              'function': {
+                  'name': fdecl.name,
+                  'description': fdecl.description,
+                  'parameters': parameters,
+              },
+          })
+    else:
+      self._tools = None
 
     self._client = httpx.AsyncClient(
         follow_redirects=True,
@@ -221,6 +259,12 @@ class OllamaModel(processor.Processor):
           yield content_api.ProcessorPart(
               message['content'], role=message['role'].upper()
           )
+        if tool_calls := message.get('tool_calls'):
+          for tool_call in tool_calls:
+            yield processor.ProcessorPart.from_function_call(
+                name=tool_call['function']['name'],
+                args=tool_call['function']['arguments'],
+            )
         for image in message.get('images', ()):
           yield content_api.ProcessorPart(
               image, mimetype='image/*', role=message.role.upper()
@@ -232,9 +276,20 @@ def _to_ollama_message(
 ) -> dict[str, Any]:
   """Returns Ollama message JSON."""
   # Gemini API uses upper case for roles, while Ollama uses lower case.
-  message = {'role': part.role.lower() or default_role.lower()}
+  message: dict[str, Any] = {'role': part.role.lower() or default_role.lower()}
 
-  if content_api.is_text(part.mimetype):
+  if part.function_call:
+    message.setdefault('tool_calls', []).append({
+        'name': part.function_call.name,
+        'arguments': part.function_call.args,
+    })
+    return message
+  elif part.function_response:
+    message['role'] = 'tool'
+    message['content'] = json.dumps(part.function_response.response)
+    message['name']: part.function_response.name
+    return message
+  elif content_api.is_text(part.mimetype):
     message['content'] = part.text
   elif content_api.is_image(part.mimetype):
     message['images'] = [base64.b64encode(part.bytes).decode('utf8')]
