@@ -21,6 +21,7 @@ from genai_processors import content_api
 from genai_processors import processor
 from genai_processors.core import genai_model
 from genai_processors.core import preamble
+from google.genai import types
 
 from .. import interfaces
 from .. import prompts
@@ -59,6 +60,11 @@ class TopicGenerator(processor.Processor):
             'response_mime_type': 'application/json',
             'response_schema': list[interfaces.Topic],
         },
+        http_options=types.HttpOptions(
+            retry_options=types.HttpRetryOptions(
+                attempts=100,
+            ),
+        ),
     )
     self._num_topics = self._config.num_topics
 

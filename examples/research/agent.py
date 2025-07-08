@@ -37,6 +37,7 @@ from genai_processors import processor
 from genai_processors.core import genai_model
 from genai_processors.core import jinja_template
 from genai_processors.core import preamble
+from google.genai import types
 
 from . import interfaces
 from . import prompts
@@ -95,7 +96,13 @@ class ResearchAgent(processor.Processor):
         data_class=interfaces.Topic,
     )
     p_genai_model = genai_model.GenaiModel(
-        api_key=api_key, model_name=self._config.research_synthesizer_model_name
+        api_key=api_key,
+        model_name=self._config.research_synthesizer_model_name,
+        http_options=types.HttpOptions(
+            retry_options=types.HttpRetryOptions(
+                attempts=100,
+            ),
+        ),
     )
     p_preamble = preamble.Preamble(
         content=[

@@ -54,6 +54,11 @@ class TopicResearcher(processor.PartProcessor):
         generate_content_config=types.GenerateContentConfig(
             tools=self._config.enabled_research_tools,
         ),
+        http_options=types.HttpOptions(
+            retry_options=types.HttpRetryOptions(
+                attempts=100,
+            ),
+        ),
     )
     p_preamble = preamble.Preamble(
         content=[
