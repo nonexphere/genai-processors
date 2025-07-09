@@ -15,7 +15,7 @@
 
 """Google DeepMind GenAI processors library."""
 
-__version__ = '1.0.2'
+__version__ = '1.0.3'
 
 from . import content_api as content_api_
 from . import processor as processor_
