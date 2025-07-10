@@ -1096,9 +1096,19 @@ class Source(Processor):
     """Maintains the original signature of the wrapped source function."""
 
 
-def source(
-    source_fn: Callable[_ProcessorParamSpec, AsyncIterable[ProcessorPartTypes]],
-) -> Callable[_ProcessorParamSpec, Source]:
+class _SourceDecorator(Protocol):
+  """Forward type definition to explain pytype how @source() propagates arguments."""
+
+  def __call__(
+      self,
+      source_fn: Callable[
+          _ProcessorParamSpec, AsyncIterable[ProcessorPartTypes]
+      ],
+  ) -> Callable[_ProcessorParamSpec, Source]:
+    ...
+
+
+def source(stop_on_first: bool = True) -> _SourceDecorator:
   """A Processor that produces ProcessorParts from some external source.
 
   Writing a source is as easy as writing a generator that yields the Parts.
@@ -1130,33 +1140,44 @@ def source(
   async for part in p(TerminalInput('>'))
   ```
 
-
   Args:
-    source_fn: The source function to turn into processor.
+    stop_on_first: Whether to interrupt the source if the incoming iterator
+      ends. For realtime "endless" sources like "stream from a webcam" it should
+      be True. Then the lifetime of the processor chain is controlled by the
+      lifetime of incoming stream. For finite sources like "stream files from
+      the given folder" it should be False.
 
   Returns:
-    The source function wrapped as a Processor.
+    The decorator to wrap the source function.
   """
 
-  class SourceImpl(Source):
-    """Adapter from the source function to a Processor."""
+  def source_impl(
+      source_fn: Callable[
+          _ProcessorParamSpec, AsyncIterable[ProcessorPartTypes]
+      ],
+  ) -> Callable[_ProcessorParamSpec, Source]:
 
-    def __init__(self, *args, **kwargs):
-      self._source = _normalize_part_stream(source_fn(*args, **kwargs))
+    class SourceImpl(Source):
+      """Adapter from the source function to a Processor."""
 
-    async def call(
-        self, content: AsyncIterable[ProcessorPart]
-    ) -> AsyncIterable[ProcessorPart]:
-      async for part in streams.merge(
-          [content, self._source], stop_on_first=True
-      ):
-        yield part
+      def __init__(self, *args, **kwargs):
+        self._source = _normalize_part_stream(source_fn(*args, **kwargs))
 
-    def __aiter__(self) -> AsyncIterator[ProcessorPart]:
-      # This maintains the original signature of the wrapped function.
-      return self._source
+      async def call(
+          self, content: AsyncIterable[ProcessorPart]
+      ) -> AsyncIterable[ProcessorPart]:
+        async for part in streams.merge(
+            [content, self._source], stop_on_first=stop_on_first
+        ):
+          yield part
 
-  return SourceImpl
+      def __aiter__(self) -> AsyncIterator[ProcessorPart]:
+        # This maintains the original signature of the wrapped function.
+        return self._source
+
+    return SourceImpl
+
+  return source_impl
 
 
 def yield_exceptions_as_parts(

@@ -66,7 +66,7 @@ def _get_single_screen_frame(substream_name: str) -> ProcessorPart:
   return ProcessorPart(img, substream_name=substream_name, role='USER')
 
 
-@processor.source
+@processor.source()
 async def VideoIn(  # pylint: disable=invalid-name
     substream_name: str = 'realtime', video_mode: VideoMode = VideoMode.CAMERA
 ) -> AsyncIterable[ProcessorPart]:

@@ -370,7 +370,7 @@ class UrlExtractor(MatchProcessor):
     )
 
 
-@processor.source
+@processor.source()
 async def terminal_input(
     prompt: str = '',
 ) -> AsyncIterable[content_api.ProcessorPartTypes]:

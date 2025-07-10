@@ -30,7 +30,7 @@ AUDIO_OUT_CHUNK_SIZE = 1024
 AudioFormats = pyaudio.paInt16 | pyaudio.paInt24
 
 
-@processor.source
+@processor.source()
 async def PyAudioIn(
     pya: pyaudio.PyAudio,
     substream_name: str = 'realtime',
