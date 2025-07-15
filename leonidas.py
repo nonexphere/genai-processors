@@ -133,7 +133,7 @@ if __name__ == '__main__':
   parser.add_argument(
       '--mode',
       type=str,
-      default='camera',
+      default='screen',
       help='pixels to stream from',
       choices=['camera', 'screen'],
   )

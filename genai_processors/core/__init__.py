@@ -13,3 +13,21 @@
 # limitations under the License.
 # ==============================================================================
 """Core processors."""
+
+from . import audio_io
+from . import drive
+from . import event_detection
+from . import genai_model
+from . import github
+from . import jinja_template
+from . import live_model
+from . import ollama_model
+from . import pdf
+from . import preamble
+from . import rate_limit_audio
+from . import realtime
+from . import speech_to_text
+from . import text
+from . import text_to_speech
+from . import timestamp
+from . import video

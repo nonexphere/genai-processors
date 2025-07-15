@@ -18,6 +18,7 @@
 __version__ = '1.0.4'
 
 from . import content_api as content_api_
+from . import core
 from . import processor as processor_
 from . import streams as streams_
 
@@ -41,3 +42,16 @@ part_processor_function = processor_.part_processor_function
 
 stream_content = streams_.stream_content
 gather_stream = streams_.gather_stream
+
+# Core processors
+GenaiModel = core.genai_model.GenaiModel
+LiveModelProcessor = core.realtime.LiveModelProcessor
+LiveProcessor = core.live_model.LiveProcessor
+OllamaModel = core.ollama_model.OllamaModel
+Preamble = core.preamble.Preamble
+PyAudioIn = core.audio_io.PyAudioIn
+PyAudioOut = core.audio_io.PyAudioOut
+SpeechToText = core.speech_to_text.SpeechToText
+Suffix = core.preamble.Suffix
+TextToSpeech = core.text_to_speech.TextToSpeech
+VideoIn = core.video.VideoIn

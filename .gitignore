@@ -42,3 +42,4 @@ dmypy.json
 # macOS and Win metadata.
 .DS_Store
 Thumbs.db
+.aider*

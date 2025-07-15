@@ -11,9 +11,66 @@ responsive experience.
 
 ## 🚀 Running the commentator
 
-We recommend the AI Studio version of the agent as it utilizes the echo
-cancellation built into the browser. Please see commentator\_ais.py for
-instructions.
+There are two ways to run the Live Commentator: via AI Studio (recommended) or by running a local web server.
+
+### Option 1: Running with AI Studio (Recommended)
+
+The AI Studio environment provides a seamless experience and leverages browser-based echo cancellation.
+
+1.  **Install Dependencies**:
+    ```shell
+    pip install --upgrade genai-processors websockets
+    ```
+
+2.  **Set Environment Variable**:
+    Ensure your `GOOGLE_API_KEY` is set.
+    ```shell
+    set GOOGLE_API_KEY=your_api_key_here
+    ```
+
+3.  **Run the WebSocket Server**:
+    Start the agent's backend server.
+    ```shell
+    python examples/live/commentator_ais.py
+    ```
+
+4.  **Open the Applet**:
+    Access the AI Studio applet at the following URL:
+    [https://aistudio.google.com/app/apps/github/google-gemini/genai-processors/tree/main/examples/live/ais_app](https://aistudio.google.com/app/apps/github/google-gemini/genai-processors/tree/main/examples/live/ais_app)
+
+5.  **Grant Permissions**:
+    Allow the applet to use your camera and microphone when prompted.
+
+### Option 2: Running Locally
+
+You can also run the UI on a local web server.
+
+1.  **Install Dependencies**:
+    ```shell
+    pip install --upgrade genai-processors websockets
+    ```
+
+2.  **Set Environment Variable**:
+    ```shell
+    set GOOGLE_API_KEY=your_api_key_here
+    ```
+
+3.  **Run the WebSocket Server**:
+    In your terminal, start the backend agent:
+    ```shell
+    python examples\live\commentator_ais.py
+    ```
+    The server will start on `ws://localhost:8765`.
+
+4.  **Run the Local Web Server**:
+    Open a **new terminal window**, navigate to the UI directory, and start a simple Python web server:
+    ```shell
+    cd examples\live\ais_app
+    python -m http.server
+    ```
+
+5.  **Open the UI**:
+    In your web browser, navigate to [http://localhost:8000](http://localhost:8000).
 
 ## 🗣️ Conversation Logic
 

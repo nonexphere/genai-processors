@@ -13,27 +13,45 @@
 # limitations under the License.
 # ==============================================================================
 
-r"""Live Commentator WebSocket server for AI Studio.
+r"""Live Commentator WebSocket server for AI Studio and local web UI.
 
-An applet within AI Studio provides a UI. It gets audio and video from a camera
-or screencast, sends it to this agent and playbacks the audio produced by the
-agent.
+This script starts a WebSocket server that powers the Live Commentator agent.
+The agent receives audio and video, processes them using GenAI Processors, and
+uses the Gemini Live API to generate real-time commentary.
 
-The agent uses Genai Processors to transform incoming streams of parts and
-passes them to Gemini Live API to generate the commentary.
+This server can be used with two different frontends:
+1. An applet in Google AI Studio (recommended).
+2. A local web application served from the `ais_app` directory.
 
-This file contains plumbing to connect the agent to AI Studio.
+See `commentator.py` for the core agent logic.
 
-See commentator.py for the actual implementation.
+## Setup
 
-To run the server locally:
+1. **Install Dependencies**:
+   ```shell
+   pip install --upgrade genai-processors websockets
+   ```
 
- * Install the dependencies with `pip install genai-processors`.
- * Access the applet at
- https://aistudio.google.com/app/apps/github/google-gemini/genai-processors/tree/main/examples/live/ais_app.
-* Define a GOOGLE_API_KEY environment variable with your API key.
- * Launch the commentator agent: `python3 ./commentator_ais.py`.
- * Allow the applet to use a camera and enable one of the video sources.
+2. **Set Environment Variable**:
+   You must set your Google API key as an environment variable.
+   On Windows:
+   ```shell
+   set GOOGLE_API_KEY=your_api_key_here
+   ```
+   On macOS/Linux:
+   ```shell
+   export GOOGLE_API_KEY=your_api_key_here
+   ```
+
+## Running the Agent
+
+After setup, start the WebSocket server by running this script:
+```shell
+python examples/live/commentator_ais.py
+```
+
+Then, connect to it using one of the frontend options described in the
+`examples/live/README.md` file.
 """
 
 import argparse
