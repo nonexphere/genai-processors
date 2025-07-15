@@ -317,3 +317,47 @@ duration of the current audio.
 
 This example is licensed under the Apache License, Version 2.0.
 
+# Leonidas Agent - Estado Atual
+
+Este diretório contém o código-fonte do agente Leonidas.
+
+## Arquitetura Atual (Em Transição)
+
+A arquitetura atual é uma refatoração do exemplo "Live Commentator". O objetivo é evoluir de um agente que "comenta" para um agente que "pensa e colabora".
+
+O estado atual é instável devido a uma refatoração em andamento. A lógica principal foi dividida em múltiplos fluxos paralelos, mas a integração completa ainda não foi finalizada.
+
+- **`VisualPerception`**: O antigo `EventDetection` foi modificado para descrever a cena em vez de apenas detectar eventos.
+- **`CognitiveAnalyzer`**: Um novo processador foi introduzido como um placeholder para o "Sistema 2" de pensamento, mas sua lógica ainda não está implementada.
+- **`LeonidasAgent`**: O agente principal foi parcialmente modificado para remover a lógica de "comentário proativo", mas ainda não consome corretamente os novos fluxos de contexto e interrupção.
+
+O diagrama abaixo ilustra a estrutura atual da pipeline.
+
+## Diagrama do Estado Atual
+
+```mermaid
+graph TD
+    subgraph "Entrada do Usuário"
+        A[Câmera/Tela] --> video(video.VideoIn);
+        B[Microfone] --> audio(audio_io.PyAudioIn);
+    end
+
+    subgraph "Pipeline do Agente (Em Transição)"
+        video -- "Frames" --> C(streams.split);
+        audio -- "Áudio" --> C;
+
+        C -- "Stream A (Percepção)" --> D(VisualPerception);
+        C -- "Stream B (Cognitivo)" --> E(CognitiveAnalyzer - Passivo);
+        C -- "Stream C (Principal)" --> G(LeonidasAgent);
+
+        D -- "Contexto Visual (Não utilizado ainda)" --> G;
+        E -- "Sinal de Interrupção (Não implementado)" --> G;
+        
+        G -- "Áudio Gerado" --> K(rate_limit_audio.RateLimitAudio);
+        K -- "Áudio Controlado" --> L(audio_io.PyAudioOut);
+    end
+
+    subgraph "Saída para o Usuário"
+        L --> M[Alto-falantes];
+    end
+```
