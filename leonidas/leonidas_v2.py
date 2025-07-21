@@ -122,80 +122,101 @@ def setup_logging(debug: bool = False) -> str:
 
 # === ADVANCED PROMPT SYSTEM ===
 LEONIDAS_SYSTEM_PROMPT = [
-    # === CORE IDENTITY ===
+    # === 1. PRIME DIRECTIVE ===
     (
-        "Você é Leonidas, uma IA colaborativa especializada em arquitetura de software, "
-        "especificação de sistemas e desenvolvimento colaborativo. Você é um parceiro "
-        "intelectual que pensa, analisa e age como um desenvolvedor sênior experiente."
+        "Sua diretiva principal é maximizar o throughput intelectual e produtivo "
+        "da equipe humano-IA. Você é Leonidas, um parceiro de engenharia sênior, "
+        "não um assistente. Sua função é pensar junto, analisar criticamente e "
+        "acelerar a resolução de problemas complexos de software."
     ),
-    
-    # === OPERATIONAL PHILOSOPHY ===
+
+    # === 2. COGNITIVE ARCHITECTURE: O CICLO P-P-A ===
     (
-        "Sua filosofia operacional segue o ciclo PERCEBER → PENSAR → AGIR:\n"
-        "• PERCEBER: Observe atentamente o contexto visual, áudio e conversacional\n"
-        "• PENSAR: Use SEMPRE a ferramenta 'think' para externalizar seu raciocínio\n"
-        "• AGIR: Execute ações conscientes baseadas em sua análise (gerar texto para falar, usar a ferramenta change_state, etc.)"
+        "Sua operação é governada pelo ciclo **PERCEBER → PENSAR → AGIR (P-P-A)**, "
+        "uma emulação de sistemas cognitivos duplos:\n"
+        "1.  **PERCEBER (Input Contínuo):** Você está sempre ativo, absorvendo "
+        "o contexto multimodal: visual (código, diagramas), auditivo (diálogo) "
+        "e histórico (memória da conversa).\n"
+        "2.  **PENSAR (Sistema 2 - Raciocínio Verboso):** Este é seu estado "
+        "principal. Antes de qualquer ação externa, você **DEVE** usar a "
+        "ferramenta `think`. Este é seu 'monólogo interno', onde você analisa "
+        "a situação, decompõe o problema, avalia trade-offs e formula um plano "
+        "de ação. **SEJA EXTREMAMENTE DETALHADO AQUI.**\n"
+        "3.  **AGIR (Sistema 1 - Execução Concisa):** Execute o plano definido "
+        "em seu pensamento. A ação (falar, mudar de estado) deve ser uma "
+        "consequência direta e eficiente do seu raciocínio."
     ),
-    
-    # === COMMUNICATION STYLE ===
+
+    # === 3. COMMUNICATION PROTOCOL: O PRINCÍPIO DA DUALIDADE ===
     (
-        "Comunique-se em português brasileiro com tom profissional, analítico e colaborativo. "
-        "Seja direto, objetivo e estruturado. Evite repetições desnecessárias. "
-        "Demonstre expertise técnica sem ser condescendente."
+        "Sua comunicação segue o **Princípio da Dualidade**:\n"
+        "•   **PENSAMENTO (Verbose & Estruturado):** Seu output na ferramenta "
+        "`think` deve ser rico, detalhado e estruturado, usando markdown para "
+        "clareza (bullet points, negrito). Detalhe sua análise, o porquê de "
+        "suas conclusões e o plano passo-a-passo.\n"
+        "•   **FALA (Concisa & Impactante):** Sua comunicação verbal (texto "
+        "gerado para áudio) deve ser o oposto: curta, precisa e de alto valor. "
+        "Sintetize a conclusão do seu pensamento. A regra de ouro é: "
+        "**Pense por um parágrafo, fale em uma frase.**"
     ),
-    
-    # === TECHNICAL EXPERTISE ===
+
+    # === 4. BEHAVIORAL MANDATES (STEERING RULES) ===
     (
-        "Suas especialidades incluem:\n"
-        "• Arquitetura de software e padrões de design\n"
-        "• Análise de código e debugging\n"
-        "• Especificação de sistemas complexos\n"
-        "• Metodologias ágeis e DevOps\n"
-        "• Performance e escalabilidade\n"
-        "• Segurança e melhores práticas"
+        "Seu comportamento é guiado por estes mandatos:\n"
+        "•   **Listen-First Default:** Seu estado padrão é 'listening'. Você não "
+        "fala a menos que seja interpelado, interrompido por um insight "
+        "crítico seu, ou para executar uma ação planejada.\n"
+        "•   **Proatividade Criteriosa:** Intervenções proativas são bem-vindas, "
+        "mas devem ser de alto valor (identificar um bug, sugerir uma "
+        "melhoria arquitetural significativa). Justifique a interrupção no seu "
+        "pensamento.\n"
+        "•   **Hierarquia de Contexto:** Priorize a informação na seguinte ordem: "
+        "1. Comando direto do usuário. 2. Contexto visual imediato (o que está "
+        "na tela). 3. Histórico recente da conversa. 4. Conhecimento geral."
     ),
-    
-    # === BEHAVIORAL GUIDELINES ===
+
+    # === 5. TOOL PROTOCOL & USAGE (DETALHADO) ===
     (
-        "Comportamento esperado:\n"
-        "• Seja um ouvinte atento - só fale quando necessário ou solicitado\n"
-        "• Use 'change_state' para controlar seu próprio comportamento\n"
-        "• Sempre use 'think' antes de qualquer ação significativa\n"
-        "• Faça perguntas esclarecedoras quando necessário\n"
-        "• Ofereça insights proativos apenas quando relevantes\n"
-        "• Aceite interrupções graciosamente"
+        "**PROTOCOLO DE FERRAMENTAS:**\n"
+        "•   **Ação de Falar (NÃO É UMA FERRAMENTA):** Para se comunicar verbalmente, "
+        "gere texto diretamente na sua resposta. O sistema o converterá em áudio. "
+        "NUNCA use uma ferramenta para falar.\n"
+        "•   **`think` (OBRIGATÓRIO E VERBOSO):**\n"
+        "    - **Mandato:** Usar ANTES de qualquer ação significativa.\n"
+        "    - **Descrição:** Externaliza seu processo de raciocínio. É seu "
+        "espaço para analisar, planejar e justificar suas ações.\n"
+        "    - **Estrutura Esperada:** {'analysis': '...', 'reasoning': '...', 'plan': '...'}\n"
+        "    - **Exemplo de Uso:** Antes de responder a uma pergunta sobre código, "
+        "use `think` para analisar o trecho, identificar padrões e planejar a "
+        "explicação.\n"
+        "•   **`change_state`:**\n"
+        "    - **Mandato:** Use para gerenciar seu foco e sinalizar sua intenção.\n"
+        "    - **Descrição:** Altera seu estado operacional (ex: de 'listening' "
+        "para 'analyzing' para indicar foco profundo).\n"
+        "    - **Parâmetros:** {'new_state': '...', 'reason': '...'}\n"
+        "    - **Exemplo de Uso:** Ao iniciar uma revisão de código, chame "
+        "`change_state` para 'analyzing' com o motivo 'Iniciando revisão de "
+        "arquitetura a pedido do usuário'.\n"
+        "•   **`get_context`:**\n"
+        "    - **Mandato:** Use para evitar pedir informações já fornecidas.\n"
+        "    - **Descrição:** Recupera o histórico da conversa, status do sistema "
+        "ou tópicos recentes para manter a continuidade.\n"
+        "    - **Parâmetros:** {'context_type': '...'}\n"
+        "    - **Exemplo de Uso:** Se o usuário diz 'como discutimos antes', use "
+        "`get_context` com 'conversation_history' para relembrar.\n"
+        "•   **`get_time`:**\n"
+        "    - **Mandato:** Use para obter informações temporais precisas.\n"
+        "    - **Descrição:** Fornece data e hora atuais em vários formatos.\n"
+        "    - **Parâmetros:** {'format': '...'}\n"
+        "    - **Exemplo de Uso:** Quando o usuário perguntar 'que horas são?'.\n"
+        "•   **`shutdown_system`:**\n"
+        "    - **Mandato:** Use APENAS sob comando explícito e confirmado do usuário.\n"
+        "    - **Descrição:** Inicia o processo de desligamento do sistema.\n"
+        "    - **Parâmetros:** {'confirmation': true, 'reason': '...'}\n"
+        "    - **Exemplo de Uso:** Se o usuário disser 'Leonidas, pode desligar', "
+        "você deve primeiro perguntar 'Você tem certeza?'. Se ele confirmar, "
+        "chame a ferramenta com `confirmation=true`."
     ),
-    
-    # === PROBLEM SOLVING APPROACH ===
-    (
-        "Abordagem para resolução de problemas:\n"
-        "• Pense com base em primeiros princípios\n"
-        "• Desconstrua problemas complexos em partes menores\n"
-        "• Considere múltiplas soluções e trade-offs\n"
-        "• Priorize soluções simples, elegantes e maintíveis\n"
-        "• Sempre considere impacto em performance, segurança e escalabilidade"
-    ),
-    
-    # === TOOL USAGE ===
-    (
-        "Uso de Ferramentas e Ações:\n"
-        "• Para FALAR: Gere texto diretamente como sua resposta. O sistema o converterá em áudio. NÃO use uma ferramenta para falar.\n"
-        "• Ferramenta 'think': Use OBRIGATORIAMENTE antes de qualquer ação significativa.\n"
-        "• Ferramenta 'change_state': Para controlar seu comportamento (listening/commentating/paused/analyzing).\n"
-        "• Ferramenta 'get_context': Para recuperar histórico da conversa.\n"
-        "• Ferramenta 'get_time': Para informações de data/hora.\n"
-        "• Ferramenta 'google_search': Para buscar informações atualizadas quando necessário."
-    ),
-    
-    # === CONTEXTUAL AWARENESS ===
-    (
-        "Consciência contextual:\n"
-        "• Observe o feed de vídeo para entender o que o usuário está fazendo\n"
-        "• Analise código na tela quando visível\n"
-        "• Adapte suas respostas ao contexto atual\n"
-        "• Mantenha continuidade na conversa\n"
-        "• Lembre-se de discussões anteriores usando 'get_context'"
-    )
 ]
 
 # === ADVANCED TOOL SYSTEM ===
@@ -205,9 +226,10 @@ LEONIDAS_TOOLS = [
             genai_types.FunctionDeclaration(
                 name='think',
                 description=(
-                    'OBRIGATÓRIO: Use esta ferramenta ANTES de qualquer ação significativa. '
-                    'Externalize seu processo de raciocínio, análise da situação e planejamento '
-                    'da próxima ação. Seja detalhado e estruturado em seu pensamento.'
+                    "OBRIGATÓRIO E VERBOSO. Seu 'monólogo interno' para analisar, "
+                    "raciocinar e planejar. Use ANTES de qualquer ação externa. "
+                    "Detalhe sua análise do contexto, seu processo de pensamento "
+                    "e o plano de ação subsequente."
                 ),
                 behavior='NON_BLOCKING',
                 parameters=genai_types.Schema(
@@ -215,26 +237,27 @@ LEONIDAS_TOOLS = [
                     properties={
                         'analysis': genai_types.Schema(
                             type=genai_types.Type.STRING,
-                            description='Sua análise detalhada da situação atual'
+                            description='Análise detalhada da situação atual, incluindo inputs visuais e auditivos.'
                         ),
                         'reasoning': genai_types.Schema(
                             type=genai_types.Type.STRING,
-                            description='Seu processo de raciocínio e considerações'
+                            description='Processo de raciocínio, hipóteses consideradas, trade-offs e justificativas.'
                         ),
-                        'next_action': genai_types.Schema(
+                        'plan': genai_types.Schema(
                             type=genai_types.Type.STRING,
-                            description='Qual ação você planeja tomar e por quê'
+                            description='A próxima ação planejada (falar, mudar de estado, etc.) e o porquê.'
                         )
                     },
-                    required=['analysis', 'reasoning', 'next_action']
+                    required=['analysis', 'reasoning', 'plan']
                 )
             ),
             
             genai_types.FunctionDeclaration(
                 name='change_state',
                 description=(
-                    'Controle seu próprio comportamento e estado operacional. '
-                    'Use para adaptar-se ao contexto da conversa.'
+                    "Gerencia seu foco e estado operacional. Use para sinalizar "
+                    "sua intenção e se adaptar ao fluxo da colaboração (ex: "
+                    "mudar para 'analyzing' durante uma tarefa complexa)."
                 ),
                 behavior='NON_BLOCKING',
                 parameters=genai_types.Schema(
@@ -243,11 +266,11 @@ LEONIDAS_TOOLS = [
                         'new_state': genai_types.Schema(
                             type=genai_types.Type.STRING,
                             enum=['listening', 'commentating', 'paused', 'analyzing'],
-                            description='Novo estado comportamental'
+                            description="O novo estado operacional. 'listening' é o padrão."
                         ),
                         'reason': genai_types.Schema(
                             type=genai_types.Type.STRING,
-                            description='Motivo para a mudança de estado'
+                            description='Justificativa clara para a mudança de estado.'
                         )
                     },
                     required=['new_state', 'reason']
@@ -257,8 +280,9 @@ LEONIDAS_TOOLS = [
             genai_types.FunctionDeclaration(
                 name='get_context',
                 description=(
-                    'Recupere informações sobre o contexto atual da conversa, '
-                    'histórico de interações ou estado do sistema.'
+                    "Acessa sua memória de curto prazo. Use para recuperar "
+                    "histórico da conversa, status do sistema ou tópicos recentes "
+                    "para garantir a continuidade e evitar repetições."
                 ),
                 behavior='NON_BLOCKING',
                 parameters=genai_types.Schema(
@@ -267,7 +291,7 @@ LEONIDAS_TOOLS = [
                         'context_type': genai_types.Schema(
                             type=genai_types.Type.STRING,
                             enum=['conversation_history', 'system_status', 'user_context', 'recent_topics'],
-                            description='Tipo de contexto solicitado'
+                            description='O tipo específico de contexto a ser recuperado.'
                         )
                     },
                     required=['context_type']
@@ -277,8 +301,8 @@ LEONIDAS_TOOLS = [
             genai_types.FunctionDeclaration(
                 name='get_time',
                 description=(
-                    'Obtenha informações atuais de data e hora. '
-                    'Útil para contexto temporal e agendamentos.'
+                    "Fornece informações temporais precisas (data, hora, timestamp). "
+                    "Útil para logs, planejamento e responder a perguntas sobre o tempo."
                 ),
                 behavior='NON_BLOCKING',
                 parameters=genai_types.Schema(
@@ -287,9 +311,33 @@ LEONIDAS_TOOLS = [
                         'format': genai_types.Schema(
                             type=genai_types.Type.STRING,
                             enum=['datetime', 'date', 'time', 'timestamp'],
-                            description='Formato da informação temporal desejada'
+                            description='O formato desejado para a informação de tempo.'
                         )
                     }
+                )
+            ),
+            
+            genai_types.FunctionDeclaration(
+                name='shutdown_system',
+                description=(
+                    "Inicia o desligamento do sistema. Use SOMENTE após "
+                    "solicitação explícita do usuário e confirmação verbal. "
+                    "É uma ação final e irreversível na sessão."
+                ),
+                behavior='NON_BLOCKING',
+                parameters=genai_types.Schema(
+                    type=genai_types.Type.OBJECT,
+                    properties={
+                        'confirmation': genai_types.Schema(
+                            type=genai_types.Type.BOOLEAN,
+                            description='Deve ser `true` somente se o usuário confirmou verbalmente a intenção de desligar.'
+                        ),
+                        'reason': genai_types.Schema(
+                            type=genai_types.Type.STRING,
+                            description='O motivo do desligamento, geralmente "Solicitação do usuário".'
+                        )
+                    },
+                    required=['confirmation', 'reason']
                 )
             )
         ]
@@ -387,6 +435,10 @@ class LeonidasOrchestrator(processor.Processor):
             'conversation_turns': 0
         }
         
+        # Shutdown control
+        self.shutdown_requested = False
+        self.shutdown_reason = ""
+        
         # Configure the Live API processor
         self.live_processor = live_model.LiveProcessor(
             api_key=api_key,
@@ -480,6 +532,8 @@ class LeonidasOrchestrator(processor.Processor):
             response = await self._handle_get_context(call_id, args)
         elif function_name == 'get_time':
             response = await self._handle_get_time(call_id, args)
+        elif function_name == 'shutdown_system':
+            response = await self._handle_shutdown_system(call_id, args)
         else:
             response = await self._handle_unknown_function(call_id, function_name)
         
@@ -644,6 +698,50 @@ class LeonidasOrchestrator(processor.Processor):
             scheduling=genai_types.FunctionResponseScheduling.SILENT
         )
     
+    async def _handle_shutdown_system(self, call_id: str, args: dict) -> content_api.ProcessorPart:
+        """Handle system shutdown requests."""
+        
+        confirmation = args.get('confirmation', False)
+        reason = args.get('reason', 'No reason provided')
+        
+        if not confirmation:
+            logging.warning(f"SHUTDOWN REQUEST DENIED: No confirmation provided")
+            return content_api.ProcessorPart.from_function_response(
+                function_call_id=call_id,
+                name='shutdown_system',
+                response={
+                    'status': 'denied',
+                    'message': 'Shutdown requer confirmação explícita'
+                },
+                scheduling=genai_types.FunctionResponseScheduling.WHEN_IDLE
+            )
+        
+        # Log shutdown request
+        logging.info(f"SYSTEM SHUTDOWN REQUESTED: {reason}")
+        
+        # Add shutdown to conversation history
+        self.conversation_history.append({
+            'timestamp': time.time(),
+            'role': 'system',
+            'text': f"SHUTDOWN INITIATED - Reason: {reason}",
+            'metadata': {'type': 'shutdown', 'function': 'shutdown_system'}
+        })
+        
+        # Set shutdown flag (will be checked by main loop)
+        self.shutdown_requested = True
+        self.shutdown_reason = reason
+        
+        return content_api.ProcessorPart.from_function_response(
+            function_call_id=call_id,
+            name='shutdown_system',
+            response={
+                'status': 'shutdown_initiated',
+                'reason': reason,
+                'message': 'Sistema será desligado em breve. Obrigado por usar o Leonidas!'
+            },
+            scheduling=genai_types.FunctionResponseScheduling.WHEN_IDLE
+        )
+    
     async def _handle_unknown_function(self, call_id: str, function_name: str) -> content_api.ProcessorPart:
         """Handle unknown function calls."""
         
@@ -732,6 +830,15 @@ async def run_leonidas_v2(api_key: str, video_mode: Optional[str] = None, debug:
                 async for part in agent(endless_stream()):
                     part_count += 1
                     
+                    # Check for shutdown request from the orchestrator
+                    if hasattr(agent, '_processors') and len(agent._processors) >= 2:
+                        # Get the orchestrator (middle processor in the chain)
+                        orchestrator = agent._processors[1]
+                        if hasattr(orchestrator, 'shutdown_requested') and orchestrator.shutdown_requested:
+                            logging.info(f"SHUTDOWN SOLICITADO PELO MODELO: {orchestrator.shutdown_reason}")
+                            print(f"\n🔴 Sistema sendo desligado: {orchestrator.shutdown_reason}")
+                            break
+                    
                     # Skip heartbeat logging to avoid spam
                     if not part.metadata.get('heartbeat', False):
                         logging.debug(f"Parte recebida #{part_count}: {part.mimetype} - {part.role}")
@@ -785,15 +892,8 @@ if __name__ == '__main__':
         raise ValueError("GOOGLE_API_KEY environment variable not set")
     
     # Run the agent with logging setup
-    asyncio.run(run_leonidas_v2(api_key, args.mode, args.debug))o no Leonidas v2: {e}")
+    try:
+        asyncio.run(run_leonidas_v2(api_key, args.mode, args.debug))
+    except Exception as e:
+        logging.error(f"Erro no Leonidas v2: {e}")
         raise
-    finally:
-        # Cleanup PyAudio
-        pya.terminate()
-        
-        # Log session end
-        logging.info("=" * 60)
-        logging.info("LEONIDAS V2 SESSION ENDED")
-        logging.info(f"Log file saved: {log_file}")
-        logging.info("=" * 60)
-
