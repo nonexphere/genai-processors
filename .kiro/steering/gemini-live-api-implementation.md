@@ -1,10 +1,10 @@
 # Gemini Live API Implementation Patterns
 
-## 📋 **GEMINI LIVE API COMPLETE IMPLEMENTATION GUIDE**
+## **GEMINI LIVE API COMPLETE IMPLEMENTATION GUIDE**
 
 This steering rule provides comprehensive implementation patterns, best practices, and code templates for integrating Gemini Live API in real-time applications like Leonidas.
 
-## 🏗️ **CORE ARCHITECTURE PATTERNS**
+## **CORE ARCHITECTURE PATTERNS**
 
 ### **1. WebSocket Connection Management**
 
@@ -572,7 +572,7 @@ class SessionContextManager:
         }
 ```
 
-## 🎯 **COMPLETE IMPLEMENTATION EXAMPLE**
+## **COMPLETE IMPLEMENTATION EXAMPLE**
 
 ### **Production-Ready Live API Client**
 ```python

@@ -1,10 +1,10 @@
 # Gemini Models Complete Reference & Steering Rules
 
-## 📋 **COMPLETE GEMINI MODELS DIAGNOSTIC**
+## **COMPLETE GEMINI MODELS DIAGNOSTIC**
 
 This steering rule provides comprehensive context about all available Gemini models, their capabilities, configurations, and optimal usage patterns for the Leonidas project and similar real-time AI applications.
 
-## 🎯 **GEMINI LIVE API MODELS**
+## **GEMINI LIVE API MODELS**
 
 ### **1. Gemini 2.5 Flash Live Preview (`gemini-live-2.5-flash-preview`)**
 **Architecture**: Half-cascade (native audio input + text-to-speech output)
@@ -220,7 +220,7 @@ config = genai_types.GenerateContentConfig(
 )
 ```
 
-## 🔧 **CONFIGURATION PATTERNS**
+## **CONFIGURATION PATTERNS**
 
 ### **Real-time Conversation Setup**
 ```python
@@ -327,7 +327,7 @@ LIVE_API_LANGUAGES = {
 }
 ```
 
-## ⚡ **PERFORMANCE OPTIMIZATION**
+## **PERFORMANCE OPTIMIZATION**
 
 ### **Model Selection Guidelines**
 
@@ -373,7 +373,7 @@ QUALITY_CONFIG = {
 }
 ```
 
-## 🔒 **SECURITY & AUTHENTICATION**
+## **SECURITY & AUTHENTICATION**
 
 ### **Server-to-Server (Recommended for Production)**
 ```python
@@ -389,7 +389,7 @@ ephemeral_token = generate_ephemeral_token()
 client = genai.Client(api_key=ephemeral_token)
 ```
 
-## 📊 **USAGE MONITORING**
+## **USAGE MONITORING**
 
 ### **Token Counting**
 ```python
@@ -420,7 +420,7 @@ class ModelPerformanceTracker:
         self.token_throughput.append(throughput)
 ```
 
-## 🚨 **ERROR HANDLING PATTERNS**
+## **ERROR HANDLING PATTERNS**
 
 ### **Connection Recovery**
 ```python
@@ -453,7 +453,7 @@ async def handle_interruptions(session):
         yield response
 ```
 
-## 🎯 **BEST PRACTICES FOR LEONIDAS PROJECT**
+## **BEST PRACTICES FOR LEONIDAS PROJECT**
 
 ### **Model Architecture Recommendations**
 1. **Main Agent**: `gemini-live-2.5-flash-preview` (balanced features + stability)

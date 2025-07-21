@@ -1,10 +1,10 @@
 # Gemini Audio Processing Pipeline & Rate Limiting
 
-## 📋 **AUDIO PROCESSING PIPELINE COMPLETE GUIDE**
+## **AUDIO PROCESSING PIPELINE COMPLETE GUIDE**
 
 This steering rule provides comprehensive patterns for audio processing, rate limiting, and real-time audio management in Gemini Live API applications, based on analysis of production implementations.
 
-## 🎵 **AUDIO PROCESSING ARCHITECTURE**
+## **AUDIO PROCESSING ARCHITECTURE**
 
 ### **1. Real-time Audio Pipeline**
 

@@ -1,10 +1,10 @@
 # Gemini State Machine & Event-Driven Patterns
 
-## 📋 **STATE MACHINE & EVENT-DRIVEN ARCHITECTURE GUIDE**
+## **STATE MACHINE & EVENT-DRIVEN ARCHITECTURE GUIDE**
 
 This steering rule provides comprehensive patterns for implementing sophisticated state machines and event-driven architectures in Gemini Live API applications, based on analysis of Leonidas and production implementations.
 
-## 🎰 **STATE MACHINE ARCHITECTURE**
+## **STATE MACHINE ARCHITECTURE**
 
 ### **1. Conversational Agent State Machine**
 
@@ -312,7 +312,7 @@ class LeonidasStateMachine:
         return None
 ```
 
-## 🎯 **EVENT-DRIVEN ARCHITECTURE**
+## **EVENT-DRIVEN ARCHITECTURE**
 
 ### **1. Event Detection and Processing**
 

@@ -1,10 +1,10 @@
 # Gemini Context Management & Real-time Transcription
 
-## 📋 **CONTEXT MANAGEMENT & TRANSCRIPTION COMPLETE GUIDE**
+## **CONTEXT MANAGEMENT & TRANSCRIPTION COMPLETE GUIDE**
 
 This steering rule provides comprehensive patterns for managing context and real-time transcription in Gemini Live API applications, based on analysis of Leonidas and production implementations.
 
-## 🧠 **CONTEXT MANAGEMENT ARCHITECTURE**
+## **CONTEXT MANAGEMENT ARCHITECTURE**
 
 ### **1. Rolling Context Windows**
 

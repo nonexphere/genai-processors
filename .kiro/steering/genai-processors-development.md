@@ -30,6 +30,10 @@ from genai_processors import processor
 - Provide usage examples in docstrings
 - Document any external dependencies or API requirements
 
+### Communication Style
+- Do not use emojis in any file, including documentation.
+- Do not use emojis in any file, including documentation.
+
 ## Processor Implementation Patterns
 
 ### Basic Processor Template

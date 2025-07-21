@@ -1,10 +1,10 @@
 # Gemini Function Calling & Scheduling Patterns
 
-## 📋 **FUNCTION CALLING & SCHEDULING COMPLETE GUIDE**
+## **FUNCTION CALLING & SCHEDULING COMPLETE GUIDE**
 
 This steering rule provides comprehensive patterns for advanced function calling, scheduling, and async function management in Gemini Live API applications, based on analysis of Leonidas and production implementations.
 
-## 🔧 **FUNCTION CALLING ARCHITECTURE**
+## **FUNCTION CALLING ARCHITECTURE**
 
 ### **1. Advanced Function Declaration System**
 
