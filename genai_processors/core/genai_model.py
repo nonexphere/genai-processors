@@ -150,7 +150,7 @@ class GenaiModel(processor.Processor):
         contents.append(turn)
         turn = genai_types.Content(parts=[])
 
-      turn.role = content_part.role
+      turn.role = content_part.role or 'user'
       turn.parts.append(content_api.to_genai_part(content_part))
 
     if turn.role:
