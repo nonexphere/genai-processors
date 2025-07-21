@@ -1,4 +1,4 @@
-# Live Commentator Example 🎙️
+# Live Commentator Example
 
 The Live Commentator is a dynamic conversational agent that actively drives the
 interaction, continuously generating commentary on input video and audio, asking
@@ -9,7 +9,7 @@ adapting its commentary to the changing context. It utilizes Gemini's multimodal
 capabilities and asynchronous function calls to provide an engaging and
 responsive experience.
 
-## 🚀 Running the commentator
+## Running the commentator
 
 There are two ways to run the Live Commentator: via AI Studio (recommended) or by running a local web server.
 
@@ -72,7 +72,7 @@ You can also run the UI on a local web server.
 5.  **Open the UI**:
     In your web browser, navigate to [http://localhost:8000](http://localhost:8000).
 
-## 🗣️ Conversation Logic
+## Conversation Logic
 
 The Live Commentator agent logic is fully contained in the `LiveCommentator`
 class in `commentator.py` and is developed as a GenAI Processor. This makes it
@@ -103,7 +103,7 @@ combination of:
     answer a question or to do something. It waits for a set duration (currently
     5 seconds) and resumes the commentary if no relevant input is received.
 
-## 🔄 State Machine
+## State Machine
 
 The LiveCommentator operates based on the following states and transitions.
 `EVENT_DETECTION_(START|STOP)` are only for this schema (you will not find them
@@ -147,7 +147,7 @@ style G fill:#888,stroke:#333,stroke-width:2px
 style H fill:#888,stroke:#333,stroke-width:2px
 ```
 
-## ⏹️ States
+## States
 
 *   **OFF**: The commentator is inactive. No commentary is generated. The user
     can still ask questions, but the commentator is not automatically generating
@@ -178,7 +178,7 @@ style H fill:#888,stroke:#333,stroke-width:2px
     user doesn't respond within `MAX_SILENCE_WAIT_FOR_USER_SEC`, the commentator
     will resume commentating.
 
-## ▶️ Actions
+## Actions
 
 The `CommentatorStateMachine` uses the following `Action` enum to trigger state
 transitions:
@@ -210,7 +210,7 @@ transitions:
     for the user to respond or provide visual input. This is triggered by the
     `wait_for_user` async function call.
 
-## 🔀 State Transitions and Logic
+## State Transitions and Logic
 
 The `CommentatorStateMachine`'s `update` method defines the state transitions.
 Here's a breakdown of the key transitions, illustrating how the commentator
@@ -259,7 +259,7 @@ responds to various events:
     *   Before the current commentary finishes, a new comment is scheduled at a
         time that would make the model output the content of the new comment
         just after the current one is fully played. This scheduling is based on
-        an estimate of TTFT (see [section](#⏱️-timing-and-latency) below). The
+        an estimate of TTFT (see [section](#timing-and-latency) below). The
         state is still in `TALKING`.
     *   When the scheduled time arrives, the state transitions to
         `REQUESTING_COMMENT`.
@@ -288,7 +288,7 @@ responds to various events:
     *   The state transitions to `OFF`.
     *   Any scheduled comments are cancelled.
 
-## ⏱️ Timing and Latency
+## Timing and Latency
 
 The `LiveCommentator` keeps track of the latency of each generation request,
 measured as the time from when the request is sent to the model, to when the
@@ -302,7 +302,7 @@ approach). The `tentative_trigger_time()` method calculates the time at which
 the next comment *should* be triggered, based on the predicted TTFT and the
 duration of the current audio.
 
-## ℹ️ Usage Notes
+## Usage Notes
 
 *   The `LiveCommentator` expects audio and video input on the `realtime`
     substream. Other substreams are used for control signals.
@@ -313,7 +313,7 @@ duration of the current audio.
     `LiveCommentator` to ensure the audio output is played back at the correct
     speed and can be interrupted properly.
 
-## 📜 License
+## License
 
 This example is licensed under the Apache License, Version 2.0.
 

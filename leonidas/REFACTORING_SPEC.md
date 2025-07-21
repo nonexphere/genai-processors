@@ -55,9 +55,9 @@ InputManager → LeonidasOrchestrator → OutputManager
 - **Implementation**: Encapsulate `rate_limit_audio.RateLimitAudio()` + `audio_io.PyAudioOut()`
 
 ### 4. Enhanced Tool System
-- **think**: Force model to externalize reasoning before acting
-- **speak**: Explicit speech control with natural language
-- **change_state**: Model controls its own behavior (listening/commentating/paused)
+- **Speaking**: Achieved by generating text directly. The model should not use a tool to speak.
+- **think**: Force model to externalize reasoning before acting.
+- **change_state**: Model controls its own behavior (listening/commentating/paused).
 - **get_context**: Retrieve conversation history and system info
 - **get_time**: Access current date/time information
 - **google_search**: Leverage native search capabilities

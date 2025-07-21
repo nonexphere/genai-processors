@@ -1,8 +1,8 @@
-# Leonidas v2 - Modular Conversational AI Agent 🤖
+# Leonidas v2 - Modular Conversational AI Agent
 
 Leonidas v2 is a complete refactoring of the original commentator into a modular, fluid conversational agent that thinks, acts, and collaborates like a human partner.
 
-## 🎯 Key Improvements
+## Key Improvements
 
 ### From Commentator to Collaborator
 - **Before**: Proactive commentator that talks continuously
@@ -19,7 +19,7 @@ Leonidas v2 is a complete refactoring of the original commentator into a modular
 - **Rich Tool System**: think, speak, change_state, get_context, get_time
 - **Contextual Awareness**: Maintains conversation history and adapts
 
-## 🏗️ Architecture
+## Architecture
 
 ```
 ┌─────────────┐    ┌──────────────────────┐    ┌──────────────┐
@@ -32,23 +32,23 @@ Leonidas v2 is a complete refactoring of the original commentator into a modular
                    └──────────────────────┘
 ```
 
-## 🛠️ Tool System
+## Tool System
 
 Leonidas v2 has an advanced tool system that gives the model full control:
 
-### Core Tools
-- **`think`**: 🧠 Mandatory reasoning before actions
-- **`speak`**: 🗣️ Direct communication with user
-- **`change_state`**: 🔄 Self-behavior control (listening/commentating/paused/analyzing)
-- **`get_context`**: 📋 Access conversation history and system status
-- **`get_time`**: 🕐 Current date/time information
+### Core Actions & Tools
+- **Speaking**: The model speaks by generating text directly in its response. The system automatically converts this text to audio.
+- **`think`**: Mandatory reasoning before actions.
+- **`change_state`**: Self-behavior control (listening/commentating/paused/analyzing).
+- **`get_context`**: Access conversation history and system status.
+- **`get_time`**: Current date/time information.
 
 ### Future Extensions
-- **`google_search`**: 🔍 Web search capabilities (native Gemini feature)
-- **`execute_code`**: 💻 Code execution (native Gemini feature)
+- **`google_search`**: Web search capabilities (native Gemini feature)
+- **`execute_code`**: Code execution (native Gemini feature)
 - **Custom tools**: Easy to add domain-specific capabilities
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 ```bash
@@ -85,7 +85,7 @@ async def main():
 asyncio.run(main())
 ```
 
-## 💬 Conversation Examples
+## Conversation Examples
 
 ### Natural Interaction
 ```
@@ -115,7 +115,7 @@ Leonidas: [SPEAKING] Perfeito! Vou analisar a arquitetura que você está
           mostrando. Vejo alguns pontos interessantes aqui...
 ```
 
-## 🔧 Configuration
+## Configuration
 
 ### Model Settings
 - **Model**: `gemini-live-2.5-flash-preview`
@@ -130,7 +130,7 @@ Leonidas: [SPEAKING] Perfeito! Vou analisar a arquitetura que você está
 - **paused**: Temporarily inactive
 - **analyzing**: Deep focus on specific task
 
-## 🎛️ Advanced Features
+## Advanced Features
 
 ### Conversation Memory
 - Maintains history of interactions
@@ -149,7 +149,7 @@ Leonidas: [SPEAKING] Perfeito! Vou analisar a arquitetura que você está
 - Plugin architecture ready
 - Future-proof design
 
-## 🔍 Debugging
+## Debugging
 
 ### Console Output
 ```
@@ -170,7 +170,7 @@ Leonidas: [SPEAKING] Perfeito! Vou analisar a arquitetura que você está
 python leonidas/leonidas_v2_cli.py --debug
 ```
 
-## 🚧 Migration from v1
+## Migration from v1
 
 ### Key Differences
 1. **No more proactive commenting** - Model decides when to speak
@@ -185,27 +185,27 @@ python leonidas/leonidas_v2_cli.py --debug
 - Improved conversation quality
 - Better resource usage
 
-## 🔮 Future Roadmap
+## Future Roadmap
 
 ### Phase 1 (Current)
-- ✅ Modular architecture
-- ✅ Advanced tool system
-- ✅ THINK-ACT cycle
-- ✅ Self-state management
+- Modular architecture
+- Advanced tool system
+- THINK-ACT cycle
+- Self-state management
 
 ### Phase 2 (Planned)
-- 🔄 Multi-feed input support
-- 🔄 Advanced memory system
-- 🔄 Custom tool plugins
-- 🔄 Performance optimizations
+- Multi-feed input support
+- Advanced memory system
+- Custom tool plugins
+- Performance optimizations
 
 ### Phase 3 (Future)
-- 📋 Robotics integration hooks
-- 📋 Multi-modal output
-- 📋 Distributed processing
-- 📋 Advanced AI capabilities
+- Robotics integration hooks
+- Multi-modal output
+- Distributed processing
+- Advanced AI capabilities
 
-## 🤝 Contributing
+## Contributing
 
 Leonidas v2 is designed for extensibility:
 
@@ -214,10 +214,10 @@ Leonidas v2 is designed for extensibility:
 3. **Output Destinations**: Extend `OutputManager` for new outputs
 4. **Prompt Engineering**: Enhance `LEONIDAS_SYSTEM_PROMPT`
 
-## 📄 License
+## License
 
 Licensed under the Apache License, Version 2.0. See the original license headers in the source files.
 
 ---
 
-**Leonidas v2** - Where AI collaboration meets human-like intelligence. 🚀
+**Leonidas v2** - Where AI collaboration meets human-like intelligence.

@@ -41,9 +41,10 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  %(prog)s --mode camera              # Use camera input (default)
-  %(prog)s --mode screen              # Use screen capture
-  %(prog)s --mode camera --debug      # Enable debug logging
+  %(prog)s                            # Run in audio-only mode
+  %(prog)s --video-mode camera        # Use camera input
+  %(prog)s --video-mode screen        # Use screen capture
+  %(prog)s --video-mode camera --debug # Enable debug logging
   
 Requirements:
   - Set GOOGLE_API_KEY environment variable
@@ -53,11 +54,11 @@ Requirements:
     )
     
     parser.add_argument(
-        '--mode',
+        '--video-mode',
         type=str,
         choices=['camera', 'screen'],
-        default='camera',
-        help='Video input mode: camera for webcam, screen for screen capture'
+        default=None,
+        help='Enable video input mode: camera for webcam, screen for screen capture. Disabled by default.'
     )
     
     parser.add_argument(
@@ -77,29 +78,29 @@ Requirements:
     # Configure logging
     if args.debug:
         logging.set_verbosity(logging.DEBUG)
-        print("🐛 Debug logging enabled")
+        print("Debug logging enabled")
     else:
         logging.set_verbosity(logging.INFO)
     
     # Get API key
     api_key = args.api_key or os.environ.get('GOOGLE_API_KEY')
     if not api_key:
-        print("❌ Error: Google AI API key not found!")
+        print("Error: Google AI API key not found!")
         print("   Set GOOGLE_API_KEY environment variable or use --api-key")
         print("   Get your key at: https://aistudio.google.com/app/apikey")
         sys.exit(1)
     
     # Display startup information
     print("=" * 60)
-    print("🤖 Leonidas v2 - Conversational AI Agent")
+    print("Leonidas v2 - Conversational AI Agent")
     print("=" * 60)
-    print(f"📹 Video Mode: {args.mode}")
-    print(f"🎤 Audio: Enabled (use headphones recommended)")
-    print(f"🧠 Model: gemini-live-2.5-flash-preview")
-    print(f"🗣️ Language: Portuguese Brazilian")
-    print(f"🔧 Architecture: Modular (InputManager → Orchestrator → OutputManager)")
+    print(f"Video Mode: {args.video_mode if args.video_mode else 'Disabled'}")
+    print(f"Audio: Enabled (use headphones recommended)")
+    print(f"Model: gemini-live-2.5-flash-preview")
+    print(f"Language: Portuguese Brazilian")
+    print(f"Architecture: Modular (InputManager → Orchestrator → OutputManager)")
     print("=" * 60)
-    print("💡 Tips:")
+    print("Tips:")
     print("   • Speak naturally - Leonidas will think before responding")
     print("   • The agent can change its own behavior based on context")
     print("   • Use Ctrl+C to exit gracefully")
@@ -108,20 +109,20 @@ Requirements:
     
     try:
         # Run the agent
-        print("🚀 Starting Leonidas v2...")
-        asyncio.run(leonidas_v2.run_leonidas_v2(api_key, args.mode))
+        print("Starting Leonidas v2...")
+        asyncio.run(leonidas_v2.run_leonidas_v2(api_key, args.video_mode))
         
     except KeyboardInterrupt:
-        print("\n👋 Leonidas v2 shutdown requested by user")
+        print("\nLeonidas v2 shutdown requested by user")
         print("   Session ended gracefully")
         
     except ImportError as e:
-        print(f"❌ Import Error: {e}")
+        print(f"Import Error: {e}")
         print("   Install required packages: pip install genai-processors pyaudio")
         sys.exit(1)
         
     except Exception as e:
-        print(f"❌ Unexpected Error: {e}")
+        print(f"Unexpected Error: {e}")
         if args.debug:
             import traceback
             traceback.print_exc()

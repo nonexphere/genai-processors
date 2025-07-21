@@ -1,4 +1,4 @@
-# Built-in Processors (`genai_processors.core`) 🧩
+# Built-in Processors (`genai_processors.core`)
 
 The library includes several pre-built processors:
 
