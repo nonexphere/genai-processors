@@ -33,13 +33,14 @@ multimodal conversational AI partner.
 # Standard library imports
 import asyncio
 import collections
+import dataclasses
 import datetime
 import os
 import sys # Import the sys module
 import time
 from datetime import datetime as dt
 from pathlib import Path
-from typing import AsyncIterable, Optional, Any
+from typing import AsyncIterable, Optional, Any, Dict
 
 # Third-party imports
 import pyaudio
@@ -503,11 +504,348 @@ LEONIDAS_TOOLS = [
                     }
                 )
             ),
+
         ]
     )
 ]
 
+# === ESTRUTURAS DE DADOS MODULARES ===
+
+@dataclasses.dataclass(frozen=True)
+class LeonidasConfig:
+    """Agrupa todas as configurações estáticas para o Leonidas."""
+    api_key: str
+    live_model_name: str = 'gemini-live-2.5-flash-preview'
+    deep_think_model_name: str = 'gemini-2.5-pro'
+    audio_input_rate: int = 16000
+    audio_output_rate: int = 24000
+    conversation_history_max_len: int = 100
+
+
+@dataclasses.dataclass
+class LeonidasState:
+    """Gerencia todo o estado dinâmico e mutável do agente Leonidas."""
+    current_state: str = 'listening'
+    state_reason: str = 'Initial state'
+    shutdown_requested: bool = False
+    shutdown_reason: str = ""
+    conversation_history: collections.deque = dataclasses.field(default_factory=lambda: collections.deque(maxlen=100))
+    metrics: Dict[str, Any] = dataclasses.field(default_factory=lambda: {
+        'tool_calls': collections.defaultdict(int),
+        'state_changes': [],
+        'conversation_turns': 0
+    })
+
+    def add_history_entry(self, part: content_api.ProcessorPart):
+        """Adiciona uma entrada ao histórico da conversa."""
+        self.conversation_history.append({
+            'timestamp': time.time(),
+            'role': part.role,
+            'text': part.text,
+            'metadata': part.metadata
+        })
+        if part.role.lower() == 'user':
+            self.metrics['conversation_turns'] += 1
+
+
+class ToolDispatcher:
+    """Processa e despacha chamadas de função (ferramentas) do modelo."""
+
+    def __init__(self, state: LeonidasState, config: LeonidasConfig, deep_think_model: genai_model.GenaiModel):
+        self.state = state
+        self.config = config
+        self.deep_think_model = deep_think_model
+        self._tool_handlers = {
+            'think': self._handle_think,
+            'change_state': self._handle_change_state,
+            'get_context': self._handle_get_context,
+            'get_time': self._handle_get_time,
+            'shutdown_system': self._handle_shutdown_system,
+            'wait_in_silence': self._handle_wait_in_silence,
+            'deep_think': self._handle_deep_think,
+        }
+
+    async def dispatch(self, part: content_api.ProcessorPart) -> Optional[content_api.ProcessorPart]:
+        """Recebe uma chamada de função e a despacha para o handler correto."""
+        call_id = part.get_metadata('id')
+        function_name = part.function_call.name
+        arguments = part.function_call.args if hasattr(part.function_call, 'args') else {}
+
+        self.state.metrics['tool_calls'][function_name] += 1
+
+        handler = self._tool_handlers.get(function_name)
+        if handler:
+            return await handler(call_id, arguments)
+        else:
+            return await self._handle_unknown_function(call_id, function_name)
+
+    async def _handle_think(self, call_id: str, args: dict) -> content_api.ProcessorPart:
+        analysis = args.get('analysis', 'No analysis provided')
+        reasoning = args.get('reasoning', 'No reasoning provided')
+        plan = args.get('plan', 'No action planned')
+
+        log_data = {'tool_call': 'think', 'analysis': analysis, 'reasoning': reasoning, 'plan': plan}
+        logger.info("Model is thinking", extra={'extra_data': log_data})
+
+        print("🧠 LEONIDAS THINKING:")
+        print(f"   Analysis: {analysis}")
+        print(f"   Reasoning: {reasoning}")
+        print(f"   Next Action: {plan}")
+
+        self.state.add_history_entry(content_api.ProcessorPart(
+            f"THINKING - Analysis: {analysis} | Reasoning: {reasoning} | Next: {plan}",
+            role='system',
+            metadata={'type': 'thinking', 'function': 'think'}
+        ))
+
+        return content_api.ProcessorPart.from_function_response(
+            function_call_id=call_id,
+            name='think',
+            response={'status': 'thinking_complete'},
+            scheduling=genai_types.FunctionResponseScheduling.SILENT
+        )
+
+    async def _handle_change_state(self, call_id: str, args: dict) -> content_api.ProcessorPart:
+        new_state = args.get('new_state', self.state.current_state)
+        reason = args.get('reason', 'No reason provided')
+        old_state = self.state.current_state
+        self.state.current_state = new_state
+        self.state.state_reason = reason
+
+        state_change = {'timestamp': time.time(), 'from_state': old_state, 'to_state': new_state, 'reason': reason}
+        self.state.metrics['state_changes'].append(state_change)
+        logger.info(f"STATE CHANGE: {old_state} → {new_state} ({reason})")
+
+        return content_api.ProcessorPart.from_function_response(
+            function_call_id=call_id,
+            name='change_state',
+            response={'status': 'success', 'old_state': old_state, 'new_state': new_state, 'reason': reason},
+            scheduling=genai_types.FunctionResponseScheduling.SILENT
+        )
+
+    async def _handle_get_context(self, call_id: str, args: dict) -> content_api.ProcessorPart:
+        context_type = args.get('context_type', 'conversation_history')
+        context_data = {}
+        if context_type == 'conversation_history':
+            recent_history = list(self.state.conversation_history)[-10:]
+            context_data = {
+                'recent_conversations': [f"{entry['role']}: {entry['text'][:100]}..." if len(entry['text']) > 100 else f"{entry['role']}: {entry['text']}" for entry in recent_history],
+                'total_turns': self.state.metrics['conversation_turns']
+            }
+        elif context_type == 'system_status':
+            context_data = {
+                'current_state': self.state.current_state,
+                'state_reason': self.state.state_reason,
+                'tool_usage': dict(self.state.metrics['tool_calls']),
+                'uptime': time.time()
+            }
+        logger.info(f"CONTEXT REQUEST ({context_type}): {context_data}")
+        return content_api.ProcessorPart.from_function_response(
+            function_call_id=call_id, name='get_context', response=context_data,
+            scheduling=genai_types.FunctionResponseScheduling.SILENT
+        )
+
+    async def _handle_get_time(self, call_id: str, args: dict) -> content_api.ProcessorPart:
+        format_type = args.get('format', 'datetime')
+        now = datetime.datetime.now()
+        time_data = {}
+        if format_type == 'datetime':
+            time_data = {'current_datetime': now.strftime('%Y-%m-%d %H:%M:%S'), 'day_of_week': now.strftime('%A'), 'timezone': 'Local'}
+        elif format_type == 'date':
+            time_data = {'current_date': now.strftime('%Y-%m-%d'), 'day_of_week': now.strftime('%A')}
+        elif format_type == 'time':
+            time_data = {'current_time': now.strftime('%H:%M:%S')}
+        elif format_type == 'timestamp':
+            time_data = {'timestamp': int(now.timestamp()), 'iso_format': now.isoformat()}
+        logger.info(f"TIME REQUEST ({format_type}): {time_data}")
+        return content_api.ProcessorPart.from_function_response(
+            function_call_id=call_id, name='get_time', response=time_data,
+            scheduling=genai_types.FunctionResponseScheduling.SILENT
+        )
+
+    async def _handle_shutdown_system(self, call_id: str, args: dict) -> content_api.ProcessorPart:
+        confirmation = args.get('confirmation', False)
+        reason = args.get('reason', 'No reason provided')
+        if not confirmation:
+            logger.warning("SHUTDOWN REQUEST DENIED: No confirmation provided")
+            return content_api.ProcessorPart.from_function_response(
+                function_call_id=call_id, name='shutdown_system',
+                response={'status': 'denied', 'message': 'Shutdown requer confirmação explícita'},
+                scheduling=genai_types.FunctionResponseScheduling.WHEN_IDLE
+            )
+        logger.info(f"SYSTEM SHUTDOWN REQUESTED: {reason}")
+        self.state.add_history_entry(content_api.ProcessorPart(
+            f"SHUTDOWN INITIATED - Reason: {reason}", role='system',
+            metadata={'type': 'shutdown', 'function': 'shutdown_system'}
+        ))
+        self.state.shutdown_requested = True
+        self.state.shutdown_reason = reason
+        return content_api.ProcessorPart.from_function_response(
+            function_call_id=call_id, name='shutdown_system',
+            response={'status': 'shutdown_initiated', 'reason': reason, 'message': 'Sistema será desligado em breve.'},
+            scheduling=genai_types.FunctionResponseScheduling.WHEN_IDLE
+        )
+
+    async def _handle_wait_in_silence(self, call_id: str, args: dict) -> content_api.ProcessorPart:
+        duration = args.get('duration_seconds', 0.0)
+        reason = args.get('reason', 'Aguardando entrada do usuário ou processamento interno.')
+        log_data = {'tool_call': 'wait_in_silence', 'duration_seconds': duration, 'reason': reason}
+        logger.info("Modelo está aguardando em silêncio", extra={'extra_data': log_data})
+        print(f"🤫 LEONIDAS AGUARDANDO EM SILÊNCIO (por {duration:.1f}s, motivo: {reason})")
+        self.state.add_history_entry(content_api.ProcessorPart(
+            f"AGUARDANDO EM SILÊNCIO - Duração: {duration}s, Motivo: {reason}", role='system',
+            metadata={'type': 'waiting', 'function': 'wait_in_silence'}
+        ))
+        return content_api.ProcessorPart.from_function_response(
+            function_call_id=call_id, name='wait_in_silence',
+            response={'status': 'waiting_initiated', 'duration_seconds': duration, 'reason': reason},
+            scheduling=genai_types.FunctionResponseScheduling.SILENT
+        )
+
+    async def _handle_deep_think(self, call_id: str, args: dict) -> content_api.ProcessorPart:
+        problem_statement = args.get('problem_statement')
+        additional_context = args.get('additional_context', 'Nenhum contexto adicional fornecido.')
+        if not problem_statement:
+            return content_api.ProcessorPart.from_function_response(
+                function_call_id=call_id, name='deep_think',
+                response={'error': 'O parâmetro "problem_statement" é obrigatório.'},
+                scheduling=genai_types.FunctionResponseScheduling.SILENT
+            )
+        log_data = {'tool_call': 'deep_think', 'problem_statement': problem_statement}
+        logger.info("Initiating deep think process", extra={'extra_data': log_data})
+        print(f"🤔 LEONIDAS DEEP THINKING on: {problem_statement}")
+        prompt = f"""
+        Você é um especialista sênior em engenharia de software e arquitetura. Sua tarefa é realizar uma análise profunda e estruturada sobre o seguinte problema. Seja detalhado, claro e forneça insights acionáveis.
+        **Problema/Tópico para Análise Profunda:**
+        {problem_statement}
+        **Contexto Adicional:**
+        {additional_context}
+        **Instruções de Saída:**
+        1.  **Análise do Problema:** Decomponha o problema em suas partes fundamentais.
+        2.  **Abordagens Possíveis:** Descreva pelo menos duas soluções ou abordagens distintas, com seus prós e contras.
+        3.  **Recomendação:** Forneça uma recomendação clara e justificada sobre a melhor abordagem.
+        4.  **Plano de Ação:** Descreva os próximos passos ou um plano de implementação de alto nível.
+        5.  **Riscos e Mitigações:** Identifique potenciais riscos e como mitigá-los.
+        Responda de forma estruturada usando markdown.
+        """
+        input_stream = streams.stream_content([content_api.ProcessorPart(prompt, role='user')])
+        try:
+            response_stream = self.deep_think_model(input_stream)
+            response_parts = await streams.gather_stream(response_stream)
+            deep_thought_output = content_api.as_text(response_parts)
+            logger.info("Deep think process completed successfully.", extra={'extra_data': {'output_length': len(deep_thought_output)}})
+            print("✅ DEEP THINKING complete.")
+            return content_api.ProcessorPart.from_function_response(
+                function_call_id=call_id, name='deep_think',
+                response={'status': 'success', 'deep_thought_output': deep_thought_output},
+                scheduling=genai_types.FunctionResponseScheduling.BLOCKING
+            )
+        except Exception as e:
+            logger.error(f"Error during deep think process: {e}", exc_info=True)
+            print(f"❌ DEEP THINKING failed: {e}")
+            return content_api.ProcessorPart.from_function_response(
+                function_call_id=call_id, name='deep_think',
+                response={'error': f'An error occurred during deep thinking: {str(e)}'},
+                scheduling=genai_types.FunctionResponseScheduling.SILENT
+            )
+
+    async def _handle_unknown_function(self, call_id: str, function_name: str) -> content_api.ProcessorPart:
+        logger.warning(f"UNKNOWN FUNCTION CALL: {function_name}")
+        return content_api.ProcessorPart.from_function_response(
+            function_call_id=call_id, name=function_name,
+            response={'error': f'Unknown function: {function_name}'},
+            scheduling=genai_types.FunctionResponseScheduling.SILENT
+        )
+
+
 # === MODULAR PROCESSORS ===
+
+class ReflectionAnalyzer:
+    """Encapsula a lógica para a análise de autorreflexão."""
+
+    def __init__(self, state: LeonidasState):
+        self.state = state
+
+    async def schedule_automatic_reflection(self):
+        """Agenda e executa a análise de autorreflexão em segundo plano."""
+        await asyncio.sleep(2.0)
+        try:
+            recent_history = list(self.state.conversation_history)[-5:]
+            user_messages = [entry for entry in recent_history if entry['role'].lower() == 'user']
+            model_messages = [entry for entry in recent_history if entry['role'].lower() == 'model']
+            
+            recent_tool_calls = dict(self.state.metrics['tool_calls'])
+            most_used_tools = sorted(recent_tool_calls.items(), key=lambda x: x[1], reverse=True)[:3]
+
+            reflection_args = {
+                'interaction_quality': self._assess_interaction_quality(recent_history, user_messages, model_messages),
+                'tools_effectiveness': self._analyze_tools_effectiveness(most_used_tools),
+                'conversation_patterns': self._identify_conversation_patterns(user_messages, model_messages),
+                'improvement_suggestions': self._generate_improvement_suggestions(recent_history, user_messages, model_messages),
+                'emotional_context': self._analyze_emotional_context(recent_history)
+            }
+            
+            self._execute_reflection(reflection_args)
+
+        except Exception as e:
+            logger.error(f"Error during automatic reflection: {e}", exc_info=True)
+
+    def _execute_reflection(self, reflection_data: dict):
+        """Executa o logging e a persistência da reflexão."""
+        log_data = {
+            'timestamp': time.time(),
+            'conversation_turns': self.state.metrics['conversation_turns'],
+            **reflection_data
+        }
+        logger.info("Self-reflection completed", extra={'extra_data': log_data})
+
+        print("🔍 LEONIDAS SELF-REFLECTION:")
+        print(f"   Qualidade: {reflection_data['interaction_quality']}")
+        print(f"   Ferramentas: {reflection_data['tools_effectiveness']}")
+        print(f"   Padrões: {reflection_data['conversation_patterns']}")
+        print(f"   Sugestões: {reflection_data['improvement_suggestions']}")
+        
+        self.state.add_history_entry(content_api.ProcessorPart(
+            f"SELF-REFLECTION - Quality: {reflection_data['interaction_quality']} | Suggestions: {reflection_data['improvement_suggestions']}",
+            role='system',
+            metadata={'type': 'self_reflection', 'data': log_data}
+        ))
+
+    def _assess_interaction_quality(self, recent_history, user_messages, model_messages):
+        if not recent_history: return "sem dados"
+        user_count = len(user_messages)
+        model_count = len(model_messages)
+        if user_count > 0 and model_count > 0:
+            ratio = model_count / user_count
+            if 0.8 <= ratio <= 1.2: return "boa - fluxo equilibrado"
+            return "regular - modelo muito verboso" if ratio > 1.2 else "regular - respostas insuficientes"
+        return "precisa melhorar - interação desequilibrada"
+
+    def _analyze_tools_effectiveness(self, most_used_tools):
+        if not most_used_tools: return "nenhuma ferramenta utilizada"
+        return "; ".join([f"{name}({count}x)" for name, count in most_used_tools])
+
+    def _identify_conversation_patterns(self, user_messages, model_messages):
+        patterns = []
+        if len(user_messages) > len(model_messages): patterns.append("usuário mais ativo")
+        elif len(model_messages) > len(user_messages): patterns.append("modelo mais verboso")
+        else: patterns.append("interação equilibrada")
+        return "; ".join(patterns)
+
+    def _generate_improvement_suggestions(self, recent_history, user_messages, model_messages):
+        suggestions = []
+        thinking_entries = [entry for entry in recent_history if entry.get('metadata', {}).get('type') == 'thinking']
+        if not thinking_entries: suggestions.append("usar mais a ferramenta 'think'")
+        if len(model_messages) > len(user_messages) * 1.5: suggestions.append("reduzir verbosidade")
+        return "; ".join(suggestions) if suggestions else "manter qualidade atual"
+
+    def _analyze_emotional_context(self, recent_history):
+        if not recent_history: return "neutro"
+        all_text = " ".join([entry.get('text', '').lower() for entry in recent_history])
+        if any(w in all_text for w in ['obrigado', 'excelente', 'ótimo']): return "positivo"
+        if any(w in all_text for w in ['erro', 'problema', 'não funciona']): return "resolução de problemas"
+        return "neutro"
+
 
 class InputManager(processor.Processor):
     """
@@ -520,22 +858,15 @@ class InputManager(processor.Processor):
     Handles audio input, and optionally video, making it extensible for
     future multi-feed scenarios (multiple cameras, microphones, etc.).
     """
-    def __init__(self, pya: pyaudio.PyAudio, video_mode: Optional[str] = None):
+    def __init__(self, pya: pyaudio.PyAudio, config: LeonidasConfig, video_mode: Optional[str] = None):
         input_processors = [
-            # PyAudioIn captures audio from the default microphone.
-            # `use_pcm_mimetype=True` ensures compatibility with Gemini Live API.
-            audio_io.PyAudioIn(pya, rate=AUDIO_INPUT_RATE, use_pcm_mimetype=True)
+            audio_io.PyAudioIn(pya, rate=config.audio_input_rate, use_pcm_mimetype=True)
         ]
         if video_mode:
-            # VideoIn captures frames from camera or screen.
-            # This is added to the input pipeline only if `video_mode` is specified.
             input_processors.append(
                 video.VideoIn(video_mode=video.VideoMode(video_mode))
             )
 
-        # If both audio and video are enabled, `parallel_concat` ensures
-        # both streams are processed concurrently and merged into a single
-        # input stream for the next stage.
         if len(input_processors) > 1:
             self.input_pipeline = processor.parallel_concat(input_processors)
         else:
@@ -567,24 +898,18 @@ class OutputManager(processor.Processor):
     Currently handles audio output with rate limiting, but designed to be
     extensible for future multi-modal output (displays, actuators, etc.).
     """
-    def __init__(self, pya: pyaudio.PyAudio):
+    def __init__(self, pya: pyaudio.PyAudio, config: LeonidasConfig):
         self._pya = pya
+        self._config = config
 
     async def call(
         self, content: AsyncIterable[content_api.ProcessorPart]
     ) -> AsyncIterable[content_api.ProcessorPart]:
-        # `RateLimitAudio` ensures that audio chunks are played at a natural
-        # speed, preventing rapid playback or buffering issues.
-        # `PyAudioOut` sends the audio data to the default speaker.
-        # Create the output pipeline - rate limiting + audio output
         output_pipeline = (
-            rate_limit_audio.RateLimitAudio(AUDIO_OUTPUT_RATE) +
-            audio_io.PyAudioOut(self._pya, rate=AUDIO_OUTPUT_RATE)
+            rate_limit_audio.RateLimitAudio(self._config.audio_output_rate) +
+            audio_io.PyAudioOut(self._pya, rate=self._config.audio_output_rate)
         )
-
-        # Process through the output pipeline
         async for part in output_pipeline(content):
-            # Add metadata to indicate the destination of the output part.
             part.metadata['output_destination'] = 'primary_audio'
             part.metadata['processed_by'] = 'OutputManager'
             yield part
@@ -593,106 +918,55 @@ class OutputManager(processor.Processor):
 class LeonidasOrchestrator(processor.Processor):
     """
     The central intelligence and control unit of Leonidas v2.
-
     This processor is responsible for connecting to the Gemini Live API,
     managing the conversation flow, executing model-defined tools, and
     maintaining the agent's internal state and memory.
     """
 
-    def __init__(self, api_key: str):
-        # Google AI API key for authentication with Gemini Live API.
-        self.api_key = api_key
+    def __init__(self, config: LeonidasConfig):
+        self.config = config
+        self.state = LeonidasState(conversation_history=collections.deque(maxlen=config.conversation_history_max_len))
+        self.context_initialized = False
+        self.initial_message_queue = asyncio.Queue()
 
-        # Agent's current operational state, controlled by the model
-        # using the `change_state` tool. This allows the model to
-        # manage its own behavior (e.g., listening, analyzing).
-        self.agent_state = 'listening'
-        self.state_reason = 'Initial state'
+        self.memory_system = LeonidasMemorySystem(
+            summary_file="summary.txt",
+            history_dir="history",
+            api_key=config.api_key
+        )
 
-        # Stores a rolling window of conversation history for context.
-        # `collections.deque` is used for efficient appends and pops from both ends.
-        # `maxlen` prevents unbounded memory growth.
-        self.conversation_history = collections.deque(maxlen=100)
-        self.context_summary = "" # Placeholder for future context summarization
-
-        # Collects various performance and operational metrics,
-        # such as tool usage counts and state transition history.
-        self.metrics = {
-            'tool_calls': collections.defaultdict(int),
-            'state_changes': [],
-            'conversation_turns': 0
-        }
-
-        # Flags to signal a system shutdown, initiated by the model
-        # via the `shutdown_system` tool.
-        self.shutdown_requested = False
-        self.shutdown_reason = ""
-
-        # Adiciona um modelo dedicado para a ferramenta deep_think
         self.deep_think_model = genai_model.GenaiModel(
-            api_key=api_key,
-            model_name="gemini-2.5-pro",
+            api_key=config.api_key,
+            model_name=config.deep_think_model_name,
             generate_content_config=genai_types.GenerateContentConfig(
                 temperature=0.4,
                 max_output_tokens=4096,
             )
         )
 
-        # Sistema de memória integrado
-        self.memory_system = LeonidasMemorySystem(
-            summary_file="summary.txt",
-            history_dir="history",
-            api_key=api_key
-        )
+        self.tool_dispatcher = ToolDispatcher(self.state, self.config, self.deep_think_model)
         
-        # Flag para controlar se a inicialização contextual já foi executada
-        self.context_initialized = False
+        self.reflection_analyzer = ReflectionAnalyzer(self.state)
 
-        # Configure the Live API processor. This is the core component that
-        # interacts with Google's Gemini Live API for real-time conversational AI.
         self.live_processor = live_model.LiveProcessor(
-            api_key=api_key,
-            model_name=MODEL_LIVE,
-            # `realtime_config` defines the behavior of the Gemini Live API session.
-            # This configuration is critical for real-time performance, tool availability,
-            # and speech characteristics.
-            # Reference: `.kiro/steering/gemini-models-complete-reference.md`
+            api_key=config.api_key,
+            model_name=config.live_model_name,
             realtime_config=genai_types.LiveConnectConfig(
-                # `tools` declares the functions the model can call.
                 tools=LEONIDAS_TOOLS,
-                # `system_instruction` provides the model with its persona,
-                # directives, and tool usage protocols.
                 system_instruction=LEONIDAS_SYSTEM_PROMPT,
-                # `output_audio_transcription` enables transcription of the model's
-                # spoken output, useful for logging and debugging.
                 output_audio_transcription={},
-                # Enables transcription of the user's spoken input.
                 input_audio_transcription={},
-                # `realtime_input_config` defines how real-time inputs (audio/video)
-                # are handled, including turn coverage for conversation turns.
                 realtime_input_config=genai_types.RealtimeInputConfig(
                     turn_coverage='TURN_INCLUDES_ALL_INPUT'
                 ),
-                # `response_modalities` specifies the types of output the model should
-                # generate (e.g., AUDIO, TEXT).
                 response_modalities=['AUDIO'],
-                # `speech_config` defines the language and voice for Text-to-Speech.
-                # 'Kore' is selected for its professional and clear tone in Portuguese.
                 speech_config={
                     'language_code': 'pt-BR',
-                    'voice_config': {
-                        'prebuilt_voice_config': {
-                            'voice_name': 'Kore'
-                        }
-                    }
+                    'voice_config': {'prebuilt_voice_config': {'voice_name': 'Kore'}}
                 },
-                # `media_resolution` balances quality and latency for visual inputs.
                 media_resolution=genai_types.MediaResolution.MEDIA_RESOLUTION_MEDIUM,
-                # `max_output_tokens` limits the length of model responses,
-                # crucial for maintaining conversational flow and controlling costs.
                 max_output_tokens=500
             ),
-            # `http_options` can specify API version or other HTTP client settings.
             http_options=genai_types.HttpOptions(api_version='v1alpha')
         )
 
@@ -700,553 +974,66 @@ class LeonidasOrchestrator(processor.Processor):
         self,
         content: AsyncIterable[content_api.ProcessorPart]
     ) -> AsyncIterable[content_api.ProcessorPart]:
-        """Main orchestration loop for Leonidas.
-
-        This method processes the incoming stream of multimodal content,
-        sends it to the Gemini Live API, and handles the model's responses,
-        including text, audio, and tool calls.
-        """
-
-        # Inicialização contextual na primeira execução
+        """Main orchestration loop for Leonidas."""
         if not self.context_initialized:
             await self._initialize_contextual_session()
             self.context_initialized = True
 
-        # A queue to inject responses from tool calls back into the main
-        # processing stream. This allows tool outputs to be treated as
-        # new inputs for the model.
         tool_response_queue = asyncio.Queue()
-
-        # Processa stream de entrada através do sistema de memória
         memory_enhanced_content = self.memory_system.get_runtime_processor()(content)
 
-        # Merge the primary content stream (from InputManager) with the
-        # stream of tool responses. This ensures that tool responses are processed
-        # by the Live API as part of the ongoing conversation.
         merged_input = streams.merge([
             memory_enhanced_content,
-            streams.dequeue(tool_response_queue)
-        ], stop_on_first=True)
-
-        # The `live_processor` handles the actual communication with the
-        # Gemini Live API, managing the WebSocket connection and streaming
-        # of inputs and outputs.
-        async for part in self.live_processor(merged_input):
-
-            # If the part is text, add it to the conversation history.
-            # This is used for context management and future `get_context` calls.
-            if content_api.is_text(part.mimetype) and part.text:
-                self._add_to_conversation_history(part)
-
-            # If the part is a function call from the model, handle it
-            # by executing the corresponding Python function and queuing
-            # its response back to the model. This is the core of the
-            # model's self-control and tool usage.
-            if part.function_call:
-                await self._handle_function_call(part, tool_response_queue)
-
-            # Yield all parts (text, audio, etc.) to the next processor in the pipeline (OutputManager).
-            yield part
-
-    def _add_to_conversation_history(self, part: content_api.ProcessorPart):
-        """Add part to conversation history.
-
-        This method stores relevant parts (user input, model output) in a
-        `collections.deque` to maintain a rolling window of the conversation.
-        It also updates the total conversation turn count.
-        """
-        self.conversation_history.append({
-            'timestamp': time.time(),
-            'role': part.role,
-            'text': part.text,
-            'metadata': part.metadata
-        })
-
-        if part.role.lower() == 'user':
-            self.metrics['conversation_turns'] += 1
-
-    async def _handle_function_call(
-        self,
-        part: content_api.ProcessorPart,
-        response_queue: asyncio.Queue
-    ): # type: ignore
-        """Handles function calls made by the Gemini model.
-
-        This method extracts the function name and arguments from the
-        `ProcessorPart`, updates internal metrics, and dispatches the call
-        to the appropriate handler function (e.g., `_handle_think`,
-        `_handle_shutdown_system`). The result is then queued back to the model.
-        """
-
-        call_id = part.get_metadata('id')
-        function_name = part.function_call.name
-        arguments = part.function_call.args if hasattr(part.function_call, 'args') else {}
-
-        # Update metrics for tool calls.
-        self.metrics['tool_calls'][function_name] += 1
-
-        # Route to appropriate handler
-        response = None
-        # Each `_handle_X` method corresponds to a tool declared in `LEONIDAS_TOOLS`.
-        # They execute the logic associated with the tool and return a
-        # `ProcessorPart` containing the function response, which is then
-        # sent back to the model.
-        # Reference: `.kiro/steering/gemini-function-scheduling-patterns.md`
-
-        if function_name == 'think':
-            response = await self._handle_think(call_id, arguments)
-        elif function_name == 'change_state':
-            response = await self._handle_change_state(call_id, arguments)
-        elif function_name == 'get_context':
-            response = await self._handle_get_context(call_id, arguments)
-        elif function_name == 'get_time':
-            response = await self._handle_get_time(call_id, arguments)
-        elif function_name == 'shutdown_system':
-            response = await self._handle_shutdown_system(call_id, arguments)
-        elif function_name == 'wait_in_silence':
-            response = await self._handle_wait_in_silence(call_id, arguments)
-        elif function_name == 'deep_think':
-            response = await self._handle_deep_think(call_id, arguments)
-        else:
-            response = await self._handle_unknown_function(call_id, function_name)
-
-        # Queue the response back to the model.
-        if response:
-            await response_queue.put(response)
-
-    async def _handle_think(self, call_id: str, args: dict) -> content_api.ProcessorPart:
-        """Handles the `think` tool call.
-
-        This tool is mandatory for the model to externalize its reasoning
-        process. The analysis, reasoning, and plan are logged internally
-        (structured JSON log) and printed to the console for transparency.
-        The response to the model is `SILENT` as thinking is an internal process.
-        """
-
-        analysis = args.get('analysis', 'No analysis provided')
-        reasoning = args.get('reasoning', 'No reasoning provided')
-        next_action = args.get('plan', 'No action planned') # Alterado de 'next_action' para 'plan'
-
-        # Prepare structured log data for the thinking process.
-        log_data = {
-            'tool_call': 'think',
-            'analysis': analysis,
-            'reasoning': reasoning,
-            'plan': next_action,
-        }
-        # Log the thinking process with structured data for later analysis.
-        logger.info("Model is thinking", extra={'extra_data': log_data})
-
-        # Keep console logs for readability, showing the model's internal thought process.
-        print("🧠 LEONIDAS THINKING:")
-        print(f"   Analysis: {analysis}")
-        print(f"   Reasoning: {reasoning}")
-        print(f"   Next Action: {next_action}")
-
-        # Store thinking in conversation history.
-        # This allows the model to refer back to its own thought process
-        # in subsequent turns via `get_context`.
-        self.conversation_history.append({
-            'timestamp': time.time(),
-            'role': 'system',
-            'text': f"THINKING - Analysis: {analysis} | Reasoning: {reasoning} | Next: {next_action}",
-            'metadata': {'type': 'thinking', 'function': 'think'}
-        })
-
-        # Return a silent function response to the model.
-        # `SILENT` scheduling means the model does not expect a verbal response
-        # from the system for this tool call, as it's an internal action.
-        return content_api.ProcessorPart.from_function_response(
-            function_call_id=call_id,
-            name='think',
-            response={'status': 'thinking_complete'},
-            scheduling=genai_types.FunctionResponseScheduling.SILENT
-        )
-
-    async def _handle_change_state(self, call_id: str, args: dict) -> content_api.ProcessorPart: # type: ignore
-        """Handles the `change_state` tool call.
-
-        This tool allows the model to control its own operational state
-        (e.g., 'listening', 'analyzing'). This is a key aspect of the
-        model's self-management and adaptability.
-        """
-
-        new_state = args.get('new_state', self.agent_state)
-        reason = args.get('reason', 'No reason provided')
-
-        old_state = self.agent_state
-        self.agent_state = new_state
-        self.state_reason = reason
-
-        # Record state change for metrics and history.
-        state_change = {
-            'timestamp': time.time(),
-            'from_state': old_state,
-            'to_state': new_state,
-            'reason': reason
-        }
-        self.metrics['state_changes'].append(state_change)
-        # Log the state change for debugging and auditing.
-        logger.info(f"STATE CHANGE: {old_state} → {new_state} ({reason})")
-
-        return content_api.ProcessorPart.from_function_response(
-            function_call_id=call_id,
-            name='change_state',
-            response={
-                'status': 'success',
-                'old_state': old_state,
-                'new_state': new_state,
-                'reason': reason
-            },
-            scheduling=genai_types.FunctionResponseScheduling.SILENT
-        )
-
-    async def _handle_get_context(self, call_id: str, args: dict) -> content_api.ProcessorPart: # type: ignore
-        """Handles the `get_context` tool call.
-
-        This tool allows the model to retrieve various types of contextual
-        information, such as conversation history or system status, to inform
-        its responses and maintain continuity.
-        """
-
-        context_type = args.get('context_type', 'conversation_history')
-
-        context_data = {}
-
-        if context_type == 'conversation_history':
-            recent_history = list(self.conversation_history)[-10:]  # Last 10 entries
-            # Summarize recent conversation entries to fit within token limits
-            # and provide a concise overview to the model.
-            context_data = {
-                'recent_conversations': [
-                    f"{entry['role']}: {entry['text'][:100]}..."
-                    if len(entry['text']) > 100 else f"{entry['role']}: {entry['text']}"
-                    for entry in recent_history
-                ],
-                'total_turns': self.metrics['conversation_turns']
-            }
-
-        elif context_type == 'system_status':
-            context_data = {
-                # Provide current operational state and tool usage statistics.
-                # This helps the model understand its own environment.
-                'current_state': self.agent_state,
-                'state_reason': self.state_reason,
-                'tool_usage': dict(self.metrics['tool_calls']),
-                'uptime': time.time()  # Simplified uptime
-            }
-
-        elif context_type == 'user_context':
-            # Extract recent user messages to infer user's current focus or
-            # interaction patterns.
-            user_messages = [
-                entry for entry in self.conversation_history
-                if entry['role'].lower() == 'user'
-            ][-5:]  # Last 5 user messages
-
-            context_data = {
-                'recent_user_topics': [msg['text'][:50] + '...' for msg in user_messages],
-                'user_interaction_frequency': len(user_messages)
-            }
-
-        elif context_type == 'recent_topics':
-            # A simple summarization of recent text content to extract
-            # overarching themes. In a more advanced system, this would use an LLM.
-            all_text = ' '.join([
-                entry['text'] for entry in list(self.conversation_history)[-20:]
-                if entry.get('text')
-            ])
-            context_data = {
-                'conversation_summary': all_text[:200] + '...' if len(all_text) > 200 else all_text
-            }
-        # Log the context request and the data provided to the model.
-        logger.info(f"CONTEXT REQUEST ({context_type}): {context_data}")
-
-        return content_api.ProcessorPart.from_function_response(
-            function_call_id=call_id,
-            name='get_context',
-            response=context_data,
-            scheduling=genai_types.FunctionResponseScheduling.SILENT
-        )
-
-    async def _handle_get_time(self, call_id: str, args: dict) -> content_api.ProcessorPart: # type: ignore
-        """Handles the `get_time` tool call.
-
-        Provides the current date and time in various formats as requested by the model.
-        """
-
-        format_type = args.get('format', 'datetime')
-        now = datetime.datetime.now()
-
-        time_data = {}
-
-        if format_type == 'datetime':
-            time_data = {
-                'current_datetime': now.strftime('%Y-%m-%d %H:%M:%S'),
-                'day_of_week': now.strftime('%A'),
-                'timezone': 'Local'
-            }
-        elif format_type == 'date':
-            time_data = {
-                'current_date': now.strftime('%Y-%m-%d'),
-                'day_of_week': now.strftime('%A')
-            }
-        elif format_type == 'time':
-            time_data = {
-                'current_time': now.strftime('%H:%M:%S')
-            }
-        elif format_type == 'timestamp':
-            time_data = {
-                'timestamp': int(now.timestamp()),
-                'iso_format': now.isoformat()
-            }
-        # Log the time request and the data returned.
-        logger.info(f"TIME REQUEST ({format_type}): {time_data}")
-
-        return content_api.ProcessorPart.from_function_response(
-            function_call_id=call_id,
-            name='get_time',
-            response=time_data,
-            scheduling=genai_types.FunctionResponseScheduling.SILENT
-        )
-
-    async def _handle_shutdown_system(self, call_id: str, args: dict) -> content_api.ProcessorPart: # type: ignore
-        """Handles the `shutdown_system` tool call.
-
-        This critical tool allows the model to initiate a graceful shutdown
-        of the Leonidas system, but only after explicit user confirmation.
-        """
-
-        confirmation = args.get('confirmation', False)
-        reason = args.get('reason', 'No reason provided')
-
-        # If the model calls `shutdown_system` without `confirmation=true`,
-        # it's denied, and a warning is logged. This enforces the safety
-        # mechanism for critical operations.
-        if not confirmation:
-            logger.warning(f"SHUTDOWN REQUEST DENIED: No confirmation provided")
-            return content_api.ProcessorPart.from_function_response(
-                function_call_id=call_id,
-                name='shutdown_system',
-                response={
-                    'status': 'denied',
-                    'message': 'Shutdown requer confirmação explícita'
-                },
-                scheduling=genai_types.FunctionResponseScheduling.WHEN_IDLE
-            )
-
-        # Log the successful shutdown request.
-        logger.info(f"SYSTEM SHUTDOWN REQUESTED: {reason}")
-
-        # Add shutdown event to conversation history for auditing.
-        self.conversation_history.append({
-            'timestamp': time.time(),
-            'role': 'system',
-            'text': f"SHUTDOWN INITIATED - Reason: {reason}",
-            'metadata': {'type': 'shutdown', 'function': 'shutdown_system'}
-        })
-
-        # Finaliza sessão de memória antes do shutdown
-        try:
-            await self._finalize_session()
-        except Exception as e:
-            logger.error(f"Error finalizing session during shutdown: {e}")
-
-        # Set the internal flag that signals the main execution loop
-        # to initiate the system shutdown.
-        self.shutdown_requested = True
-        self.shutdown_reason = reason
-
-        return content_api.ProcessorPart.from_function_response(
-            function_call_id=call_id,
-            name='shutdown_system',
-            response={
-                'status': 'shutdown_initiated',
-                'reason': reason,
-                'message': 'Sistema será desligado em breve. Sessão salva com sucesso. Obrigado por usar o Leonidas!'
-            },
-            scheduling=genai_types.FunctionResponseScheduling.WHEN_IDLE
-        )
-
-    async def _handle_wait_in_silence(self, call_id: str, args: dict) -> content_api.ProcessorPart:
-        """Handles the `wait_in_silence` tool call.
-
-        This tool allows the model to signal that it should wait silently,
-        without generating any verbal output, for a specified duration or
-        until new user input is detected.
-        """
-        duration = args.get('duration_seconds', 0.0)
-        reason = args.get('reason', 'Aguardando entrada do usuário ou processamento interno.')
-
-        log_data = {
-            'tool_call': 'wait_in_silence',
-            'duration_seconds': duration,
-            'reason': reason,
-        }
-        logger.info("Modelo está aguardando em silêncio", extra={'extra_data': log_data})
-        print(f"🤫 LEONIDAS AGUARDANDO EM SILÊNCIO (por {duration:.1f}s, motivo: {reason})")
-
-        # Store waiting event in conversation history.
-        self.conversation_history.append({
-            'timestamp': time.time(),
-            'role': 'system',
-            'text': f"AGUARDANDO EM SILÊNCIO - Duração: {duration}s, Motivo: {reason}",
-            'metadata': {'type': 'waiting', 'function': 'wait_in_silence'}
-        })
-
-        # Return a silent function response to the model.
-        # `SILENT` scheduling means the model does not expect a verbal response
-        # from the system for this tool call, as it's an internal action.
-        return content_api.ProcessorPart.from_function_response(
-            function_call_id=call_id,
-            name='wait_in_silence',
-            response={'status': 'waiting_initiated', 'duration_seconds': duration, 'reason': reason},
-            scheduling=genai_types.FunctionResponseScheduling.SILENT
-        )
-
-    async def _handle_deep_think(self, call_id: str, args: dict) -> content_api.ProcessorPart:
-        """Handles the `deep_think` tool call using a more powerful model."""
-        problem_statement = args.get('problem_statement')
-        additional_context = args.get('additional_context', 'Nenhum contexto adicional fornecido.')
-
-        if not problem_statement:
-            return content_api.ProcessorPart.from_function_response(
-                function_call_id=call_id,
-                name='deep_think',
-                response={'error': 'O parâmetro "problem_statement" é obrigatório.'},
-                scheduling=genai_types.FunctionResponseScheduling.SILENT
-            )
-
-        # Log the initiation of the deep thinking process
-        log_data = {
-            'tool_call': 'deep_think',
-            'problem_statement': problem_statement,
-        }
-        logger.info("Initiating deep think process", extra={'extra_data': log_data})
-        print(f"🤔 LEONIDAS DEEP THINKING on: {problem_statement}")
-
-        # Construct the prompt for the deep think model
-        prompt = f"""
-        Você é um especialista sênior em engenharia de software e arquitetura. Sua tarefa é realizar uma análise profunda e estruturada sobre o seguinte problema. Seja detalhado, claro e forneça insights acionáveis.
-
-        **Problema/Tópico para Análise Profunda:**
-        {problem_statement}
-
-        **Contexto Adicional:**
-        {additional_context}
-
-        **Instruções de Saída:**
-        1.  **Análise do Problema:** Decomponha o problema em suas partes fundamentais.
-        2.  **Abordagens Possíveis:** Descreva pelo menos duas soluções ou abordagens distintas, com seus prós e contras.
-        3.  **Recomendação:** Forneça uma recomendação clara e justificada sobre a melhor abordagem.
-        4.  **Plano de Ação:** Descreva os próximos passos ou um plano de implementação de alto nível.
-        5.  **Riscos e Mitigações:** Identifique potenciais riscos e como mitigá-los.
-
-        Responda de forma estruturada usando markdown.
-        """
-
-        # Create a stream for the model input
-        input_stream = streams.stream_content([
-            content_api.ProcessorPart(prompt, role='user')
+            streams.dequeue(tool_response_queue),
+            streams.dequeue(self.initial_message_queue),
         ])
 
-        # Call the deep think model
-        try:
-            response_stream = self.deep_think_model(input_stream)
-            # Gather the full response
-            response_parts = await streams.gather_stream(response_stream)
-            deep_thought_output = content_api.as_text(response_parts)
+        async for part in self.live_processor(merged_input):
+            if content_api.is_text(part.mimetype) and part.text:
+                self.state.add_history_entry(part)
+                
+                if part.role.lower() == 'model' and len(part.text.strip()) > 10:
+                    asyncio.create_task(self.reflection_analyzer.schedule_automatic_reflection())
 
-            logger.info("Deep think process completed successfully.", extra={
-                'extra_data': {'output_length': len(deep_thought_output)}
-            })
-            print("✅ DEEP THINKING complete.")
-
-            # Return the result to the main model
-            return content_api.ProcessorPart.from_function_response(
-                function_call_id=call_id,
-                name='deep_think',
-                response={
-                    'status': 'success',
-                    'deep_thought_output': deep_thought_output
-                },
-                # Use BLOCKING as the main model will likely need this result to proceed.
-                scheduling=genai_types.FunctionResponseScheduling.BLOCKING
-            )
-        except Exception as e:
-            logger.error(f"Error during deep think process: {e}", exc_info=True)
-            print(f"❌ DEEP THINKING failed: {e}")
-            return content_api.ProcessorPart.from_function_response(
-                function_call_id=call_id,
-                name='deep_think',
-                response={'error': f'An error occurred during deep thinking: {str(e)}'},
-                scheduling=genai_types.FunctionResponseScheduling.SILENT
-            )
-
-    async def _handle_unknown_function(self, call_id: str, function_name: str) -> content_api.ProcessorPart: # type: ignore
-        """Handles calls to functions not explicitly defined in `LEONIDAS_TOOLS`.
-
-        This serves as a fallback for unexpected model behavior or
-        unimplemented tools, logging a warning for debugging.
-        """
-
-        logger.warning(f"UNKNOWN FUNCTION CALL: {function_name}")
-
-        return content_api.ProcessorPart.from_function_response(
-            function_call_id=call_id,
-            name=function_name,
-            response={'error': f'Unknown function: {function_name}'},
-            scheduling=genai_types.FunctionResponseScheduling.SILENT
-        )
+            if part.function_call:
+                response = await self.tool_dispatcher.dispatch(part)
+                if response:
+                    await tool_response_queue.put(response)
+            
+            yield part
 
     async def _initialize_contextual_session(self):
-        """Inicializa sessão com contexto carregado do sistema de memória."""
+        """Initializes session with context loaded from the memory system."""
         try:
             logger.info("Initializing contextual session with memory system")
-            
-            # Executa pipeline de inicialização do sistema de memória
             async for part in self.memory_system.initialize_session():
-                # Processa cumprimentos contextuais
-                if (part.substream_name == 'contextual_greeting' and 
-                    part.role == 'assistant' and 
-                    part.text.strip()):
-                    
-                    # Injeta cumprimento contextual no sistema
-                    logger.info("Contextual greeting generated", extra={
-                        'extra_data': {
-                            'greeting_type': part.metadata.get('greeting_type', 'contextual'),
-                            'greeting_length': len(part.text)
-                        }
-                    })
-                    
-                    # Adiciona ao histórico de conversação
-                    self._add_to_conversation_history(part)
-                    
-                    print(f"🤝 LEONIDAS (Contextual): {part.text}")
-                    
-                elif part.substream_name == 'silent_initialization':
-                    # Inicialização silenciosa
-                    logger.info("Silent initialization configured")
-                    print("🔇 LEONIDAS: Initialized silently, ready to assist")
-                    
-                elif part.substream_name == 'default_greeting':
-                    # Cumprimento padrão (primeira execução)
-                    logger.info("Default greeting for first execution")
-                    self._add_to_conversation_history(part)
-                    print(f"👋 LEONIDAS: {part.text}")
-                    
+                if (part.substream_name in ['contextual_greeting', 'silent_initialization', 'default_greeting'] and
+                    part.role in ['assistant', 'system']):
+                    log_message = "Contextual greeting generated"
+                    if part.substream_name == 'silent_initialization':
+                        log_message = "Silent initialization configured"
+                    elif part.substream_name == 'default_greeting':
+                        log_message = "Default greeting for first execution"
+                    logger.info(log_message, extra={'extra_data': {'type': part.substream_name, 'text_length': len(part.text or '')}})
+                    if part.text and part.text.strip():
+                        self.state.add_history_entry(part)
+                    await self.initial_message_queue.put(part)
         except Exception as e:
             logger.error(f"Error during contextual initialization: {e}")
-            # Fallback para inicialização padrão
-            print("👋 LEONIDAS: Olá! Sou o Leonidas, seu parceiro de desenvolvimento. Como posso ajudar hoje?")
+            fallback_greeting = content_api.ProcessorPart(
+                "Olá! Sou o Leonidas, seu parceiro de desenvolvimento. Como posso ajudar hoje?",
+                role='assistant', substream_name='default_greeting', metadata={'greeting_type': 'fallback'}
+            )
+            await self.initial_message_queue.put(fallback_greeting)
+        finally:
+            await self.initial_message_queue.put(None)
 
-    async def _finalize_session(self):
-        """Finaliza sessão e processa resumo através do sistema de memória."""
+    async def finalize_session(self):
+        """Finalizes the session and processes the summary through the memory system."""
         try:
             logger.info("Finalizing session and generating summary")
-            
-            # Executa pipeline de finalização do sistema de memória
-            async for part in self.memory_system.finalize_session():
+            session_data = list(self.state.conversation_history)
+            async for part in self.memory_system.finalize_session(session_data):
                 if part.metadata.get('summary_type') == 'consolidated_summary':
                     logger.info("Session summary consolidated", extra={
                         'extra_data': {
@@ -1256,13 +1043,12 @@ class LeonidasOrchestrator(processor.Processor):
                         }
                     })
                     print("📝 Session summary updated successfully")
-                    
         except Exception as e:
-            logger.error(f"Error during session finalization: {e}")
+            logger.error(f"Error during session finalization: {e}", exc_info=True)
             print("⚠️ Warning: Could not save session summary")
 
     def get_memory_stats(self) -> dict:
-        """Retorna estatísticas do sistema de memória."""
+        """Returns statistics from the memory system."""
         try:
             return self.memory_system.get_session_stats()
         except Exception as e:
@@ -1278,32 +1064,6 @@ class LeonidasOrchestrator(processor.Processor):
 # Reference: `leonidas/README.md` (Architecture),
 # `.kiro/steering/genai-processors-architecture.md` (Processor Composition).
 
-def create_leonidas_agent_v2(api_key: str, pya: pyaudio.PyAudio = None, video_mode: Optional[str] = None) -> processor.Processor:
-    """
-    Create the complete Leonidas v2 agent with modular architecture.
-
-    This factory function composes the three main processors:
-    1. InputManager - Hardware input abstraction
-    2. LeonidasOrchestrator - Core intelligence and tool execution
-    3. OutputManager - Hardware output abstraction
-
-    Args:
-        api_key: Google AI API key for Gemini Live API
-        pya: PyAudio instance for audio I/O
-        video_mode: Optional video input mode ('camera' or 'screen'). If None,
-          video is disabled.
-
-    Returns:
-        Complete Leonidas v2 processor pipeline
-    """
-
-    return (
-        InputManager(pya, video_mode) +      # Layer 1: Input abstraction
-        LeonidasOrchestrator(api_key) +      # Layer 2: Core intelligence
-        OutputManager(pya)                   # Layer 3: Output abstraction
-    )
-
-
 # === MAIN EXECUTION ===
 
 # This function serves as the main entry point for running the Leonidas agent.
@@ -1314,61 +1074,38 @@ def create_leonidas_agent_v2(api_key: str, pya: pyaudio.PyAudio = None, video_mo
 async def run_leonidas(api_key: str, video_mode: Optional[str] = None, debug: bool = False):
     """
     Run the Leonidas v2 agent.
-
     Args:
         api_key: Google AI API key
         video_mode: Optional video input mode ('camera' or 'screen').
         debug: Enable debug logging
     """
-
-    # Setup logging for the session, creating a unique log file.
-    # This is the first step to ensure all subsequent operations are logged.
     log_file = setup_logging(debug)
-
-    # Set an environment variable for video mode if screen capture is requested.
-    # This might be used by underlying video capture libraries.
     if video_mode == 'screen':
         os.environ['VIDEO_MODE'] = 'screen'
 
-    # Initialize PyAudio, which is required for microphone input and speaker output.
     pya = pyaudio.PyAudio()
+    
+    config = LeonidasConfig(api_key=api_key)
+    orchestrator_ref = None
 
-    # Define a controllable stream that can be shut down via an event.
-    async def _controllable_endless_stream(
-        shutdown_event: asyncio.Event,
-    ) -> AsyncIterable[Any]:
-        """A stream that runs until a shutdown event is set."""
+    async def _controllable_endless_stream(shutdown_event: asyncio.Event) -> AsyncIterable[Any]:
         while not shutdown_event.is_set():
             try:
                 await asyncio.sleep(1)
             except asyncio.CancelledError:
                 break
         logger.info("Controllable stream is shutting down.")
-        # The generator finishes when the loop ends, closing the stream.
-        if False:
-            yield
+        if False: yield
 
-    async def _monitor_shutdown(shutdown_event: asyncio.Event, orchestrator):
-        """Monitor shutdown requests independently of the main processing loop."""
+    async def _monitor_shutdown(shutdown_event: asyncio.Event, orchestrator: LeonidasOrchestrator):
         while not shutdown_event.is_set():
             try:
-                if (
-                    orchestrator
-                    and hasattr(orchestrator, 'shutdown_requested')
-                    and orchestrator.shutdown_requested
-                ):
-                    logger.info(
-                        'SHUTDOWN DETECTED BY MONITOR: %s',
-                        orchestrator.shutdown_reason,
-                    )
-                    print(
-                        '\n🔴 System shutting down (detected by monitor): %s'
-                        % orchestrator.shutdown_reason
-                    )
+                if orchestrator and orchestrator.state.shutdown_requested:
+                    logger.info('SHUTDOWN DETECTED BY MONITOR: %s', orchestrator.state.shutdown_reason)
+                    print('\n🔴 System shutting down (detected by monitor): %s' % orchestrator.state.shutdown_reason)
                     shutdown_event.set()
                     break
-                
-                await asyncio.sleep(0.5)  # Check every 500ms
+                await asyncio.sleep(0.5)
             except asyncio.CancelledError:
                 break
             except Exception as e:
@@ -1376,244 +1113,68 @@ async def run_leonidas(api_key: str, video_mode: Optional[str] = None, debug: bo
                 await asyncio.sleep(1)
 
     try:
-        # Create the full Leonidas agent pipeline using the factory function.
-        agent = create_leonidas_agent_v2(api_key, pya, video_mode)
+        # Instancia os processadores modulares
+        input_manager = InputManager(pya, config, video_mode)
+        orchestrator_ref = LeonidasOrchestrator(config)
+        output_manager = OutputManager(pya, config)
+        
+        # Compõe o agente encadeando os processadores
+        agent = input_manager + orchestrator_ref + output_manager
 
-        # Log startup messages to inform the user.
         logger.info("Leonidas v2 iniciando...")
         logger.info(f"Logs sendo salvos em: {log_file}")
         logger.info("Use Ctrl+C para encerrar")
 
-        logger.info("Criando contexto do processador...")
-        # `processor.context()` creates an `asyncio.TaskGroup` that manages
-        # all background tasks spawned by processors within this context.
-        # This ensures proper cancellation and error propagation across the pipeline.
-        # Reference: `.kiro/steering/genai-processors-architecture.md` (Context and Task Management).
         async with processor.context():
-            logger.info("Contexto criado, iniciando stream...")
             shutdown_event = asyncio.Event()
-
-            # The `agent` is called with a controllable stream. When the
-            # shutdown_event is set, the stream will end, causing the entire
-            # processing pipeline to drain and shut down gracefully.
-            if video_mode:
-                logger.info("Iniciando captura de áudio e vídeo...")
-            else:
-                logger.info("Iniciando captura de áudio...")
-
             part_count = 0
             
-            # Get direct reference to orchestrator for shutdown monitoring
-            orchestrator = None
-            if hasattr(agent, '_processors') and len(agent._processors) >= 2:
-                orchestrator = agent._processors[1]
-            elif hasattr(agent, '_processor') and hasattr(agent._processor, '_processors'):
-                # Handle nested processor structures
-                nested_processors = agent._processor._processors
-                if len(nested_processors) >= 2:
-                    orchestrator = nested_processors[1]
-            
-            if not orchestrator or not hasattr(orchestrator, 'shutdown_requested'):
-                logger.warning("Could not find orchestrator for shutdown monitoring")
-            else:
-                # Start shutdown monitor task
-                monitor_task = asyncio.create_task(_monitor_shutdown(shutdown_event, orchestrator))
-            
+            monitor_task = asyncio.create_task(_monitor_shutdown(shutdown_event, orchestrator_ref))
+
             try:
-                async for part in agent(
-                    _controllable_endless_stream(shutdown_event)
-                ):
+                async for part in agent(_controllable_endless_stream(shutdown_event)):
                     part_count += 1
-
-                    # Check for shutdown request after each part
-                    if (
-                        orchestrator
-                        and hasattr(orchestrator, 'shutdown_requested')
-                        and orchestrator.shutdown_requested
-                        and not shutdown_event.is_set()
-                    ):
-                        logger.info(
-                            'SHUTDOWN REQUESTED BY MODEL: %s',
-                            orchestrator.shutdown_reason,
-                        )
-                        print(
-                            '\n🔴 System shutting down: %s'
-                            % orchestrator.shutdown_reason
-                        )
+                    if orchestrator_ref.state.shutdown_requested and not shutdown_event.is_set():
+                        logger.info('SHUTDOWN REQUESTED BY MODEL: %s', orchestrator_ref.state.shutdown_reason)
+                        print('\n🔴 System shutting down: %s' % orchestrator_ref.state.shutdown_reason)
                         shutdown_event.set()
-                        break  # Exit the loop immediately
-
-                    # Skip logging for heartbeat parts (e.g., from video stream)
-                    # to avoid excessive log spam, especially in debug mode.
-                    if not part.metadata.get('heartbeat', False):
-                        logger.debug(
-                            'Parte recebida #{}: {} - {}'.format(
-                                part_count, part.mimetype, part.role
-                            )
-                        )
-
-                    # Handle and print transcriptions for a cleaner output.
-                    if (
-                        part.substream_name == 'input_transcription'
-                        and part.text.strip()
-                    ):
+                        break
+                    
+                    if part.substream_name == 'input_transcription' and part.text.strip():
                         print(f"🎤 USER: {part.text}")
-                    elif (
-                        part.substream_name == 'output_transcription'
-                        and part.text.strip()
-                    ):
+                    elif part.substream_name == 'output_transcription' and part.text.strip():
                         print(f"🤖 LEONIDAS: {part.text}")
-                    # The original fragmented text parts from the model have role='MODEL' but no
-                    # substream_name, so they are now ignored, preventing cluttered output.
-                    elif (
-                        content_api.is_text(part.mimetype)
-                        and part.text
-                        and part.text.strip()
-                        and part.role.upper() != 'MODEL'
-                    ):
+                    elif content_api.is_text(part.mimetype) and part.text and part.text.strip() and part.role.upper() != 'MODEL':
                         print(f"[{part.role.upper()}]: {part.text}")
 
-                    # Log other important part types for initial debugging.
-                    elif (
-                        not part.metadata.get('heartbeat', False)
-                        and part_count <= 20
-                    ):
-                        logger.info(
-                            'Parte #{}: {} ({} bytes)'.format(
-                                part_count,
-                                part.mimetype,
-                                len(part.bytes) if part.bytes else 0,
-                            )
-                        )
-
             except asyncio.CancelledError:
-                # This exception is typically raised when the `TaskGroup` is
-                # cancelled, for example, during a graceful shutdown.
                 logger.info("Stream cancelado")
             finally:
-                # Cleanup monitor task if it exists
-                if 'monitor_task' in locals() and not monitor_task.done():
+                if monitor_task and not monitor_task.done():
                     monitor_task.cancel()
                     try:
                         await monitor_task
                     except asyncio.CancelledError:
                         pass
-
             logger.info(f"Stream finalizado após {part_count} partes")
 
     except KeyboardInterrupt:
-        # Handle Ctrl+C for graceful user-initiated shutdown.
         logger.info("Leonidas v2 encerrado pelo usuário")
     except Exception as e:
-        # Catch any unexpected exceptions and log them.
-        logger.error(f"Erro no Leonidas v2: {e}")
+        logger.error(f"Erro no Leonidas v2: {e}", exc_info=True)
         raise
     finally:
-        # Ensure PyAudio resources are always released.
-        pya.terminate()
+        if orchestrator_ref:
+            print("\n📝 Finalizing session and saving summary...")
+            await orchestrator_ref.finalize_session()
 
-        # Log session end.
+        pya.terminate()
         logger.info("=" * 60)
         logger.info("LEONIDAS V2 SESSION ENDED")
         logger.info(f"Log file saved: {log_file}")
         logger.info("=" * 60)
 
 
-if __name__ == '__main__':
-    # This block ensures that `main()` is called only when the script is
-    # executed directly, not when imported as a module.
-    # It parses command-line arguments and initiates the agent's execution.
-
-    import argparse
-
-    # Parse arguments
-    parser = argparse.ArgumentParser(
-        description='Leonidas v2 - Modular Conversational AI Agent',
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  %(prog)s                            # Run in audio-only mode
-  %(prog)s --video-mode camera        # Use camera input
-  %(prog)s --video-mode screen        # Use screen capture
-  %(prog)s --video-mode camera --debug # Enable debug logging
-
-Requirements:
-  - Set GOOGLE_API_KEY environment variable
-  - Install: pip install genai-processors pyaudio
-  - Use headphones to prevent audio feedback
-        """
-    )
-
-    parser.add_argument(
-        '--video-mode',
-        type=str,
-        choices=['camera', 'screen'],
-        default=None,
-        help='Enable video input mode: camera for webcam, screen for screen capture. Disabled by default.'
-    )
-
-    parser.add_argument(
-        '--debug',
-        action='store_true',
-        help='Enable debug logging for troubleshooting'
-    )
-
-    parser.add_argument(
-        '--api-key',
-        type=str,
-        help='Google AI API key (overrides GOOGLE_API_KEY env var)'
-    )
-
-    args = parser.parse_args()
-
-
-    # Get API key
-    api_key = args.api_key or os.environ.get('GOOGLE_API_KEY')
-    if not api_key:
-        print("Error: Google AI API key not found!")
-        print("   Set GOOGLE_API_KEY environment variable or use --api-key")
-        print("   Get your key at: https://aistudio.google.com/app/apikey")
-        sys.exit(1)
-
-    # Display startup information
-    print("=" * 60)
-    print("Leonidas v2 - Conversational AI Agent")
-    print("=" * 60)
-    print(f"Video Mode: {args.video_mode if args.video_mode else 'Disabled'}")
-    print(f"Audio: Enabled (use headphones recommended)")
-    print(f"Model: gemini-live-2.5-flash-preview")
-    print(f"Language: Portuguese Brazilian")
-    print(f"Architecture: Modular (InputManager → Orchestrator → OutputManager)")
-    print("=" * 60)
-    print("Tips:")
-    print("   • Speak naturally - Leonidas will think before responding")
-    print("   • The agent can change its own behavior based on context")
-    print("   • Use Ctrl+C to exit gracefully")
-    print("   • Check console for thinking process and state changes")
-    print("=" * 60)
-
-    try:
-        # Run the agent
-        print("Starting Leonidas v2...")
-        asyncio.run(run_leonidas(api_key, args.video_mode, args.debug))
-
-    except KeyboardInterrupt:
-        print("\nLeonidas v2 shutdown requested by user")
-        print("   Session ended gracefully")
-
-    except ImportError as e:
-        print(f"Import Error: {e}")
-        print("   Install required packages: pip install genai-processors pyaudio")
-        sys.exit(1)
-
-    except Exception as e:
-        print(f"Unexpected Error: {e}")
-        if args.debug:
-            import traceback
-            traceback.print_exc()
-        else:
-            print("   Use --debug flag for detailed error information")
-        sys.exit(1)
 
 
 # === APPENDICE: REGRAS DE MANUTENÇÃO DE ARQUIVO ===

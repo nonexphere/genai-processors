@@ -183,7 +183,7 @@ class LiveProcessor(processor.Processor):
       self, content: AsyncIterable[ProcessorPart]
   ) -> AsyncIterable[ProcessorPart]:
 
-    output_queue = asyncio.Queue[Optional[ProcessorPart]](maxsize=1_000)
+    output_queue = asyncio.Queue[Optional[ProcessorPart]](maxsize=10_000)
 
     async with self._client.aio.live.connect(
         model=self._model_name,

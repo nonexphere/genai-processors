@@ -286,7 +286,7 @@ class ContextLoadProcessor(processor.Processor):
         return f"{self.__class__.__qualname__}:{self.summary_file}"
 
 
-class SummaryGenerationProcessor(processor.Processor):
+class SummaryGenerationProcessor:  # Removido (processor.Processor)
     """Gera resumos inteligentes usando modelo Gemini.
     
     Este processador analisa o histórico de uma sessão e gera um resumo
@@ -306,58 +306,64 @@ class SummaryGenerationProcessor(processor.Processor):
             )
         )
         
-    async def call(self, content: AsyncIterable[content_api.ProcessorPart]) -> AsyncIterable[content_api.ProcessorPartTypes]:
+    async def generate(self, session_parts: List[Dict[str, Any]]) -> Optional[content_api.ProcessorPart]:
         """Processa histórico de sessão e gera resumo estruturado."""
-        
-        # Coleta dados da sessão
-        session_parts = []
-        async for part in content:
-            session_parts.append(part)
-            yield part  # Passa adiante
         
         # Gera resumo se há dados suficientes
         conversational_parts = [
             part for part in session_parts 
-            if (content_api.is_text(part.mimetype) and 
-                part.role in ['user', 'assistant'] and
-                len(part.text.strip()) > 10)  # Ignora partes muito pequenas
+            if (part.get('role') in ['user', 'assistant'] and
+                isinstance(part.get('text'), str) and
+                len(part['text'].strip()) > 10)  # Ignora partes muito pequenas
         ]
         
-        if len(conversational_parts) >= 3:  # Mínimo de interações significativas
-            summary_prompt = self._create_summary_prompt(conversational_parts)
-            
-            # Processa com modelo Gemini
-            summary_stream = self.genai_model(streams.stream_content([
-                content_api.ProcessorPart(
-                    summary_prompt,
-                    role='user',
-                    substream_name='summary_generation'
-                )
-            ]))
-            
-            async for summary_part in summary_stream:
-                # Emite resumo gerado
-                summary_part.metadata['summary_type'] = 'session_summary'
-                summary_part.metadata['source_parts_count'] = len(conversational_parts)
-                summary_part.metadata['generated_at'] = time.time()
-                summary_part.role = 'system'  # Marca como conteúdo do sistema
-                yield summary_part
-                
-                logger.info("Session summary generated", extra={
-                    'extra_data': {
-                        'source_parts': len(conversational_parts),
-                        'summary_length': len(summary_part.text)
-                    }
-                })
-        else:
-            yield processor.debug(f"Insufficient data for summary generation: {len(conversational_parts)} parts")
-    
-    def _create_summary_prompt(self, session_parts: List[content_api.ProcessorPart]) -> str:
+        if len(conversational_parts) < 3:  # Mínimo de interações significativas
+            logger.warning(f"Insufficient data for summary generation: {len(conversational_parts)} parts")
+            return None
+
+        summary_prompt = self._create_summary_prompt(conversational_parts)
+        
+        # Processa com modelo Gemini
+        summary_stream = self.genai_model(streams.stream_content([
+            content_api.ProcessorPart(
+                summary_prompt,
+                role='user',
+                substream_name='summary_generation'
+            )
+        ]))
+        
+        # Coleta a resposta completa do modelo
+        summary_response_parts = await streams.gather_stream(summary_stream)
+        summary_text = content_api.as_text(summary_response_parts)
+
+        if not summary_text.strip():
+            logger.warning("Summary generation resulted in empty text.")
+            return None
+
+        # Retorna resumo gerado como uma única parte
+        summary_part = content_api.ProcessorPart(
+            summary_text,
+            role='system',
+            metadata={
+                'summary_type': 'session_summary',
+                'source_parts_count': len(conversational_parts),
+                'generated_at': time.time()
+            }
+        )
+        
+        logger.info("Session summary generated", extra={
+            'extra_data': {
+                'source_parts': len(conversational_parts),
+                'summary_length': len(summary_part.text)
+            }
+        })
+        return summary_part
+
+    def _create_summary_prompt(self, session_parts: List[Dict[str, Any]]) -> str:
         """Cria prompt para geração de resumo."""
         conversation_text = "\n".join([
-            f"{part.role}: {part.text}" 
-            for part in session_parts 
-            if content_api.is_text(part.mimetype)
+            f"{part.get('role')}: {part.get('text')}" 
+            for part in session_parts
         ])
         
         return f"""
@@ -794,10 +800,8 @@ class LeonidasMemorySystem:
             self.session_history
         )
         
-        self.finalization_pipeline = (
-            self.summary_generation +
-            self.persistent_memory
-        )
+        # O pipeline de finalização agora é apenas o processador de persistência
+        self.finalization_pipeline = self.persistent_memory
         
         logger.info("Leonidas Memory System initialized", extra={
             'extra_data': {
@@ -837,8 +841,8 @@ class LeonidasMemorySystem:
         """Finaliza sessão e processa resumo."""
         if session_data is None:
             # Obtém dados da sessão atual do SessionHistoryProcessor
-            session_data = await self.session_history.finalize_session()
-            session_interactions = session_data.get('interactions', [])
+            session_data_dict = await self.session_history.finalize_session()
+            session_interactions = session_data_dict.get('interactions', [])
         else:
             session_interactions = session_data
         
@@ -846,18 +850,17 @@ class LeonidasMemorySystem:
             yield processor.debug("No session data to process for summary")
             return
         
-        # Converte dados da sessão para stream
-        session_stream = streams.stream_content([
-            content_api.ProcessorPart(
-                interaction['content'],
-                role=interaction['role'],
-                metadata=interaction.get('metadata', {})
-            )
-            for interaction in session_interactions
-            if interaction.get('content', '').strip()  # Ignora interações vazias
-        ])
+        # 1. Gera o resumo usando o método `generate`
+        summary_part = await self.summary_generation.generate(session_interactions)
         
-        async for part in self.finalization_pipeline(session_stream):
+        if not summary_part:
+            yield processor.debug("Summary generation did not produce a result.")
+            return
+
+        # 2. Cria um stream com o resumo gerado e passa para o processador de persistência
+        summary_stream = streams.stream_content([summary_part])
+        
+        async for part in self.finalization_pipeline(summary_stream):
             yield part
     
     async def get_current_context(self) -> Optional[str]:
