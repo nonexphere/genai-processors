@@ -58,29 +58,28 @@ export GOOGLE_API_KEY="your_api_key_here"
 
 ### Basic Usage
 ```bash
+# From the root of the repository:
+
 # Camera mode (default)
-python leonidas/leonidas_cli.py
+python leonidas_cli.py
 
 # Screen capture mode
-python leonidas/leonidas_cli.py --mode screen
+python leonidas_cli.py --video-mode screen
 
 # Debug mode
-python leonidas/leonidas_cli.py --debug
+python leonidas_cli.py --debug
 ```
 
 ### Programmatic Usage
 ```python
 import asyncio
-from leonidas import leonidas
+from genai_processors.agents import leonidas
 
 async def main():
     api_key = "your_api_key"
-    agent = leonidas.create_leonidas_agent_v2(api_key)
     
-    # Run the agent
-    async for part in agent(input_stream):
-        # Handle responses
-        pass
+    # The run_leonidas function handles the agent creation and execution loop.
+    await leonidas.run_leonidas(api_key)
 
 asyncio.run(main())
 ```

@@ -34,10 +34,10 @@ import base64
 from collections.abc import AsyncIterable
 import json
 from typing import Any, Literal
-from genai_processors import content_api
-from genai_processors import mime_types
-from genai_processors import processor
-from genai_processors import tool_utils
+from .. import content_api
+from .. import mime_types
+from .. import processor
+from .. import tool_utils
 from google.genai import types as genai_types
 import httpx
 from pydantic import json_schema

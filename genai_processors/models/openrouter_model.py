@@ -66,9 +66,9 @@ from collections.abc import AsyncIterable
 import json
 from typing import Any
 
-from genai_processors import content_api
-from genai_processors import processor
-from genai_processors import tool_utils
+from .. import content_api
+from .. import processor
+from .. import tool_utils
 from google.genai import types as genai_types
 import httpx
 from typing_extensions import TypedDict

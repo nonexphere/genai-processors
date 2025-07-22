@@ -38,7 +38,7 @@ from genai_processors import debug
 from genai_processors import mime_types
 from genai_processors import processor
 from genai_processors import streams
-from genai_processors.core import speech_to_text
+from . import speech_to_text
 
 
 ProcessorPart = content_api.ProcessorPart

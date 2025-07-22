@@ -28,9 +28,13 @@ import asyncio
 import os
 import sys
 
+import argparse
+import asyncio
+import os
+import sys
+
 from absl import logging
-from genai_processors.core import text
-import leonidas
+from genai_processors.agents import leonidas
 
 def main():
     """Main CLI entry point."""
@@ -104,6 +108,7 @@ Requirements:
     try:
         # Run the agent
         print("Starting Leonidas v2...")
+        # O ponto de entrada agora está dentro do módulo do agente
         asyncio.run(leonidas.run_leonidas(api_key, args.video_mode, args.debug))
         
     except KeyboardInterrupt:

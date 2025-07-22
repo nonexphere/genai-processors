@@ -42,7 +42,7 @@ from genai_processors import content_api
 from genai_processors import processor
 from genai_processors import streams
 from genai_processors import cache
-from genai_processors.core import genai_model
+from genai_processors.models import genai_model
 from google.genai import types as genai_types
 
 # Logger estruturado

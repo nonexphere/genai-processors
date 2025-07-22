@@ -49,8 +49,8 @@ import re
 import time
 from typing import Iterable, Optional
 from absl import logging
-from genai_processors import content_api
-from genai_processors import processor
+from .. import content_api
+from .. import processor
 from google.genai import client
 from google.genai import types as genai_types
 

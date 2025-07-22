@@ -54,8 +54,8 @@ async for part in p(input_stream):
 
 from collections.abc import AsyncIterable
 from typing import Any
-from genai_processors import content_api
-from genai_processors import processor
+from .. import content_api
+from .. import processor
 from google.genai import client
 from google.genai import types as genai_types
 

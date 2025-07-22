@@ -54,14 +54,14 @@ from genai_processors import processor
 from genai_processors import streams
 from genai_processors.streams import endless_stream
 from genai_processors.core import audio_io
-from genai_processors.core import genai_model
-from genai_processors.core import live_model
+from genai_processors.models import genai_model
+from genai_processors.models import live_model
 from genai_processors.core import rate_limit_audio
 from genai_processors.core import video
 from google.genai import types as genai_types
 
 # Import do sistema de memória
-from memory_system import LeonidasMemorySystem
+from .memory_system import LeonidasMemorySystem
 
 # === CONFIGURATION ===
 MODEL_LIVE = 'gemini-live-2.5-flash-preview'

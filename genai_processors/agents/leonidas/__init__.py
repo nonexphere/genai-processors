@@ -13,7 +13,39 @@
 # limitations under the License.
 # ==============================================================================
 
-"""Leonidas v2 - Modular Conversational AI Agent Package."""
+"""
+==============================================================================
+Agente Leonidas: Um Parceiro de Engenharia Colaborativo
+==============================================================================
+
+### Metaprompt do Agente
+
+Leonidas é um agente de IA conversacional projetado para atuar como um
+engenheiro de software sênior. Ele integra percepção multimodal (áudio, vídeo),
+memória persistente e um sistema de ferramentas robusto para colaborar em
+tarefas de desenvolvimento de software em tempo real.
+
+Este pacote contém todos os "legos" que compõem o agente Leonidas.
+
+### Mapa de Componentes:
+
+- **leonidas.py**:
+  - `LeonidasOrchestrator`: O processador central que gerencia o ciclo de vida
+    da conversa, a lógica de ferramentas e a comunicação com o `LiveProcessor`.
+  - `InputManager` / `OutputManager`: Abstrações para hardware de E/S.
+  - `run_leonidas`: A função principal que monta e executa o pipeline do agente.
+  - `LEONIDAS_SYSTEM_PROMPT` / `LEONIDAS_TOOLS`: A "personalidade" e as
+    capacidades do agente, definidas para o modelo Gemini.
+
+- **memory_system.py**:
+  - `LeonidasMemorySystem`: Orquestra a memória de curto e longo prazo,
+    incluindo a geração de resumos e o carregamento de contexto.
+
+- **leonidas_cli.py**:
+  - O ponto de entrada da linha de comando para iniciar o agente (localizado na
+    raiz do projeto).
+
+"""
 
 from .leonidas import (
     InputManager,
@@ -25,32 +57,16 @@ from .leonidas import (
     LEONIDAS_SYSTEM_PROMPT,
 )
 
-from .memory_system import (
-    LeonidasMemorySystem,
-    MemoryInputProcessor,
-    SessionHistoryProcessor,
-    ContextLoadProcessor,
-    SummaryGenerationProcessor,
-    PersistentMemoryProcessor,
-    InitialContextProcessor,
-    ContextualGreetingProcessor,
-)
+from .memory_system import LeonidasMemorySystem
 
-__version__ = "2.0.0"
+__version__ = "2.1.0"
 __all__ = [
     "InputManager",
-    "OutputManager", 
+    "OutputManager",
     "LeonidasOrchestrator",
     "setup_logging",
     "run_leonidas",
     "LEONIDAS_TOOLS",
     "LEONIDAS_SYSTEM_PROMPT",
     "LeonidasMemorySystem",
-    "MemoryInputProcessor",
-    "SessionHistoryProcessor",
-    "ContextLoadProcessor",
-    "SummaryGenerationProcessor",
-    "PersistentMemoryProcessor",
-    "InitialContextProcessor",
-    "ContextualGreetingProcessor",
 ]
