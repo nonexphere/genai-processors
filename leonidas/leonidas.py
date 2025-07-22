@@ -100,7 +100,8 @@ def setup_logging(debug: bool = False) -> str:
     log_path = logs_dir / log_filename
 
     # Configure logging level based on the 'debug' flag.
-    log_level = logging.DEBUG if debug else logging.INFO
+    # Use standard logging levels instead of absl logging levels
+    log_level = std_logging.DEBUG if debug else std_logging.INFO
 
     # Define a custom JSON formatter for structured logging.
     # This allows logs to be easily parsed by log analysis tools and provides
@@ -149,7 +150,11 @@ def setup_logging(debug: bool = False) -> str:
 
     # Also configure `absl.logging` to match the desired verbosity.
     # `absl.logging` is used by some internal `genai-processors` components.
-    logging.set_verbosity(log_level)
+    # Convert std_logging level to absl logging level
+    if debug:
+        logging.set_verbosity(logging.DEBUG)
+    else:
+        logging.set_verbosity(logging.INFO)
 
     # Control verbosity for third-party libraries to reduce noise, especially
     # in non-debug modes. This is crucial for clean production logs.
@@ -620,6 +625,8 @@ class LeonidasOrchestrator(processor.Processor):
                 # `output_audio_transcription` enables transcription of the model's
                 # spoken output, useful for logging and debugging.
                 output_audio_transcription={},
+                # Enables transcription of the user's spoken input.
+                input_audio_transcription={},
                 # `realtime_input_config` defines how real-time inputs (audio/video)
                 # are handled, including turn coverage for conversation turns.
                 realtime_input_config=genai_types.RealtimeInputConfig(
@@ -1002,12 +1009,6 @@ class LeonidasOrchestrator(processor.Processor):
         except Exception as e:
             logger.error(f"Error finalizing session during shutdown: {e}")
 
-        # Finaliza sessão de memória antes do shutdown
-        try:
-            await self._finalize_session()
-        except Exception as e:
-            logger.error(f"Error finalizing session during shutdown: {e}")
-
         # Set the internal flag that signals the main execution loop
         # to initiate the system shutdown.
         self.shutdown_requested = True
@@ -1210,6 +1211,48 @@ async def run_leonidas(api_key: str, video_mode: Optional[str] = None, debug: bo
     # Initialize PyAudio, which is required for microphone input and speaker output.
     pya = pyaudio.PyAudio()
 
+    # Define a controllable stream that can be shut down via an event.
+    async def _controllable_endless_stream(
+        shutdown_event: asyncio.Event,
+    ) -> AsyncIterable[Any]:
+        """A stream that runs until a shutdown event is set."""
+        while not shutdown_event.is_set():
+            try:
+                await asyncio.sleep(1)
+            except asyncio.CancelledError:
+                break
+        logger.info("Controllable stream is shutting down.")
+        # The generator finishes when the loop ends, closing the stream.
+        if False:
+            yield
+
+    async def _monitor_shutdown(shutdown_event: asyncio.Event, orchestrator):
+        """Monitor shutdown requests independently of the main processing loop."""
+        while not shutdown_event.is_set():
+            try:
+                if (
+                    orchestrator
+                    and hasattr(orchestrator, 'shutdown_requested')
+                    and orchestrator.shutdown_requested
+                ):
+                    logger.info(
+                        'SHUTDOWN DETECTED BY MONITOR: %s',
+                        orchestrator.shutdown_reason,
+                    )
+                    print(
+                        '\n🔴 System shutting down (detected by monitor): %s'
+                        % orchestrator.shutdown_reason
+                    )
+                    shutdown_event.set()
+                    break
+                
+                await asyncio.sleep(0.5)  # Check every 500ms
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                logger.error(f"Error in shutdown monitor: {e}")
+                await asyncio.sleep(1)
+
     try:
         # Create the full Leonidas agent pipeline using the factory function.
         agent = create_leonidas_agent_v2(api_key, pya, video_mode)
@@ -1226,55 +1269,113 @@ async def run_leonidas(api_key: str, video_mode: Optional[str] = None, debug: bo
         # Reference: `.kiro/steering/genai-processors-architecture.md` (Context and Task Management).
         async with processor.context():
             logger.info("Contexto criado, iniciando stream...")
+            shutdown_event = asyncio.Event()
 
-            # The `agent` (which starts with `InputManager`) is called with
-            # `endless_stream()`. This is a special stream that never ends,
-            # keeping the input source processors (microphone, camera) alive
-            # and continuously generating input parts.
-            # Reference: `genai_processors/streams.py` (endless_stream).
+            # The `agent` is called with a controllable stream. When the
+            # shutdown_event is set, the stream will end, causing the entire
+            # processing pipeline to drain and shut down gracefully.
             if video_mode:
                 logger.info("Iniciando captura de áudio e vídeo...")
             else:
                 logger.info("Iniciando captura de áudio...")
 
             part_count = 0
+            
+            # Get direct reference to orchestrator for shutdown monitoring
+            orchestrator = None
+            if hasattr(agent, '_processors') and len(agent._processors) >= 2:
+                orchestrator = agent._processors[1]
+            elif hasattr(agent, '_processor') and hasattr(agent._processor, '_processors'):
+                # Handle nested processor structures
+                nested_processors = agent._processor._processors
+                if len(nested_processors) >= 2:
+                    orchestrator = nested_processors[1]
+            
+            if not orchestrator or not hasattr(orchestrator, 'shutdown_requested'):
+                logger.warning("Could not find orchestrator for shutdown monitoring")
+            else:
+                # Start shutdown monitor task
+                monitor_task = asyncio.create_task(_monitor_shutdown(shutdown_event, orchestrator))
+            
             try:
-                async for part in agent(endless_stream()):
+                async for part in agent(
+                    _controllable_endless_stream(shutdown_event)
+                ):
                     part_count += 1
 
-                    # Check if the `shutdown_system` tool was called by the model.
-                    # This involves inspecting the internal structure of the chained
-                    # processor to access the `LeonidasOrchestrator` instance.
-                    # This is a direct implementation of the "Encerramento Gracioso"
-                    # requirement from `leonidas/REQUIREMENTS.md` (Section 4.2).
-                    # Note: Accessing `_processors` directly is for internal control
-                    # and relies on the known pipeline structure.
-                    if hasattr(agent, '_processors') and len(agent._processors) >= 2:
-                        # Get the orchestrator (middle processor in the chain)
-                        orchestrator = agent._processors[1]
-                        if hasattr(orchestrator, 'shutdown_requested') and orchestrator.shutdown_requested:
-                            logger.info(f"SHUTDOWN SOLICITADO PELO MODELO: {orchestrator.shutdown_reason}")
-                            print(f"\n🔴 Sistema sendo desligado: {orchestrator.shutdown_reason}")
-                            break
+                    # Check for shutdown request after each part
+                    if (
+                        orchestrator
+                        and hasattr(orchestrator, 'shutdown_requested')
+                        and orchestrator.shutdown_requested
+                        and not shutdown_event.is_set()
+                    ):
+                        logger.info(
+                            'SHUTDOWN REQUESTED BY MODEL: %s',
+                            orchestrator.shutdown_reason,
+                        )
+                        print(
+                            '\n🔴 System shutting down: %s'
+                            % orchestrator.shutdown_reason
+                        )
+                        shutdown_event.set()
+                        break  # Exit the loop immediately
 
                     # Skip logging for heartbeat parts (e.g., from video stream)
                     # to avoid excessive log spam, especially in debug mode.
                     if not part.metadata.get('heartbeat', False):
-                        logger.debug(f"Parte recebida #{part_count}: {part.mimetype} - {part.role}")
+                        logger.debug(
+                            'Parte recebida #{}: {} - {}'.format(
+                                part_count, part.mimetype, part.role
+                            )
+                        )
 
-                    # Print text output from the model to the console for immediate feedback.
-                    if content_api.is_text(part.mimetype) and part.text and part.text.strip():
+                    # Handle and print transcriptions for a cleaner output.
+                    if (
+                        part.substream_name == 'input_transcription'
+                        and part.text.strip()
+                    ):
+                        print(f"🎤 USER: {part.text}")
+                    elif (
+                        part.substream_name == 'output_transcription'
+                        and part.text.strip()
+                    ):
+                        print(f"🤖 LEONIDAS: {part.text}")
+                    # The original fragmented text parts from the model have role='MODEL' but no
+                    # substream_name, so they are now ignored, preventing cluttered output.
+                    elif (
+                        content_api.is_text(part.mimetype)
+                        and part.text
+                        and part.text.strip()
+                        and part.role.upper() != 'MODEL'
+                    ):
                         print(f"[{part.role.upper()}]: {part.text}")
 
-                    # Log other important part types (non-heartbeat, first 20 parts)
-                    # for initial debugging and understanding stream flow.
-                    elif not part.metadata.get('heartbeat', False) and part_count <= 20:
-                        logger.info(f"Parte #{part_count}: {part.mimetype} ({len(part.bytes) if part.bytes else 0} bytes)")
+                    # Log other important part types for initial debugging.
+                    elif (
+                        not part.metadata.get('heartbeat', False)
+                        and part_count <= 20
+                    ):
+                        logger.info(
+                            'Parte #{}: {} ({} bytes)'.format(
+                                part_count,
+                                part.mimetype,
+                                len(part.bytes) if part.bytes else 0,
+                            )
+                        )
 
             except asyncio.CancelledError:
-                # This exception is typically raised when the `TaskGroup` is cancelled,
-                # for example, during a graceful shutdown.
+                # This exception is typically raised when the `TaskGroup` is
+                # cancelled, for example, during a graceful shutdown.
                 logger.info("Stream cancelado")
+            finally:
+                # Cleanup monitor task if it exists
+                if 'monitor_task' in locals() and not monitor_task.done():
+                    monitor_task.cancel()
+                    try:
+                        await monitor_task
+                    except asyncio.CancelledError:
+                        pass
 
             logger.info(f"Stream finalizado após {part_count} partes")
 
@@ -1343,12 +1444,6 @@ Requirements:
 
     args = parser.parse_args()
 
-    # Configure logging
-    if args.debug:
-        logging.set_verbosity(logging.DEBUG)
-        print("Debug logging enabled")
-    else:
-        logging.set_verbosity(logging.INFO)
 
     # Get API key
     api_key = args.api_key or os.environ.get('GOOGLE_API_KEY')

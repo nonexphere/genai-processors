@@ -75,12 +75,6 @@ Requirements:
     
     args = parser.parse_args()
     
-    # Configure logging
-    if args.debug:
-        logging.set_verbosity(logging.DEBUG)
-        print("Debug logging enabled")
-    else:
-        logging.set_verbosity(logging.INFO)
     
     # Get API key
     api_key = args.api_key or os.environ.get('GOOGLE_API_KEY')
@@ -110,7 +104,7 @@ Requirements:
     try:
         # Run the agent
         print("Starting Leonidas v2...")
-        asyncio.run(leonidas.run_leonidas(api_key, args.video_mode))
+        asyncio.run(leonidas.run_leonidas(api_key, args.video_mode, args.debug))
         
     except KeyboardInterrupt:
         print("\nLeonidas v2 shutdown requested by user")
