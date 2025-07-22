@@ -37,6 +37,7 @@ from typing import AsyncIterable, Optional, Any
 
 import pyaudio
 from absl import logging
+import logging as std_logging
 from genai_processors import content_api
 from genai_processors import processor
 from genai_processors import streams
@@ -51,6 +52,8 @@ from google.genai import types as genai_types
 MODEL_LIVE = 'gemini-live-2.5-flash-preview'
 AUDIO_INPUT_RATE = 16000   # Input sample rate
 AUDIO_OUTPUT_RATE = 24000  # Gemini output sample rate
+
+logger = std_logging.getLogger(__name__) # Adicionado
 
 # === LOGGING CONFIGURATION ===
 def setup_logging(debug: bool = False) -> str:
@@ -76,8 +79,21 @@ def setup_logging(debug: bool = False) -> str:
     log_level = logging.DEBUG if debug else logging.INFO
     
     # Setup file handler
-    import logging as std_logging
+    import json # Adicionado
     
+    # Adicionado: Classe JSONFormatter
+    class JSONFormatter(std_logging.Formatter):
+        def format(self, record):
+            log_record = {
+                "timestamp": self.formatTime(record, self.datefmt),
+                "level": record.levelname,
+                "name": record.name,
+                "message": record.getMessage(),
+            }
+            if hasattr(record, 'extra_data'):
+                log_record.update(record.extra_data)
+            return json.dumps(log_record)
+
     # Create formatter
     formatter = std_logging.Formatter(
         '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -87,7 +103,7 @@ def setup_logging(debug: bool = False) -> str:
     # Setup file handler
     file_handler = std_logging.FileHandler(log_path, encoding='utf-8')
     file_handler.setLevel(log_level)
-    file_handler.setFormatter(formatter)
+    file_handler.setFormatter(JSONFormatter()) # Alterado para usar JSONFormatter
     
     # Setup console handler
     console_handler = std_logging.StreamHandler()
@@ -108,15 +124,23 @@ def setup_logging(debug: bool = False) -> str:
     # Also configure absl logging
     logging.set_verbosity(log_level)
     
+    # Adicionado: Controle de verbosidade de bibliotecas de terceiros
+    if debug:
+        std_logging.getLogger('websockets.client').setLevel(std_logging.INFO)
+        std_logging.getLogger('google_genai').setLevel(std_logging.INFO)
+    else:
+        std_logging.getLogger('websockets.client').setLevel(std_logging.WARNING)
+        std_logging.getLogger('google_genai').setLevel(std_logging.WARNING)
+
     # Log session start information
-    std_logging.info("=" * 60)
-    std_logging.info("LEONIDAS V2 SESSION STARTED")
-    std_logging.info("=" * 60)
-    std_logging.info(f"Log file: {log_path}")
-    std_logging.info(f"Timestamp: {dt.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    std_logging.info(f"Debug mode: {debug}")
-    std_logging.info(f"Model: {MODEL_LIVE}")
-    std_logging.info("=" * 60)
+    logger.info("=" * 60) # Alterado para logger.info
+    logger.info("LEONIDAS V2 SESSION STARTED") # Alterado para logger.info
+    logger.info("=" * 60) # Alterado para logger.info
+    logger.info(f"Log file: {log_path}") # Alterado para logger.info
+    logger.info(f"Timestamp: {dt.now().strftime('%Y-%m-%d %H:%M:%S')}") # Alterado para logger.info
+    logger.info(f"Debug mode: {debug}") # Alterado para logger.info
+    logger.info(f"Model: {MODEL_LIVE}") # Alterado para logger.info
+    logger.info("=" * 60) # Alterado para logger.info
     
     return str(log_path)
 
@@ -304,7 +328,7 @@ LEONIDAS_TOOLS = [
                     "Fornece informações temporais precisas (data, hora, timestamp). "
                     "Útil para logs, planejamento e responder a perguntas sobre o tempo."
                 ),
-                behavior='NON_BLOCKING',
+                behavior='BLOCKING',
                 parameters=genai_types.Schema(
                     type=genai_types.Type.OBJECT,
                     properties={
@@ -546,13 +570,22 @@ class LeonidasOrchestrator(processor.Processor):
         
         analysis = args.get('analysis', 'No analysis provided')
         reasoning = args.get('reasoning', 'No reasoning provided')
-        next_action = args.get('next_action', 'No action planned')
+        next_action = args.get('plan', 'No action planned') # Alterado de 'next_action' para 'plan'
         
-        # Log the thinking process
-        logging.info(f"LEONIDAS THINKING:")
-        logging.info(f"   Analysis: {analysis}")
-        logging.info(f"   Reasoning: {reasoning}")
-        logging.info(f"   Next Action: {next_action}")
+        # Log the thinking process as structured data
+        log_data = {
+            'tool_call': 'think',
+            'analysis': analysis,
+            'reasoning': reasoning,
+            'plan': next_action,
+        }
+        logger.info("Model is thinking", extra={'extra_data': log_data}) # Alterado para logger.info com extra
+        
+        # Keep console logs for readability
+        print("🧠 LEONIDAS THINKING:")
+        print(f"   Analysis: {analysis}")
+        print(f"   Reasoning: {reasoning}")
+        print(f"   Next Action: {next_action}")
         
         # Store thinking in conversation history
         self.conversation_history.append({
@@ -589,7 +622,7 @@ class LeonidasOrchestrator(processor.Processor):
         }
         self.metrics['state_changes'].append(state_change)
         
-        logging.info(f"STATE CHANGE: {old_state} → {new_state} ({reason})")
+        logger.info(f"STATE CHANGE: {old_state} → {new_state} ({reason})") # Alterado para logger.info
         
         return content_api.ProcessorPart.from_function_response(
             function_call_id=call_id,
@@ -651,7 +684,7 @@ class LeonidasOrchestrator(processor.Processor):
                 'conversation_summary': all_text[:200] + '...' if len(all_text) > 200 else all_text
             }
         
-        logging.info(f"CONTEXT REQUEST ({context_type}): {context_data}")
+        logger.info(f"CONTEXT REQUEST ({context_type}): {context_data}") # Alterado para logger.info
         
         return content_api.ProcessorPart.from_function_response(
             function_call_id=call_id,
@@ -689,7 +722,7 @@ class LeonidasOrchestrator(processor.Processor):
                 'iso_format': now.isoformat()
             }
         
-        logging.info(f"TIME REQUEST ({format_type}): {time_data}")
+        logger.info(f"TIME REQUEST ({format_type}): {time_data}") # Alterado para logger.info
         
         return content_api.ProcessorPart.from_function_response(
             function_call_id=call_id,
@@ -705,7 +738,7 @@ class LeonidasOrchestrator(processor.Processor):
         reason = args.get('reason', 'No reason provided')
         
         if not confirmation:
-            logging.warning(f"SHUTDOWN REQUEST DENIED: No confirmation provided")
+            logger.warning(f"SHUTDOWN REQUEST DENIED: No confirmation provided") # Alterado para logger.warning
             return content_api.ProcessorPart.from_function_response(
                 function_call_id=call_id,
                 name='shutdown_system',
@@ -717,7 +750,7 @@ class LeonidasOrchestrator(processor.Processor):
             )
         
         # Log shutdown request
-        logging.info(f"SYSTEM SHUTDOWN REQUESTED: {reason}")
+        logger.info(f"SYSTEM SHUTDOWN REQUESTED: {reason}") # Alterado para logger.info
         
         # Add shutdown to conversation history
         self.conversation_history.append({
@@ -745,7 +778,7 @@ class LeonidasOrchestrator(processor.Processor):
     async def _handle_unknown_function(self, call_id: str, function_name: str) -> content_api.ProcessorPart:
         """Handle unknown function calls."""
         
-        logging.warning(f"UNKNOWN FUNCTION CALL: {function_name}")
+        logger.warning(f"UNKNOWN FUNCTION CALL: {function_name}") # Alterado para logger.warning
         
         return content_api.ProcessorPart.from_function_response(
             function_call_id=call_id,
@@ -810,19 +843,19 @@ async def run_leonidas_v2(api_key: str, video_mode: Optional[str] = None, debug:
         agent = create_leonidas_agent_v2(api_key, pya, video_mode)
         
         # Run the agent
-        logging.info("Leonidas v2 iniciando...")
-        logging.info(f"Logs sendo salvos em: {log_file}")
-        logging.info("Use Ctrl+C para encerrar")
+        logger.info("Leonidas v2 iniciando...") # Alterado para logger.info
+        logger.info(f"Logs sendo salvos em: {log_file}") # Alterado para logger.info
+        logger.info("Use Ctrl+C para encerrar") # Alterado para logger.info
         
-        logging.info("Criando contexto do processador...")
+        logger.info("Criando contexto do processador...") # Alterado para logger.info
         async with processor.context():
-            logging.info("Contexto criado, iniciando stream...")
+            logger.info("Contexto criado, iniciando stream...") # Alterado para logger.info
             
             # Start the input stream directly - let InputManager handle content generation
             if video_mode:
-                logging.info("Iniciando captura de áudio e vídeo...")
+                logger.info("Iniciando captura de áudio e vídeo...") # Alterado para logger.info
             else:
-                logging.info("Iniciando captura de áudio...")
+                logger.info("Iniciando captura de áudio...") # Alterado para logger.info
             
             part_count = 0
             try:
@@ -835,13 +868,13 @@ async def run_leonidas_v2(api_key: str, video_mode: Optional[str] = None, debug:
                         # Get the orchestrator (middle processor in the chain)
                         orchestrator = agent._processors[1]
                         if hasattr(orchestrator, 'shutdown_requested') and orchestrator.shutdown_requested:
-                            logging.info(f"SHUTDOWN SOLICITADO PELO MODELO: {orchestrator.shutdown_reason}")
+                            logger.info(f"SHUTDOWN SOLICITADO PELO MODELO: {orchestrator.shutdown_reason}") # Alterado para logger.info
                             print(f"\n🔴 Sistema sendo desligado: {orchestrator.shutdown_reason}")
                             break
                     
                     # Skip heartbeat logging to avoid spam
                     if not part.metadata.get('heartbeat', False):
-                        logging.debug(f"Parte recebida #{part_count}: {part.mimetype} - {part.role}")
+                        logger.debug(f"Parte recebida #{part_count}: {part.mimetype} - {part.role}") # Alterado para logger.debug
                     
                     # Log text output for debugging
                     if content_api.is_text(part.mimetype) and part.text and part.text.strip():
@@ -849,27 +882,27 @@ async def run_leonidas_v2(api_key: str, video_mode: Optional[str] = None, debug:
                     
                     # Log other important types
                     elif not part.metadata.get('heartbeat', False) and part_count <= 20:
-                        logging.info(f"Parte #{part_count}: {part.mimetype} ({len(part.bytes) if part.bytes else 0} bytes)")
+                        logger.info(f"Parte #{part_count}: {part.mimetype} ({len(part.bytes) if part.bytes else 0} bytes)") # Alterado para logger.info
                         
             except asyncio.CancelledError:
-                logging.info("Stream cancelado")
+                logger.info("Stream cancelado") # Alterado para logger.info
             
-            logging.info(f"Stream finalizado após {part_count} partes")
+            logger.info(f"Stream finalizado após {part_count} partes") # Alterado para logger.info
     
     except KeyboardInterrupt:
-        logging.info("Leonidas v2 encerrado pelo usuário")
+        logger.info("Leonidas v2 encerrado pelo usuário") # Alterado para logger.info
     except Exception as e:
-        logging.error(f"Erro no Leonidas v2: {e}")
+        logger.error(f"Erro no Leonidas v2: {e}") # Alterado para logger.error
         raise
     finally:
         # Cleanup PyAudio
         pya.terminate()
         
         # Log session end
-        logging.info("=" * 60)
-        logging.info("LEONIDAS V2 SESSION ENDED")
-        logging.info(f"Log file saved: {log_file}")
-        logging.info("=" * 60)
+        logger.info("=" * 60) # Alterado para logger.info
+        logger.info("LEONIDAS V2 SESSION ENDED") # Alterado para logger.info
+        logger.info(f"Log file saved: {log_file}") # Alterado para logger.info
+        logger.info("=" * 60) # Alterado para logger.info
 
 
 

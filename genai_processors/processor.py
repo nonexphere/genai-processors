@@ -53,7 +53,6 @@ gather_stream = streams.gather_stream
 # Part queue size. It should be a big number to avoid blocking the processor.
 _MAX_QUEUE_SIZE = 10_000
 
-# ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
 # Interface Definition & util functions
 
 
@@ -555,7 +554,6 @@ def create_filter(condition: Callable[[ProcessorPart], bool]) -> PartProcessor:
   return _PartProcessorWrapper(filter_with_condition)
 
 
-# ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
 # Internal chaining mechanism for processors including concurrent execution.
 # These methods should stay internal to this file. Use '+' or processor.chain
 # to combine processors together.
