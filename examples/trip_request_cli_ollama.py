@@ -32,7 +32,7 @@ Before running this script, ensure the `GOOGLE_API_KEY` environment
 variable is set to the api-key you obtained from Google AI Studio.
 
 Usage:
-  python3 trip_request_cli.py
+  python3 trip_request_cli_ollama.py
 """
 import asyncio
 from collections.abc import AsyncIterable
@@ -160,7 +160,7 @@ async def run_trip_request() -> None:
       .default(processor.passthrough())
   )
 
-  print('Enter a trip request. Use ctrl+D to quit:')
+  print('Enter a trip request. Use ctrl+D to quit.')
   print(
       'NOTE: there is no history, rewrite your request from scratch each time.'
   )

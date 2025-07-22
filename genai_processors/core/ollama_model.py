@@ -37,7 +37,7 @@ from typing import Any, Literal
 from genai_processors import content_api
 from genai_processors import mime_types
 from genai_processors import processor
-from google.genai import _transformers
+from genai_processors import tool_utils
 from google.genai import types as genai_types
 import httpx
 from pydantic import json_schema
@@ -140,28 +140,14 @@ class OllamaModel(processor.Processor):
     self._keep_alive = keep_alive
 
     if tools := generate_content_config.get('tools'):
+      tool_utils.raise_for_gemini_server_side_tools(tools)
       self._tools = []
       for tool in tools:
-        for tool_name in (
-            'retrieval',
-            'google_search',
-            'google_search_retrieval',
-            'enterprise_web_search',
-            'google_maps',
-            'url_context',
-            'code_execution',
-            'computer_use',
-        ):
-          if getattr(tool, tool_name) is not None:
-            raise ValueError(f'Tool {tool_name} is not supported.')
-
         for fdecl in tool.function_declarations or ():
           if fdecl.parameters:
-            parameters = _transformers.t_schema(  # pytype: disable=wrong-arg-types
-                _FakeClient(), fdecl.parameters
-            ).json_schema.model_dump(
-                mode='json', exclude_unset=True
-            )
+            parameters = tool_utils.to_schema(
+                fdecl.parameters
+            ).json_schema.model_dump(mode='json', exclude_unset=True)
           else:
             parameters = None
 
@@ -196,8 +182,8 @@ class OllamaModel(processor.Processor):
 
     # Render response_schema in-to a JSON schema.
     if generate_content_config.get('response_schema') is not None:
-      self._format = _transformers.t_schema(  # pytype: disable=wrong-arg-types
-          _FakeClient(), generate_content_config['response_schema']
+      self._format = tool_utils.to_schema(
+          generate_content_config['response_schema']
       ).json_schema.model_dump(mode='json', exclude_unset=True)
     elif generate_content_config.get('response_json_schema'):
       self._format = generate_content_config['response_json_schema']
@@ -256,9 +242,7 @@ class OllamaModel(processor.Processor):
         if message.get('content'):
           if self._strip_quotes:
             message['content'] = message['content'].replace('"', '')
-          yield content_api.ProcessorPart(
-              message['content'], role=message['role'].upper()
-          )
+          yield content_api.ProcessorPart(message['content'], role='model')
         if tool_calls := message.get('tool_calls'):
           for tool_call in tool_calls:
             yield processor.ProcessorPart.from_function_call(
@@ -267,7 +251,7 @@ class OllamaModel(processor.Processor):
             )
         for image in message.get('images', ()):
           yield content_api.ProcessorPart(
-              image, mimetype='image/*', role=message.role.upper()
+              image, mimetype='image/*', role='model'
           )
 
 
@@ -276,7 +260,11 @@ def _to_ollama_message(
 ) -> dict[str, Any]:
   """Returns Ollama message JSON."""
   # Gemini API uses upper case for roles, while Ollama uses lower case.
-  message: dict[str, Any] = {'role': part.role.lower() or default_role.lower()}
+  role = part.role.lower() or default_role
+  if role == 'model':
+    role = 'assistant'
+
+  message: dict[str, Any] = {'role': role}
 
   if part.function_call:
     message.setdefault('tool_calls', []).append({
@@ -297,10 +285,3 @@ def _to_ollama_message(
     raise ValueError(f'Unsupported Part type: {part.mimetype}')
 
   return message
-
-
-class _FakeClient:
-  """A fake genai client to invoke t_schema."""
-
-  def __init__(self):
-    self.vertexai = False
