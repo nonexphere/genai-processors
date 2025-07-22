@@ -645,59 +645,42 @@ Responda APENAS com o JSON em uma única linha, sem quebras de linha ou explica�
 
 
 class ContextualGreetingProcessor(processor.PartProcessor):
-    """Gera cumprimento contextual baseado na análise do contexto inicial.
+    """Gera um *prompt* de cumprimento contextual baseado na análise.
     
-    Este processador cria uma mensagem de inicialização natural baseada
-    na análise do contexto histórico.
+    Este processador cria um prompt para que o LiveProcessor gere uma
+    mensagem de inicialização natural baseada na análise do contexto histórico.
     """
     
     def __init__(self, api_key: str = None):
-        self.genai_model = genai_model.GenaiModel(
-            model_name="gemini-2.5-flash",
-            api_key=api_key,
-            generate_content_config=genai_types.GenerateContentConfig(
-                max_output_tokens=200,
-                temperature=0.7  # Mais criativo para cumprimentos
-            )
-        )
+        # Este processador não precisa mais de um modelo, ele apenas gera prompts.
+        pass
     
     def match(self, part: content_api.ProcessorPart) -> bool:
         """Processa análises de contexto inicial."""
         return part.metadata.get('analysis_type') == 'initial_context_analysis'
     
     async def call(self, part: content_api.ProcessorPart) -> AsyncIterable[content_api.ProcessorPartTypes]:
-        """Gera cumprimento contextual baseado na análise."""
+        """Gera prompt de cumprimento contextual baseado na análise."""
         if self.match(part):
             try:
                 # Parse da análise JSON
                 analysis = json.loads(part.text)
                 
                 if analysis.get('deve_cumprimentar', False):
-                    # Gera cumprimento contextual
+                    # Gera o PROMPT para o cumprimento
                     greeting_prompt = self._create_greeting_prompt(analysis)
                     
-                    greeting_stream = self.genai_model(streams.stream_content([
-                        content_api.ProcessorPart(
-                            greeting_prompt,
-                            role='user',
-                            substream_name='greeting_generation'
-                        )
-                    ]))
-                    
-                    async for greeting_part in greeting_stream:
-                        # Emite cumprimento gerado
-                        greeting_part.metadata['greeting_type'] = 'contextual'
-                        greeting_part.metadata['initialization_type'] = analysis.get('tipo_inicializacao')
-                        greeting_part.role = 'assistant'  # Resposta do Leonidas
-                        greeting_part.substream_name = 'contextual_greeting'
-                        yield greeting_part
-                        
-                        logger.info("Contextual greeting generated", extra={
-                            'extra_data': {
-                                'initialization_type': analysis.get('tipo_inicializacao'),
-                                'greeting_length': len(greeting_part.text)
-                            }
-                        })
+                    # Emite o PROMPT para ser usado pelo LiveProcessor
+                    yield content_api.ProcessorPart(
+                        greeting_prompt,
+                        role='user',
+                        substream_name='contextual_greeting_prompt',
+                        metadata={
+                            'initialization_type': analysis.get('tipo_inicializacao'),
+                            'turn_complete': True
+                        }
+                    )
+                    logger.info("Contextual greeting prompt generated")
                 
                 elif analysis.get('tipo_inicializacao') == 'silenciosa':
                     # Emite indicação de inicialização silenciosa
@@ -718,12 +701,13 @@ class ContextualGreetingProcessor(processor.PartProcessor):
                 yield processor.debug(f"Failed to parse context analysis: {e}, using default initialization")
                 
                 yield content_api.ProcessorPart(
-                    "Olá! Sou o Leonidas, seu parceiro de desenvolvimento. Como posso ajudar hoje?",
-                    role='assistant',
-                    substream_name='default_greeting',
+                    "Apresente-se como Leonidas, seu parceiro de desenvolvimento, e pergunte como posso ajudar hoje.",
+                    role='user',
+                    substream_name='default_greeting_prompt',
                     metadata={
                         'greeting_type': 'default',
-                        'initialization_type': 'fallback'
+                        'initialization_type': 'fallback',
+                        'turn_complete': True
                     }
                 )
         
