@@ -7,8 +7,8 @@ We have successfully transformed Leonidas from a monolithic "commentator" into a
 ## 📁 Files Created
 
 ### Core Implementation
-- **`leonidas_v2.py`** - Complete modular implementation with advanced tool system
-- **`leonidas_v2_cli.py`** - Command-line interface for the new agent
+- **`leonidas.py`** - Complete modular implementation with advanced tool system
+- **`leonidas_cli.py`** - Command-line interface for the new agent
 - **`test_v2.py`** - Comprehensive test suite for validation
 
 ### Documentation
@@ -91,18 +91,18 @@ Created a comprehensive system prompt with:
 
 ### Basic Startup
 ```bash
-python leonidas/leonidas_v2_cli.py --mode camera
+python leonidas/leonidas_cli.py --mode camera
 ```
 
 ### Debug Mode
 ```bash
-python leonidas/leonidas_v2_cli.py --debug
+python leonidas/leonidas_cli.py --debug
 ```
 
 ### Programmatic Usage
 ```python
-from leonidas import leonidas_v2
-agent = leonidas_v2.create_leonidas_agent_v2(api_key)
+from leonidas import leonidas
+agent = leonidas.create_leonidas_agent_v2(api_key)
 ```
 
 ## 💬 Conversation Flow Example

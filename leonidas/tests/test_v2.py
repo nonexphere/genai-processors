@@ -11,11 +11,11 @@ import os
 import sys
 from unittest.mock import AsyncMock, MagicMock
 
-# Add the parent directory to the path so we can import leonidas_v2
+# Add the parent directory to the path so we can import leonidas
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from genai_processors import content_api, streams
-import leonidas_v2
+import leonidas
 
 async def test_orchestrator_tools():
     """Test the LeonidasOrchestrator tool system."""
@@ -27,11 +27,11 @@ async def test_orchestrator_tools():
     
     try:
         # Create orchestrator (this will fail without real API key, but we can test structure)
-        orchestrator = leonidas_v2.LeonidasOrchestrator(api_key)
+        orchestrator = leonidas.LeonidasOrchestrator(api_key)
         
         print("LeonidasOrchestrator created successfully")
         print(f"   Initial state: {orchestrator.agent_state}")
-        print(f"   Tools configured: {len(leonidas_v2.LEONIDAS_TOOLS[0].function_declarations)}")
+        print(f"   Tools configured: {len(leonidas.LEONIDAS_TOOLS[0].function_declarations)}")
         
         # Test tool handlers directly
         print("\nTesting tool handlers...")
@@ -76,11 +76,11 @@ def test_prompt_system():
     
     try:
         # Check prompt structure
-        prompt = leonidas_v2.LEONIDAS_SYSTEM_PROMPT
+        prompt = leonidas.LEONIDAS_SYSTEM_PROMPT
         print(f"System prompt has {len(prompt)} sections")
         
         # Check tools structure
-        tools = leonidas_v2.LEONIDAS_TOOLS
+        tools = leonidas.LEONIDAS_TOOLS
         print(f"Tool system has {len(tools)} tool groups")
         
         tool_declarations = tools[0].function_declarations
@@ -110,10 +110,10 @@ def test_modular_architecture():
     
     try:
         # Test that we can import and access the main components
-        input_manager = leonidas_v2.InputManager
-        output_manager = leonidas_v2.OutputManager
-        orchestrator_class = leonidas_v2.LeonidasOrchestrator
-        factory_function = leonidas_v2.create_leonidas_agent_v2
+        input_manager = leonidas.InputManager
+        output_manager = leonidas.OutputManager
+        orchestrator_class = leonidas.LeonidasOrchestrator
+        factory_function = leonidas.create_leonidas_agent_v2
         
         print("All main components are accessible")
         print("   - InputManager (processor function)")
@@ -127,7 +127,7 @@ def test_modular_architecture():
         # This will fail at runtime due to API key, but we can check the structure
         try:
             # Mock the API key validation for structure testing
-            agent = leonidas_v2.create_leonidas_agent_v2("test_key")
+            agent = leonidas.create_leonidas_agent_v2("test_key")
             print("Factory function creates processor pipeline")
         except Exception as e:
             # Expected to fail without real API key, but structure should be valid
@@ -150,14 +150,14 @@ def test_configuration():
     
     try:
         # Test constants
-        assert leonidas_v2.MODEL_LIVE == 'gemini-live-2.5-flash-preview'
-        assert leonidas_v2.AUDIO_INPUT_RATE == 16000
-        assert leonidas_v2.AUDIO_OUTPUT_RATE == 24000
+        assert leonidas.MODEL_LIVE == 'gemini-live-2.5-flash-preview'
+        assert leonidas.AUDIO_INPUT_RATE == 16000
+        assert leonidas.AUDIO_OUTPUT_RATE == 24000
         
         print("Configuration constants are correct")
-        print(f"   Model: {leonidas_v2.MODEL_LIVE}")
-        print(f"   Audio Input: {leonidas_v2.AUDIO_INPUT_RATE}Hz")
-        print(f"   Audio Output: {leonidas_v2.AUDIO_OUTPUT_RATE}Hz")
+        print(f"   Model: {leonidas.MODEL_LIVE}")
+        print(f"   Audio Input: {leonidas.AUDIO_INPUT_RATE}Hz")
+        print(f"   Audio Output: {leonidas.AUDIO_OUTPUT_RATE}Hz")
         
         return True
         
@@ -212,7 +212,7 @@ async def main():
         print("All tests passed! Leonidas v2 is ready to run.")
         print("\nNext steps:")
         print("   1. Set GOOGLE_API_KEY environment variable")
-        print("   2. Run: python leonidas/leonidas_v2_cli.py")
+        print("   2. Run: python leonidas/leonidas_cli.py")
         return True
     else:
         print("Some tests failed. Please review the implementation.")

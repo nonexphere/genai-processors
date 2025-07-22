@@ -123,12 +123,15 @@ class InMemoryCache(CacheBase):
     - ttl_hours: float = 12
     - max_items: int = 1000
     - hash_fn: Callable (uses xxhash.xxh128 by default)
+    - base: Optional[InMemoryCache] = None  # Shared cache architecture
     
     # Key features
-    - JSON serialization of ProcessorContent
-    - Prefix support for processor isolation
-    - Async operations with error handling
-    - Automatic cleanup and eviction
+    - JSON serialization of ProcessorContent with async to_thread
+    - Prefix support for processor isolation (creates new instances)
+    - Shared cache architecture via base parameter
+    - Context-aware caching with contextvars integration
+    - Robust error handling in hash functions and serialization
+    - Automatic cleanup and eviction with cachetools.TTLCache
 ```
 
 ### **Concurrent Execution Engine (map_processor.py)**

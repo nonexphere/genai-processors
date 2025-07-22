@@ -10,7 +10,7 @@ import asyncio
 import os
 import time
 from unittest.mock import Mock, AsyncMock
-from leonidas_v2 import LeonidasOrchestrator
+from leonidas import LeonidasOrchestrator
 from genai_processors import content_api
 from google.genai import types as genai_types
 
@@ -115,7 +115,7 @@ def demonstrate_integration():
     print("🔧 Integração com o sistema principal")
     print("=" * 60)
     
-    print("No arquivo leonidas_v2.py, as seguintes modificações foram feitas:")
+    print("No arquivo leonidas.py, as seguintes modificações foram feitas:")
     print()
     
     print("1. NOVA FERRAMENTA adicionada ao LEONIDAS_TOOLS:")
@@ -130,7 +130,7 @@ def demonstrate_integration():
     print("   - Define flags shutdown_requested e shutdown_reason")
     print()
     
-    print("3. MODIFICAÇÃO no loop principal (run_leonidas_v2):")
+    print("3. MODIFICAÇÃO no loop principal (run_leonidas):")
     print("   - Verifica periodicamente se shutdown foi solicitado")
     print("   - Encerra o loop graciosamente quando detectado")
     print("   - Exibe mensagem informativa ao usuário")

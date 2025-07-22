@@ -9,8 +9,8 @@ Este é o steering rule principal que direciona todo o desenvolvimento do projet
 **ATENÇÃO**: O projeto principal está na pasta `leonidas/` e é onde todo o desenvolvimento deve ser focado. Esta pasta contém:
 
 - **`leonidas.py`** - Implementação principal atual
-- **`leonidas_v2.py`** - Nova versão em desenvolvimento
-- **`leonidas_v2_cli.py`** - Interface CLI da v2
+- **`leonidas.py`** - Nova versão em desenvolvimento
+- **`leonidas_cli.py`** - Interface CLI da v2
 - **`test_v2.py`** - Testes da nova versão
 - **`README_v2.md`** - Documentação da v2
 - **`TARGET_STATE.md`** - Estado alvo do projeto
@@ -20,7 +20,7 @@ Este é o steering rule principal que direciona todo o desenvolvimento do projet
 ## 🚀 **PRIORIDADES DE DESENVOLVIMENTO**
 
 ### **1. Evolução da Versão 2 (PRIORIDADE MÁXIMA)**
-- Foco em `leonidas_v2.py` como base principal
+- Foco em `leonidas.py` como base principal
 - Implementar funcionalidades baseadas nos steering rules de Gemini
 - Usar `gemini-live-2.5-flash-preview` como modelo principal
 - Integrar padrões de `leonidas-gemini-integration.md`
@@ -66,8 +66,7 @@ class LeonidasV2:
 
 ### **Ao Trabalhar no Leonidas:**
 1. **SEMPRE** focar na pasta `leonidas/`
-2. **SEMPRE** usar `leonidas_v2.py` como base principal
-3. **SEMPRE** seguir os padrões de `leonidas-gemini-integration.md`
+2. **SEMPRE** usar `leonidas.py` como base principal
 4. **SEMPRE** implementar em português brasileiro
 5. **SEMPRE** usar `gemini-live-2.5-flash-preview` como modelo padrão
 
@@ -109,8 +108,8 @@ LEONIDAS_CONFIG = types.LiveConnectConfig(
 ## 🎯 **OBJETIVOS ESPECÍFICOS**
 
 ### **Curto Prazo:**
-1. Finalizar `leonidas_v2.py` com funcionalidades core
-2. Implementar CLI robusta em `leonidas_v2_cli.py`
+1. Finalizar `leonidas.py` com funcionalidades core
+2. Implementar CLI robusta em `leonidas_cli.py`
 3. Completar testes em `test_v2.py`
 4. Documentar em `README_v2.md`
 

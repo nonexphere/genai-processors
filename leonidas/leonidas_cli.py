@@ -19,8 +19,8 @@ This CLI provides a simple way to run the new modular Leonidas v2 agent
 with improved conversation flow and tool-based intelligence.
 
 Usage:
-    python leonidas/leonidas_v2_cli.py --mode camera
-    python leonidas/leonidas_v2_cli.py --mode screen --debug
+    python leonidas/leonidas_cli.py --mode camera
+    python leonidas/leonidas_cli.py --mode screen --debug
 """
 
 import argparse
@@ -30,7 +30,7 @@ import sys
 
 from absl import logging
 from genai_processors.core import text
-import leonidas_v2
+import leonidas
 
 def main():
     """Main CLI entry point."""
@@ -110,7 +110,7 @@ Requirements:
     try:
         # Run the agent
         print("Starting Leonidas v2...")
-        asyncio.run(leonidas_v2.run_leonidas_v2(api_key, args.video_mode))
+        asyncio.run(leonidas.run_leonidas(api_key, args.video_mode))
         
     except KeyboardInterrupt:
         print("\nLeonidas v2 shutdown requested by user")

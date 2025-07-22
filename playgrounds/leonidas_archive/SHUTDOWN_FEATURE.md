@@ -83,7 +83,7 @@ async def _handle_shutdown_system(self, call_id: str, args: dict) -> content_api
 ### Detecção no Loop Principal
 
 ```python
-# No loop principal de run_leonidas_v2
+# No loop principal de run_leonidas
 async for part in agent(endless_stream()):
     # Verifica se shutdown foi solicitado
     if orchestrator.shutdown_requested:

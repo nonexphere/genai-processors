@@ -7,7 +7,7 @@ import asyncio
 import os
 import pyaudio
 from genai_processors import content_api, streams, processor
-import leonidas_v2
+import leonidas
 
 async def test_simple_orchestrator():
     """Test just the orchestrator without input/output."""
@@ -21,7 +21,7 @@ async def test_simple_orchestrator():
     
     try:
         # Create orchestrator
-        orchestrator = leonidas_v2.LeonidasOrchestrator(api_key)
+        orchestrator = leonidas.LeonidasOrchestrator(api_key)
         print("✅ Orchestrator criado")
         
         # Create a simple test stream
@@ -65,7 +65,7 @@ async def test_input_manager():
     
     try:
         pya = pyaudio.PyAudio()
-        input_manager = leonidas_v2.InputManager(pya, 'camera')
+        input_manager = leonidas.InputManager(pya, 'camera')
         print("✅ InputManager criado")
         
         # Test with empty stream

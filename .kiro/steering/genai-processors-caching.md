@@ -15,8 +15,13 @@ processor_cache = cache.InMemoryCache(
     hash_fn=None         # Uses default deterministic hashing
 )
 
-# Cache with custom key prefix for processor isolation
+# Cache with custom key prefix for processor isolation (creates new instance with shared cache)
 prefixed_cache = processor_cache.with_key_prefix("MyProcessor:")
+
+# Shared cache architecture - multiple instances sharing same underlying cache
+base_cache = cache.InMemoryCache(ttl_hours=24, max_items=5000)
+processor_a_cache = cache.InMemoryCache(base=base_cache, hash_fn=custom_hash_fn)
+processor_b_cache = base_cache.with_key_prefix("ProcessorB:")
 ```
 
 ### Cache Key Generation
@@ -44,10 +49,57 @@ def custom_hash_function(content: ProcessorContentTypes) -> str | None:
 
 ### Cache Integration Patterns
 
-#### Processor-Level Caching
+#### Context-Aware Caching with CachedPartProcessor
+```python
+from genai_processors import processor, cache
+
+# Modern approach using built-in CachedPartProcessor
+class MyProcessor(processor.PartProcessor):
+    """Example processor that benefits from caching."""
+    
+    async def call(self, part: content_api.ProcessorPart) -> AsyncIterable[content_api.ProcessorPart]:
+        if content_api.is_text(part.mimetype):
+            # Expensive processing
+            processed_text = await expensive_nlp_operation(part.text)
+            yield content_api.ProcessorPart(processed_text, role=part.role)
+        else:
+            yield part
+
+# Wrap with caching
+cached_processor = processor.CachedPartProcessor(
+    MyProcessor(),
+    key_prefix="MyProcessor:",  # Optional custom prefix
+    default_cache=cache.InMemoryCache(ttl_hours=12, max_items=1000)
+)
+
+# Context-based cache management
+async def process_with_context_cache():
+    # Set cache for current context
+    context_cache = cache.InMemoryCache(ttl_hours=6, max_items=500)
+    processor.CachedPartProcessor.set_cache(context_cache)
+    
+    # All CachedPartProcessor instances in this context will use this cache
+    async for result in cached_processor(input_stream):
+        yield result
+
+# Shared cache architecture for multiple processors
+base_cache = cache.InMemoryCache(ttl_hours=24, max_items=5000)
+
+processor_a = processor.CachedPartProcessor(
+    ProcessorA(),
+    default_cache=cache.InMemoryCache(base=base_cache)
+)
+
+processor_b = processor.CachedPartProcessor(
+    ProcessorB(),
+    default_cache=base_cache.with_key_prefix("ProcessorB:")
+)
+```
+
+#### Legacy Processor-Level Caching Pattern
 ```python
 class CachedProcessor(processor.Processor):
-    """Processor with built-in caching capabilities."""
+    """Processor with built-in caching capabilities (legacy pattern)."""
     
     def __init__(self, cache_instance: cache.CacheBase = None):
         self.cache = cache_instance or cache.InMemoryCache(
@@ -75,7 +127,7 @@ class CachedProcessor(processor.Processor):
             results.append(result)
             yield result
         
-        # Store in cache
+        # Store in cache (async serialization)
         await self.cache.put(input_parts, results)
     
     async def _process_uncached(self, parts: list[content_api.ProcessorPart]) -> AsyncIterable[content_api.ProcessorPart]:
@@ -120,6 +172,132 @@ class ConditionalCacheProcessor(processor.Processor):
             # Cache the results if applicable
             if selected_cache and processed_parts:
                 await selected_cache.put([part], processed_parts)
+```
+
+## Modern Caching Architecture
+
+### Context-Aware Cache Management
+The updated caching system provides sophisticated context management:
+
+```python
+import contextvars
+from genai_processors import processor, cache
+
+# Context-aware caching for request isolation
+async def handle_user_request(user_id: str, request_data):
+    # Create user-specific cache context
+    user_cache = cache.InMemoryCache(
+        ttl_hours=2,  # Short TTL for user sessions
+        max_items=100,
+        hash_fn=lambda content: f"user_{user_id}_{cache.default_processor_content_hash(content)}"
+    )
+    
+    # Set cache for current context (thread-safe)
+    processor.CachedPartProcessor.set_cache(user_cache)
+    
+    # All cached processors in this context use the user cache
+    result = await process_user_request(request_data)
+    return result
+
+# Shared cache architecture for memory efficiency
+class MultiTenantCacheSystem:
+    def __init__(self):
+        # Shared base cache for common operations
+        self.base_cache = cache.InMemoryCache(
+            ttl_hours=24,
+            max_items=10000
+        )
+        
+        # Tenant-specific caches sharing the same underlying storage
+        self.tenant_caches = {}
+    
+    def get_tenant_cache(self, tenant_id: str) -> cache.InMemoryCache:
+        if tenant_id not in self.tenant_caches:
+            self.tenant_caches[tenant_id] = self.base_cache.with_key_prefix(f"tenant_{tenant_id}:")
+        return self.tenant_caches[tenant_id]
+```
+
+### Advanced Cache Configuration Patterns
+
+```python
+# Production-ready cache configuration
+class ProductionCacheConfig:
+    @staticmethod
+    def create_high_performance_cache() -> cache.InMemoryCache:
+        return cache.InMemoryCache(
+            ttl_hours=12,
+            max_items=50000,  # Large cache for high throughput
+            hash_fn=ProductionCacheConfig._optimized_hash_fn
+        )
+    
+    @staticmethod
+    def create_memory_efficient_cache() -> cache.InMemoryCache:
+        return cache.InMemoryCache(
+            ttl_hours=1,      # Short TTL to free memory quickly
+            max_items=1000,   # Smaller cache size
+            hash_fn=ProductionCacheConfig._compact_hash_fn
+        )
+    
+    @staticmethod
+    def _optimized_hash_fn(content: content_api.ProcessorContentTypes) -> str | None:
+        """Optimized hash function for high-performance scenarios."""
+        try:
+            # Custom hashing logic for better performance
+            content_obj = content_api.ProcessorContent(content)
+            
+            # Skip caching for very large content
+            total_size = sum(len(part.text or '') + len(part.bytes or b'') for part in content_obj.all_parts)
+            if total_size > 1024 * 1024:  # 1MB limit
+                return None
+            
+            # Use default hashing for cacheable content
+            return cache.default_processor_content_hash(content)
+        except Exception:
+            return None
+    
+    @staticmethod
+    def _compact_hash_fn(content: content_api.ProcessorContentTypes) -> str | None:
+        """Compact hash function for memory-efficient scenarios."""
+        try:
+            content_obj = content_api.ProcessorContent(content)
+            
+            # Only cache small text content
+            if len(content_obj.all_parts) == 1:
+                part = content_obj.all_parts[0]
+                if content_api.is_text(part.mimetype) and len(part.text or '') < 1000:
+                    return cache.default_processor_content_hash(content)
+            
+            return None  # Don't cache complex or large content
+        except Exception:
+            return None
+
+# Error-resilient caching
+class ResilientCacheWrapper:
+    def __init__(self, base_cache: cache.InMemoryCache):
+        self.base_cache = base_cache
+        self.error_count = 0
+        self.max_errors = 10
+    
+    async def safe_lookup(self, query: content_api.ProcessorContentTypes):
+        """Lookup with error tracking."""
+        try:
+            result = await self.base_cache.lookup(query)
+            self.error_count = 0  # Reset on success
+            return result
+        except Exception as e:
+            self.error_count += 1
+            if self.error_count > self.max_errors:
+                # Disable caching temporarily
+                return cache.CacheMiss
+            raise
+    
+    async def safe_put(self, query: content_api.ProcessorContentTypes, value: content_api.ProcessorContentTypes):
+        """Put with error handling."""
+        try:
+            await self.base_cache.put(query, value)
+        except Exception:
+            # Silently fail on cache put errors
+            pass
 ```
 
 ## Performance Optimization Strategies

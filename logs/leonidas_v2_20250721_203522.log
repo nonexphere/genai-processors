@@ -1,14 +1,14 @@
 2025-07-21 20:35:22 - root - INFO - ============================================================
 2025-07-21 20:35:22 - root - INFO - LEONIDAS V2 SESSION STARTED
 2025-07-21 20:35:22 - root - INFO - ============================================================
-2025-07-21 20:35:22 - root - INFO - Log file: logs\leonidas_v2_20250721_203522.log
+2025-07-21 20:35:22 - root - INFO - Log file: logs\leonidas_20250721_203522.log
 2025-07-21 20:35:22 - root - INFO - Timestamp: 2025-07-21 20:35:22
 2025-07-21 20:35:22 - root - INFO - Debug mode: False
 2025-07-21 20:35:22 - root - INFO - Model: gemini-live-2.5-flash-preview
 2025-07-21 20:35:22 - root - INFO - ============================================================
 2025-07-21 20:35:22 - google_genai._api_client - WARNING - Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
 2025-07-21 20:35:24 - absl - INFO - Leonidas v2 iniciando...
-2025-07-21 20:35:24 - absl - INFO - Logs sendo salvos em: logs\leonidas_v2_20250721_203522.log
+2025-07-21 20:35:24 - absl - INFO - Logs sendo salvos em: logs\leonidas_20250721_203522.log
 2025-07-21 20:35:24 - absl - INFO - Use Ctrl+C para encerrar
 2025-07-21 20:35:24 - absl - INFO - Criando contexto do processador...
 2025-07-21 20:35:24 - absl - INFO - Contexto criado, iniciando stream...
@@ -615,9 +615,9 @@
 2025-07-21 20:36:02 - websockets.client - DEBUG - < CLOSE 1000 (OK) [2 bytes]
 2025-07-21 20:36:02 - absl - INFO - ============================================================
 2025-07-21 20:36:02 - absl - INFO - LEONIDAS V2 SESSION ENDED
-2025-07-21 20:36:02 - absl - INFO - Log file saved: logs\leonidas_v2_20250721_203522.log
+2025-07-21 20:36:02 - absl - INFO - Log file saved: logs\leonidas_20250721_203522.log
 2025-07-21 20:36:02 - absl - INFO - ============================================================
 2025-07-21 20:36:02 - asyncio - ERROR - Task was destroyed but it is pending!
-task: <Task cancelling name='Task-1' coro=<run_leonidas_v2() done, defined at C:\Users\guilh\DESKTOP3\nexus-app-os\genai-processors\leonidas\leonidas_v2.py:788> wait_for=<Future pending cb=[Task.task_wakeup()]> cb=[gather.<locals>._done_callback() at C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.1520.0_x64__qbz5n2kfra8p0\Lib\asyncio\tasks.py:820]>
+task: <Task cancelling name='Task-1' coro=<run_leonidas() done, defined at C:\Users\guilh\DESKTOP3\nexus-app-os\genai-processors\leonidas\leonidas.py:788> wait_for=<Future pending cb=[Task.task_wakeup()]> cb=[gather.<locals>._done_callback() at C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.1520.0_x64__qbz5n2kfra8p0\Lib\asyncio\tasks.py:820]>
 2025-07-21 20:36:02 - asyncio - ERROR - Task was destroyed but it is pending!
 task: <Task cancelling name='Task-4' coro=<RateLimitAudio.call.<locals>.consume_content() done, defined at C:\Users\guilh\DESKTOP3\nexus-app-os\genai-processors\genai_processors\core\rate_limit_audio.py:103> wait_for=<Future pending cb=[shield.<locals>._outer_done_callback() at C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.1520.0_x64__qbz5n2kfra8p0\Lib\asyncio\tasks.py:975, Task.task_wakeup()]> cb=[TaskGroup._on_task_done(), <1 more>, gather.<locals>._done_callback() at C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.1520.0_x64__qbz5n2kfra8p0\Lib\asyncio\tasks.py:820]>

@@ -87,8 +87,10 @@ rate_limited = rate_limit_audio.RateLimitAudio(
 1. **Prefer PartProcessors for parallelizable work**: Higher concurrency than stream processors
 2. **Use appropriate queue sizes**: Balance memory usage and throughput (default: 10,000 for parts)
 3. **Implement caching strategically**: 
-   - Use `InMemoryCache` with TTL for expensive operations
-   - Leverage `@functools.cached_property` for processor metadata
+   - Use `CachedPartProcessor` wrapper for automatic caching
+   - Leverage context-aware caching with `contextvars` for thread safety
+   - Use shared cache architecture with `base` parameter for memory efficiency
+   - Implement custom `hash_fn` for specialized cache key generation
    - Use deterministic hashing with `xxhash` for cache keys
 4. **Consider streaming vs buffering**: Stream when possible, buffer when necessary (e.g., for API calls)
 5. **Optimize concurrent execution**: Use `map_processor` for tree-based parallel processing

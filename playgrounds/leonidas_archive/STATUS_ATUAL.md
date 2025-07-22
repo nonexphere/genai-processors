@@ -7,8 +7,8 @@ O projeto Leonidas v2 está **COMPLETO e PRONTO PARA USO**. A refatoração foi 
 ## ✅ **IMPLEMENTAÇÃO COMPLETA**
 
 ### **Arquivos Principais**
-- ✅ **`leonidas_v2.py`** - Implementação modular completa (1.200+ linhas)
-- ✅ **`leonidas_v2_cli.py`** - Interface CLI robusta
+- ✅ **`leonidas.py`** - Implementação modular completa (1.200+ linhas)
+- ✅ **`leonidas_cli.py`** - Interface CLI robusta
 - ✅ **`test_v2.py`** - Suite de testes abrangente
 - ✅ **`README_v2.md`** - Documentação completa
 - ✅ **`demo_v2.py`** - Script de demonstração
@@ -121,23 +121,23 @@ export GOOGLE_API_KEY="sua_chave_aqui"
 ### **Execução**
 ```bash
 # Modo câmera (padrão)
-python leonidas/leonidas_v2_cli.py
+python leonidas/leonidas_cli.py
 
 # Modo captura de tela
-python leonidas/leonidas_v2_cli.py --mode screen
+python leonidas/leonidas_cli.py --mode screen
 
 # Modo debug
-python leonidas/leonidas_v2_cli.py --debug
+python leonidas/leonidas_cli.py --debug
 ```
 
 ### **Uso Programático**
 ```python
 import asyncio
-from leonidas import leonidas_v2
+from leonidas import leonidas
 
 async def main():
     api_key = "sua_chave"
-    agent = leonidas_v2.create_leonidas_agent_v2(api_key)
+    agent = leonidas.create_leonidas_agent_v2(api_key)
     # Usar o agente...
 
 asyncio.run(main())
@@ -164,7 +164,7 @@ Leonidas: [SPEAKING] Perfeito! Vou analisar o código que você está
 
 ### **Conformidade 100%**
 - ✅ **Foco na pasta `leonidas/`**: Todos os arquivos na pasta correta
-- ✅ **Versão 2 como prioridade**: `leonidas_v2.py` como base principal
+- ✅ **Versão 2 como prioridade**: `leonidas.py` como base principal
 - ✅ **Padrões Gemini**: Seguindo `leonidas-gemini-integration.md`
 - ✅ **Português brasileiro**: Implementação completa
 - ✅ **Modelo correto**: `gemini-live-2.5-flash-preview`
@@ -182,7 +182,7 @@ Leonidas: [SPEAKING] Perfeito! Vou analisar o código que você está
 
 ### **Imediato (Pronto para Uso)**
 1. ✅ Configurar `GOOGLE_API_KEY`
-2. ✅ Executar `python leonidas_v2_cli.py`
+2. ✅ Executar `python leonidas_cli.py`
 3. ✅ Testar conversação real
 4. ✅ Ajustar prompt baseado no uso
 

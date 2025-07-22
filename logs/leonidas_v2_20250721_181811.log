@@ -1,14 +1,14 @@
 2025-07-21 18:18:11 - root - INFO - ============================================================
 2025-07-21 18:18:11 - root - INFO - LEONIDAS V2 SESSION STARTED
 2025-07-21 18:18:11 - root - INFO - ============================================================
-2025-07-21 18:18:11 - root - INFO - Log file: logs\leonidas_v2_20250721_181811.log
+2025-07-21 18:18:11 - root - INFO - Log file: logs\leonidas_20250721_181811.log
 2025-07-21 18:18:11 - root - INFO - Timestamp: 2025-07-21 18:18:11
 2025-07-21 18:18:11 - root - INFO - Debug mode: False
 2025-07-21 18:18:11 - root - INFO - Model: gemini-live-2.5-flash-preview
 2025-07-21 18:18:11 - root - INFO - ============================================================
 2025-07-21 18:18:11 - google_genai._api_client - WARNING - Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
 2025-07-21 18:18:13 - absl - INFO - Leonidas v2 iniciando...
-2025-07-21 18:18:13 - absl - INFO - Logs sendo salvos em: logs\leonidas_v2_20250721_181811.log
+2025-07-21 18:18:13 - absl - INFO - Logs sendo salvos em: logs\leonidas_20250721_181811.log
 2025-07-21 18:18:13 - absl - INFO - Use Ctrl+C para encerrar
 2025-07-21 18:18:13 - absl - INFO - Criando contexto do processador...
 2025-07-21 18:18:13 - absl - INFO - Contexto criado, iniciando stream...
@@ -857,5 +857,5 @@
 2025-07-21 18:18:54 - websockets.client - DEBUG - x closing TCP connection
 2025-07-21 18:18:54 - absl - INFO - ============================================================
 2025-07-21 18:18:54 - absl - INFO - LEONIDAS V2 SESSION ENDED
-2025-07-21 18:18:54 - absl - INFO - Log file saved: logs\leonidas_v2_20250721_181811.log
+2025-07-21 18:18:54 - absl - INFO - Log file saved: logs\leonidas_20250721_181811.log
 2025-07-21 18:18:54 - absl - INFO - ============================================================

@@ -59,23 +59,23 @@ export GOOGLE_API_KEY="your_api_key_here"
 ### Basic Usage
 ```bash
 # Camera mode (default)
-python leonidas/leonidas_v2_cli.py
+python leonidas/leonidas_cli.py
 
 # Screen capture mode
-python leonidas/leonidas_v2_cli.py --mode screen
+python leonidas/leonidas_cli.py --mode screen
 
 # Debug mode
-python leonidas/leonidas_v2_cli.py --debug
+python leonidas/leonidas_cli.py --debug
 ```
 
 ### Programmatic Usage
 ```python
 import asyncio
-from leonidas import leonidas_v2
+from leonidas import leonidas
 
 async def main():
     api_key = "your_api_key"
-    agent = leonidas_v2.create_leonidas_agent_v2(api_key)
+    agent = leonidas.create_leonidas_agent_v2(api_key)
     
     # Run the agent
     async for part in agent(input_stream):
@@ -167,7 +167,7 @@ Leonidas: [SPEAKING] Perfeito! Vou analisar a arquitetura que você está
 
 ### Debug Mode
 ```bash
-python leonidas/leonidas_v2_cli.py --debug
+python leonidas/leonidas_cli.py --debug
 ```
 
 ## Migration from v1

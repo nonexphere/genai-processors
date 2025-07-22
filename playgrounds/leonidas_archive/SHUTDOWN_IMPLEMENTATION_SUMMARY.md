@@ -3,7 +3,7 @@
 ## ✅ Modificações Realizadas
 
 ### 1. **Nova Ferramenta `shutdown_system`**
-- **Localização**: `LEONIDAS_TOOLS` em `leonidas_v2.py`
+- **Localização**: `LEONIDAS_TOOLS` em `leonidas.py`
 - **Funcionalidade**: Permite ao modelo Gemini desligar o sistema quando solicitado pelo usuário
 - **Parâmetros**:
   - `confirmation` (boolean, obrigatório): Confirmação explícita do usuário
@@ -25,7 +25,7 @@
 - **Uso**: Verificadas pelo loop principal para encerramento gracioso
 
 ### 4. **Modificação do Loop Principal**
-- **Localização**: Função `run_leonidas_v2()`
+- **Localização**: Função `run_leonidas()`
 - **Verificação**: Checa periodicamente se shutdown foi solicitado
 - **Encerramento**: Para o loop e exibe mensagem informativa
 - **Gracioso**: Permite limpeza adequada de recursos

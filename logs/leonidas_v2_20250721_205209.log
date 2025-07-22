@@ -1,18 +1,18 @@
-{"timestamp": "2025-07-21 20:52:09,569", "level": "INFO", "name": "leonidas_v2", "message": "============================================================"}
-{"timestamp": "2025-07-21 20:52:09,569", "level": "INFO", "name": "leonidas_v2", "message": "LEONIDAS V2 SESSION STARTED"}
-{"timestamp": "2025-07-21 20:52:09,570", "level": "INFO", "name": "leonidas_v2", "message": "============================================================"}
-{"timestamp": "2025-07-21 20:52:09,570", "level": "INFO", "name": "leonidas_v2", "message": "Log file: logs\\leonidas_v2_20250721_205209.log"}
-{"timestamp": "2025-07-21 20:52:09,571", "level": "INFO", "name": "leonidas_v2", "message": "Timestamp: 2025-07-21 20:52:09"}
-{"timestamp": "2025-07-21 20:52:09,571", "level": "INFO", "name": "leonidas_v2", "message": "Debug mode: False"}
-{"timestamp": "2025-07-21 20:52:09,571", "level": "INFO", "name": "leonidas_v2", "message": "Model: gemini-live-2.5-flash-preview"}
-{"timestamp": "2025-07-21 20:52:09,572", "level": "INFO", "name": "leonidas_v2", "message": "============================================================"}
+{"timestamp": "2025-07-21 20:52:09,569", "level": "INFO", "name": "leonidas", "message": "============================================================"}
+{"timestamp": "2025-07-21 20:52:09,569", "level": "INFO", "name": "leonidas", "message": "LEONIDAS V2 SESSION STARTED"}
+{"timestamp": "2025-07-21 20:52:09,570", "level": "INFO", "name": "leonidas", "message": "============================================================"}
+{"timestamp": "2025-07-21 20:52:09,570", "level": "INFO", "name": "leonidas", "message": "Log file: logs\\leonidas_20250721_205209.log"}
+{"timestamp": "2025-07-21 20:52:09,571", "level": "INFO", "name": "leonidas", "message": "Timestamp: 2025-07-21 20:52:09"}
+{"timestamp": "2025-07-21 20:52:09,571", "level": "INFO", "name": "leonidas", "message": "Debug mode: False"}
+{"timestamp": "2025-07-21 20:52:09,571", "level": "INFO", "name": "leonidas", "message": "Model: gemini-live-2.5-flash-preview"}
+{"timestamp": "2025-07-21 20:52:09,572", "level": "INFO", "name": "leonidas", "message": "============================================================"}
 {"timestamp": "2025-07-21 20:52:09,681", "level": "WARNING", "name": "google_genai._api_client", "message": "Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY."}
-{"timestamp": "2025-07-21 20:52:11,244", "level": "INFO", "name": "leonidas_v2", "message": "Leonidas v2 iniciando..."}
-{"timestamp": "2025-07-21 20:52:11,244", "level": "INFO", "name": "leonidas_v2", "message": "Logs sendo salvos em: logs\\leonidas_v2_20250721_205209.log"}
-{"timestamp": "2025-07-21 20:52:11,244", "level": "INFO", "name": "leonidas_v2", "message": "Use Ctrl+C para encerrar"}
-{"timestamp": "2025-07-21 20:52:11,244", "level": "INFO", "name": "leonidas_v2", "message": "Criando contexto do processador..."}
-{"timestamp": "2025-07-21 20:52:11,245", "level": "INFO", "name": "leonidas_v2", "message": "Contexto criado, iniciando stream..."}
-{"timestamp": "2025-07-21 20:52:11,245", "level": "INFO", "name": "leonidas_v2", "message": "Iniciando captura de \u00e1udio..."}
+{"timestamp": "2025-07-21 20:52:11,244", "level": "INFO", "name": "leonidas", "message": "Leonidas v2 iniciando..."}
+{"timestamp": "2025-07-21 20:52:11,244", "level": "INFO", "name": "leonidas", "message": "Logs sendo salvos em: logs\\leonidas_20250721_205209.log"}
+{"timestamp": "2025-07-21 20:52:11,244", "level": "INFO", "name": "leonidas", "message": "Use Ctrl+C para encerrar"}
+{"timestamp": "2025-07-21 20:52:11,244", "level": "INFO", "name": "leonidas", "message": "Criando contexto do processador..."}
+{"timestamp": "2025-07-21 20:52:11,245", "level": "INFO", "name": "leonidas", "message": "Contexto criado, iniciando stream..."}
+{"timestamp": "2025-07-21 20:52:11,245", "level": "INFO", "name": "leonidas", "message": "Iniciando captura de \u00e1udio..."}
 {"timestamp": "2025-07-21 20:52:11,360", "level": "DEBUG", "name": "websockets.client", "message": "= connection is CONNECTING"}
 {"timestamp": "2025-07-21 20:52:11,465", "level": "DEBUG", "name": "websockets.client", "message": "> GET //ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent HTTP/1.1"}
 {"timestamp": "2025-07-21 20:52:11,465", "level": "DEBUG", "name": "websockets.client", "message": "> Host: generativelanguage.googleapis.com"}
@@ -137,28 +137,28 @@
 {"timestamp": "2025-07-21 20:52:19,011", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"n...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:19,081", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"a...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:19,116", "level": "DEBUG", "name": "websockets.client", "message": "< BINARY 7b 0a 20 20 22 73 65 72 76 65 72 43 6f 6e 74 65 ... 7d 0a 20 20 7d 0a 7d 0a [759 bytes]"}
-{"timestamp": "2025-07-21 20:52:19,119", "level": "DEBUG", "name": "leonidas_v2", "message": "Parte recebida #1: text/plain - None"}
-{"timestamp": "2025-07-21 20:52:19,120", "level": "INFO", "name": "leonidas_v2", "message": "Parte #1: text/plain (0 bytes)"}
+{"timestamp": "2025-07-21 20:52:19,119", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #1: text/plain - None"}
+{"timestamp": "2025-07-21 20:52:19,120", "level": "INFO", "name": "leonidas", "message": "Parte #1: text/plain (0 bytes)"}
 {"timestamp": "2025-07-21 20:52:19,121", "level": "DEBUG", "name": "websockets.client", "message": "< BINARY 7b 0a 20 20 22 74 6f 6f 6c 43 61 6c 6c 22 3a 20 ... 5d 0a 20 20 7d 0a 7d 0a [749 bytes]"}
-{"timestamp": "2025-07-21 20:52:19,123", "level": "INFO", "name": "leonidas_v2", "message": "Model is thinking", "tool_call": "think", "analysis": "O usu\u00e1rio iniciou a conversa com um \"Ol\u00e1\". Preciso responder de forma concisa e indicar que estou pronto para auxiliar, mantendo o meu papel de parceiro de engenharia s\u00eanior.", "reasoning": "O cumprimento inicial \u00e9 uma oportunidade para estabelecer o tom colaborativo. N\u00e3o devo ser excessivamente formal, mas sim direto ao ponto e focado na minha fun\u00e7\u00e3o de suporte t\u00e9cnico.", "plan": "Vou responder com uma sauda\u00e7\u00e3o e uma frase curta que sinaliza minha disponibilidade para discutir desafios de engenharia ou software."}
+{"timestamp": "2025-07-21 20:52:19,123", "level": "INFO", "name": "leonidas", "message": "Model is thinking", "tool_call": "think", "analysis": "O usu\u00e1rio iniciou a conversa com um \"Ol\u00e1\". Preciso responder de forma concisa e indicar que estou pronto para auxiliar, mantendo o meu papel de parceiro de engenharia s\u00eanior.", "reasoning": "O cumprimento inicial \u00e9 uma oportunidade para estabelecer o tom colaborativo. N\u00e3o devo ser excessivamente formal, mas sim direto ao ponto e focado na minha fun\u00e7\u00e3o de suporte t\u00e9cnico.", "plan": "Vou responder com uma sauda\u00e7\u00e3o e uma frase curta que sinaliza minha disponibilidade para discutir desafios de engenharia ou software."}
 {"timestamp": "2025-07-21 20:52:19,125", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"tool_response\": {\"functionResponses\": [{\"will...thinking_complete\"}}]}}' [197 bytes]"}
-{"timestamp": "2025-07-21 20:52:19,126", "level": "DEBUG", "name": "leonidas_v2", "message": "Parte recebida #2: text/plain - MODEL"}
-{"timestamp": "2025-07-21 20:52:19,127", "level": "INFO", "name": "leonidas_v2", "message": "Parte #2: text/plain (0 bytes)"}
+{"timestamp": "2025-07-21 20:52:19,126", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #2: text/plain - MODEL"}
+{"timestamp": "2025-07-21 20:52:19,127", "level": "INFO", "name": "leonidas", "message": "Parte #2: text/plain (0 bytes)"}
 {"timestamp": "2025-07-21 20:52:19,141", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"s...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:19,159", "level": "DEBUG", "name": "websockets.client", "message": "< BINARY 7b 0a 20 20 22 73 65 72 76 65 72 43 6f 6e 74 65 ... 7d 0a 20 20 7d 0a 7d 0a [296 bytes]"}
-{"timestamp": "2025-07-21 20:52:19,160", "level": "DEBUG", "name": "leonidas_v2", "message": "Parte recebida #3: text/plain - None"}
-{"timestamp": "2025-07-21 20:52:19,161", "level": "INFO", "name": "leonidas_v2", "message": "Parte #3: text/plain (0 bytes)"}
+{"timestamp": "2025-07-21 20:52:19,160", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #3: text/plain - None"}
+{"timestamp": "2025-07-21 20:52:19,161", "level": "INFO", "name": "leonidas", "message": "Parte #3: text/plain (0 bytes)"}
 {"timestamp": "2025-07-21 20:52:19,210", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"v...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:19,271", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"o...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:19,331", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"u...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:19,374", "level": "DEBUG", "name": "websockets.client", "message": "< BINARY 7b 0a 20 20 22 73 65 72 76 65 72 43 6f 6e 74 65 ... 65 0a 20 20 7d 0a 7d 0a [53 bytes]"}
 {"timestamp": "2025-07-21 20:52:19,376", "level": "DEBUG", "name": "websockets.client", "message": "< BINARY 7b 0a 20 20 22 73 65 72 76 65 72 43 6f 6e 74 65 ... 5d 0a 20 20 7d 0a 7d 0a [454 bytes]"}
-{"timestamp": "2025-07-21 20:52:19,378", "level": "DEBUG", "name": "leonidas_v2", "message": "Parte recebida #4: text/plain - MODEL"}
-{"timestamp": "2025-07-21 20:52:19,378", "level": "INFO", "name": "leonidas_v2", "message": "Parte #4: text/plain (0 bytes)"}
-{"timestamp": "2025-07-21 20:52:19,379", "level": "DEBUG", "name": "leonidas_v2", "message": "Parte recebida #5: text/plain - MODEL"}
-{"timestamp": "2025-07-21 20:52:19,379", "level": "INFO", "name": "leonidas_v2", "message": "Parte #5: text/plain (0 bytes)"}
-{"timestamp": "2025-07-21 20:52:19,380", "level": "DEBUG", "name": "leonidas_v2", "message": "Parte recebida #6: text/plain - MODEL"}
-{"timestamp": "2025-07-21 20:52:19,380", "level": "INFO", "name": "leonidas_v2", "message": "Parte #6: text/plain (0 bytes)"}
+{"timestamp": "2025-07-21 20:52:19,378", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #4: text/plain - MODEL"}
+{"timestamp": "2025-07-21 20:52:19,378", "level": "INFO", "name": "leonidas", "message": "Parte #4: text/plain (0 bytes)"}
+{"timestamp": "2025-07-21 20:52:19,379", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #5: text/plain - MODEL"}
+{"timestamp": "2025-07-21 20:52:19,379", "level": "INFO", "name": "leonidas", "message": "Parte #5: text/plain (0 bytes)"}
+{"timestamp": "2025-07-21 20:52:19,380", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #6: text/plain - MODEL"}
+{"timestamp": "2025-07-21 20:52:19,380", "level": "INFO", "name": "leonidas", "message": "Parte #6: text/plain (0 bytes)"}
 {"timestamp": "2025-07-21 20:52:19,401", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"9...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:19,461", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"9...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:19,530", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"E...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
@@ -185,7 +185,7 @@
 {"timestamp": "2025-07-21 20:52:20,700", "level": "DEBUG", "name": "websockets.client", "message": "< BINARY 7b 0a 20 20 22 73 65 72 76 65 72 43 6f 6e 74 65 ... 7d 0a 20 20 7d 0a 7d 0a [15568 bytes]"}
 {"timestamp": "2025-07-21 20:52:20,701", "level": "DEBUG", "name": "websockets.client", "message": "< BINARY 7b 0a 20 20 22 73 65 72 76 65 72 43 6f 6e 74 65 ... 7d 0a 20 20 7d 0a 7d 0a [84 bytes]"}
 {"timestamp": "2025-07-21 20:52:20,740", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
-{"timestamp": "2025-07-21 20:52:20,769", "level": "DEBUG", "name": "leonidas_v2", "message": "Parte recebida #7: text/plain - MODEL"}
+{"timestamp": "2025-07-21 20:52:20,769", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #7: text/plain - MODEL"}
 {"timestamp": "2025-07-21 20:52:20,810", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"_...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:20,862", "level": "DEBUG", "name": "websockets.client", "message": "< BINARY 7b 0a 20 20 22 73 65 72 76 65 72 43 6f 6e 74 65 ... 7d 0a 20 20 7d 0a 7d 0a [15568 bytes]"}
 {"timestamp": "2025-07-21 20:52:20,863", "level": "DEBUG", "name": "websockets.client", "message": "< BINARY 7b 0a 20 20 22 73 65 72 76 65 72 43 6f 6e 74 65 ... 7d 0a 20 20 7d 0a 7d 0a [84 bytes]"}
@@ -202,7 +202,7 @@
 {"timestamp": "2025-07-21 20:52:20,963", "level": "DEBUG", "name": "websockets.client", "message": "< BINARY 7b 0a 20 20 22 73 65 72 76 65 72 43 6f 6e 74 65 ... 7d 0a 20 20 7d 0a 7d 0a [15568 bytes]"}
 {"timestamp": "2025-07-21 20:52:20,963", "level": "DEBUG", "name": "websockets.client", "message": "< BINARY 7b 0a 20 20 22 73 65 72 76 65 72 43 6f 6e 74 65 ... 7d 0a 20 20 7d 0a 7d 0a [84 bytes]"}
 {"timestamp": "2025-07-21 20:52:21,000", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
-{"timestamp": "2025-07-21 20:52:21,007", "level": "DEBUG", "name": "leonidas_v2", "message": "Parte recebida #8: text/plain - MODEL"}
+{"timestamp": "2025-07-21 20:52:21,007", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #8: text/plain - MODEL"}
 {"timestamp": "2025-07-21 20:52:21,060", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:21,062", "level": "DEBUG", "name": "websockets.client", "message": "< BINARY 7b 0a 20 20 22 73 65 72 76 65 72 43 6f 6e 74 65 ... 7d 0a 20 20 7d 0a 7d 0a [15568 bytes]"}
 {"timestamp": "2025-07-21 20:52:21,062", "level": "DEBUG", "name": "websockets.client", "message": "< BINARY 7b 0a 20 20 22 73 65 72 76 65 72 43 6f 6e 74 65 ... 7d 0a 20 20 7d 0a 7d 0a [84 bytes]"}
@@ -237,7 +237,7 @@
 {"timestamp": "2025-07-21 20:52:21,217", "level": "DEBUG", "name": "websockets.client", "message": "< BINARY 7b 0a 20 20 22 73 65 72 76 65 72 43 6f 6e 74 65 ... 7d 0a 20 20 7d 0a 7d 0a [15568 bytes]"}
 {"timestamp": "2025-07-21 20:52:21,218", "level": "DEBUG", "name": "websockets.client", "message": "< BINARY 7b 0a 20 20 22 73 65 72 76 65 72 43 6f 6e 74 65 ... 7d 0a 20 20 7d 0a 7d 0a [84 bytes]"}
 {"timestamp": "2025-07-21 20:52:21,250", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"_...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
-{"timestamp": "2025-07-21 20:52:21,251", "level": "DEBUG", "name": "leonidas_v2", "message": "Parte recebida #9: text/plain - MODEL"}
+{"timestamp": "2025-07-21 20:52:21,251", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #9: text/plain - MODEL"}
 {"timestamp": "2025-07-21 20:52:21,320", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:21,372", "level": "DEBUG", "name": "websockets.client", "message": "< BINARY 7b 0a 20 20 22 73 65 72 76 65 72 43 6f 6e 74 65 ... 7d 0a 20 20 7d 0a 7d 0a [15568 bytes]"}
 {"timestamp": "2025-07-21 20:52:21,372", "level": "DEBUG", "name": "websockets.client", "message": "< BINARY 7b 0a 20 20 22 73 65 72 76 65 72 43 6f 6e 74 65 ... 7d 0a 20 20 7d 0a 7d 0a [84 bytes]"}
@@ -251,118 +251,118 @@
 {"timestamp": "2025-07-21 20:52:21,410", "level": "DEBUG", "name": "websockets.client", "message": "< BINARY 7b 0a 20 20 22 73 65 72 76 65 72 43 6f 6e 74 65 ... 7d 0a 20 20 7d 0a 7d 0a [93 bytes]"}
 {"timestamp": "2025-07-21 20:52:21,411", "level": "DEBUG", "name": "websockets.client", "message": "< BINARY 7b 0a 20 20 22 73 65 72 76 65 72 43 6f 6e 74 65 ... 65 0a 20 20 7d 0a 7d 0a [60 bytes]"}
 {"timestamp": "2025-07-21 20:52:21,450", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
-{"timestamp": "2025-07-21 20:52:21,492", "level": "DEBUG", "name": "leonidas_v2", "message": "Parte recebida #10: text/plain - MODEL"}
+{"timestamp": "2025-07-21 20:52:21,492", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #10: text/plain - MODEL"}
 {"timestamp": "2025-07-21 20:52:21,510", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:21,571", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
-{"timestamp": "2025-07-21 20:52:21,572", "level": "DEBUG", "name": "leonidas_v2", "message": "Parte recebida #11: text/plain - MODEL"}
+{"timestamp": "2025-07-21 20:52:21,572", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #11: text/plain - MODEL"}
 {"timestamp": "2025-07-21 20:52:21,640", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:21,700", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:21,770", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
-{"timestamp": "2025-07-21 20:52:21,771", "level": "DEBUG", "name": "leonidas_v2", "message": "Parte recebida #12: text/plain - MODEL"}
+{"timestamp": "2025-07-21 20:52:21,771", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #12: text/plain - MODEL"}
 {"timestamp": "2025-07-21 20:52:21,830", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"M...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:21,890", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"4...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:21,961", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"8...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
-{"timestamp": "2025-07-21 20:52:22,006", "level": "DEBUG", "name": "leonidas_v2", "message": "Parte recebida #13: text/plain - MODEL"}
+{"timestamp": "2025-07-21 20:52:22,006", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #13: text/plain - MODEL"}
 {"timestamp": "2025-07-21 20:52:22,020", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:22,089", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"E...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:22,150", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"3...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:22,210", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"7...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
-{"timestamp": "2025-07-21 20:52:22,253", "level": "DEBUG", "name": "leonidas_v2", "message": "Parte recebida #14: text/plain - MODEL"}
+{"timestamp": "2025-07-21 20:52:22,253", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #14: text/plain - MODEL"}
 {"timestamp": "2025-07-21 20:52:22,280", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"8...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:22,340", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"F...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:22,409", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:22,470", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
-{"timestamp": "2025-07-21 20:52:22,488", "level": "DEBUG", "name": "leonidas_v2", "message": "Parte recebida #15: text/plain - MODEL"}
+{"timestamp": "2025-07-21 20:52:22,488", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #15: text/plain - MODEL"}
 {"timestamp": "2025-07-21 20:52:22,530", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"_...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:22,600", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:22,660", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:22,729", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
-{"timestamp": "2025-07-21 20:52:22,730", "level": "DEBUG", "name": "leonidas_v2", "message": "Parte recebida #16: text/plain - MODEL"}
+{"timestamp": "2025-07-21 20:52:22,730", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #16: text/plain - MODEL"}
 {"timestamp": "2025-07-21 20:52:22,791", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:22,852", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"_...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:22,921", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"_...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
-{"timestamp": "2025-07-21 20:52:22,972", "level": "DEBUG", "name": "leonidas_v2", "message": "Parte recebida #17: text/plain - MODEL"}
+{"timestamp": "2025-07-21 20:52:22,972", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #17: text/plain - MODEL"}
 {"timestamp": "2025-07-21 20:52:22,981", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:23,050", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:23,111", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:23,171", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
-{"timestamp": "2025-07-21 20:52:23,206", "level": "DEBUG", "name": "leonidas_v2", "message": "Parte recebida #18: text/plain - MODEL"}
+{"timestamp": "2025-07-21 20:52:23,206", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #18: text/plain - MODEL"}
 {"timestamp": "2025-07-21 20:52:23,240", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:23,300", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:23,370", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:23,430", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"_...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
-{"timestamp": "2025-07-21 20:52:23,457", "level": "DEBUG", "name": "leonidas_v2", "message": "Parte recebida #19: text/plain - MODEL"}
+{"timestamp": "2025-07-21 20:52:23,457", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #19: text/plain - MODEL"}
 {"timestamp": "2025-07-21 20:52:23,490", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:23,561", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"_...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:23,621", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
-{"timestamp": "2025-07-21 20:52:23,690", "level": "DEBUG", "name": "leonidas_v2", "message": "Parte recebida #20: text/plain - MODEL"}
+{"timestamp": "2025-07-21 20:52:23,690", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #20: text/plain - MODEL"}
 {"timestamp": "2025-07-21 20:52:23,693", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"B...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:23,750", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:23,810", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:23,880", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"_...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
-{"timestamp": "2025-07-21 20:52:23,935", "level": "DEBUG", "name": "leonidas_v2", "message": "Parte recebida #21: text/plain - MODEL"}
+{"timestamp": "2025-07-21 20:52:23,935", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #21: text/plain - MODEL"}
 {"timestamp": "2025-07-21 20:52:23,940", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:24,010", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"_...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:24,070", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"_...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:24,130", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
-{"timestamp": "2025-07-21 20:52:24,169", "level": "DEBUG", "name": "leonidas_v2", "message": "Parte recebida #22: text/plain - MODEL"}
+{"timestamp": "2025-07-21 20:52:24,169", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #22: text/plain - MODEL"}
 {"timestamp": "2025-07-21 20:52:24,200", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:24,260", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"_...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:24,329", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:24,389", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
-{"timestamp": "2025-07-21 20:52:24,406", "level": "DEBUG", "name": "leonidas_v2", "message": "Parte recebida #23: text/plain - MODEL"}
+{"timestamp": "2025-07-21 20:52:24,406", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #23: text/plain - MODEL"}
 {"timestamp": "2025-07-21 20:52:24,450", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"_...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:24,520", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:24,581", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"_...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:24,650", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
-{"timestamp": "2025-07-21 20:52:24,650", "level": "DEBUG", "name": "leonidas_v2", "message": "Parte recebida #24: text/plain - MODEL"}
+{"timestamp": "2025-07-21 20:52:24,650", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #24: text/plain - MODEL"}
 {"timestamp": "2025-07-21 20:52:24,713", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:24,770", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:24,840", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
-{"timestamp": "2025-07-21 20:52:24,891", "level": "DEBUG", "name": "leonidas_v2", "message": "Parte recebida #25: text/plain - MODEL"}
+{"timestamp": "2025-07-21 20:52:24,891", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #25: text/plain - MODEL"}
 {"timestamp": "2025-07-21 20:52:24,900", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"_...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:24,970", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:25,031", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"_...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:25,091", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"_...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
-{"timestamp": "2025-07-21 20:52:25,128", "level": "DEBUG", "name": "leonidas_v2", "message": "Parte recebida #26: text/plain - MODEL"}
+{"timestamp": "2025-07-21 20:52:25,128", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #26: text/plain - MODEL"}
 {"timestamp": "2025-07-21 20:52:25,161", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:25,220", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:25,289", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:25,349", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
-{"timestamp": "2025-07-21 20:52:25,376", "level": "DEBUG", "name": "leonidas_v2", "message": "Parte recebida #27: text/plain - MODEL"}
+{"timestamp": "2025-07-21 20:52:25,376", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #27: text/plain - MODEL"}
 {"timestamp": "2025-07-21 20:52:25,410", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:25,480", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:25,540", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
-{"timestamp": "2025-07-21 20:52:25,609", "level": "DEBUG", "name": "leonidas_v2", "message": "Parte recebida #28: text/plain - MODEL"}
+{"timestamp": "2025-07-21 20:52:25,609", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #28: text/plain - MODEL"}
 {"timestamp": "2025-07-21 20:52:25,610", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"_...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:25,670", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:25,730", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"_...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:25,799", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
-{"timestamp": "2025-07-21 20:52:25,856", "level": "DEBUG", "name": "leonidas_v2", "message": "Parte recebida #29: text/plain - MODEL"}
+{"timestamp": "2025-07-21 20:52:25,856", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #29: text/plain - MODEL"}
 {"timestamp": "2025-07-21 20:52:25,861", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:25,929", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"_...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:25,991", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:26,051", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"_...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
-{"timestamp": "2025-07-21 20:52:26,089", "level": "DEBUG", "name": "leonidas_v2", "message": "Parte recebida #30: text/plain - MODEL"}
+{"timestamp": "2025-07-21 20:52:26,089", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #30: text/plain - MODEL"}
 {"timestamp": "2025-07-21 20:52:26,120", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:26,180", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:26,249", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:26,310", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
-{"timestamp": "2025-07-21 20:52:26,339", "level": "DEBUG", "name": "leonidas_v2", "message": "Parte recebida #31: text/plain - MODEL"}
+{"timestamp": "2025-07-21 20:52:26,339", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #31: text/plain - MODEL"}
 {"timestamp": "2025-07-21 20:52:26,371", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"_...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:26,440", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:26,501", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:26,570", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
-{"timestamp": "2025-07-21 20:52:26,571", "level": "DEBUG", "name": "leonidas_v2", "message": "Parte recebida #32: text/plain - MODEL"}
+{"timestamp": "2025-07-21 20:52:26,571", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #32: text/plain - MODEL"}
 {"timestamp": "2025-07-21 20:52:26,630", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:26,690", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"_...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:26,725", "level": "DEBUG", "name": "websockets.client", "message": "< BINARY 7b 0a 20 20 22 73 65 72 76 65 72 43 6f 6e 74 65 ... 5d 0a 20 20 7d 0a 7d 0a [452 bytes]"}
 {"timestamp": "2025-07-21 20:52:26,760", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"_...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
-{"timestamp": "2025-07-21 20:52:26,777", "level": "DEBUG", "name": "leonidas_v2", "message": "Parte recebida #33: text/plain - MODEL"}
-{"timestamp": "2025-07-21 20:52:26,777", "level": "DEBUG", "name": "leonidas_v2", "message": "Parte recebida #34: text/plain - MODEL"}
-{"timestamp": "2025-07-21 20:52:26,778", "level": "DEBUG", "name": "leonidas_v2", "message": "Parte recebida #35: text/plain - MODEL"}
-{"timestamp": "2025-07-21 20:52:26,778", "level": "DEBUG", "name": "leonidas_v2", "message": "Parte recebida #36: text/plain - MODEL"}
-{"timestamp": "2025-07-21 20:52:26,778", "level": "DEBUG", "name": "leonidas_v2", "message": "Parte recebida #37: text/plain - MODEL"}
+{"timestamp": "2025-07-21 20:52:26,777", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #33: text/plain - MODEL"}
+{"timestamp": "2025-07-21 20:52:26,777", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #34: text/plain - MODEL"}
+{"timestamp": "2025-07-21 20:52:26,778", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #35: text/plain - MODEL"}
+{"timestamp": "2025-07-21 20:52:26,778", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #36: text/plain - MODEL"}
+{"timestamp": "2025-07-21 20:52:26,778", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #37: text/plain - MODEL"}
 {"timestamp": "2025-07-21 20:52:26,820", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:26,889", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:26,950", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
@@ -522,14 +522,14 @@
 {"timestamp": "2025-07-21 20:52:36,550", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:36,610", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"_...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:36,679", "level": "DEBUG", "name": "websockets.client", "message": "< BINARY 7b 0a 20 20 22 73 65 72 76 65 72 43 6f 6e 74 65 ... 7d 0a 20 20 7d 0a 7d 0a [787 bytes]"}
-{"timestamp": "2025-07-21 20:52:36,682", "level": "DEBUG", "name": "leonidas_v2", "message": "Parte recebida #38: text/plain - None"}
+{"timestamp": "2025-07-21 20:52:36,682", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #38: text/plain - None"}
 {"timestamp": "2025-07-21 20:52:36,685", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:36,693", "level": "DEBUG", "name": "websockets.client", "message": "< BINARY 7b 0a 20 20 22 74 6f 6f 6c 43 61 6c 6c 22 3a 20 ... 5d 0a 20 20 7d 0a 7d 0a [776 bytes]"}
-{"timestamp": "2025-07-21 20:52:36,694", "level": "INFO", "name": "leonidas_v2", "message": "Model is thinking", "tool_call": "think", "analysis": "O usu\u00e1rio perguntou \"T\u00e1 me ouvindo?\". Isso indica uma poss\u00edvel preocupa\u00e7\u00e3o com a conex\u00e3o ou com a minha capacidade de processar \u00e1udio. Devo confirmar que estou ouvindo claramente para tranquiliz\u00e1-lo e validar a funcionalidade.", "reasoning": "\u00c9 fundamental garantir que a comunica\u00e7\u00e3o est\u00e1 estabelecida. Uma resposta direta e afirmativa \u00e9 o mais adequado neste momento para remover qualquer d\u00favida sobre a minha audi\u00e7\u00e3o.", "plan": "Vou responder de forma clara e concisa que sim, estou ouvindo, e aguardar a pr\u00f3xima intera\u00e7\u00e3o do usu\u00e1rio."}
+{"timestamp": "2025-07-21 20:52:36,694", "level": "INFO", "name": "leonidas", "message": "Model is thinking", "tool_call": "think", "analysis": "O usu\u00e1rio perguntou \"T\u00e1 me ouvindo?\". Isso indica uma poss\u00edvel preocupa\u00e7\u00e3o com a conex\u00e3o ou com a minha capacidade de processar \u00e1udio. Devo confirmar que estou ouvindo claramente para tranquiliz\u00e1-lo e validar a funcionalidade.", "reasoning": "\u00c9 fundamental garantir que a comunica\u00e7\u00e3o est\u00e1 estabelecida. Uma resposta direta e afirmativa \u00e9 o mais adequado neste momento para remover qualquer d\u00favida sobre a minha audi\u00e7\u00e3o.", "plan": "Vou responder de forma clara e concisa que sim, estou ouvindo, e aguardar a pr\u00f3xima intera\u00e7\u00e3o do usu\u00e1rio."}
 {"timestamp": "2025-07-21 20:52:36,696", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"tool_response\": {\"functionResponses\": [{\"will...thinking_complete\"}}]}}' [196 bytes]"}
-{"timestamp": "2025-07-21 20:52:36,697", "level": "DEBUG", "name": "leonidas_v2", "message": "Parte recebida #39: text/plain - MODEL"}
+{"timestamp": "2025-07-21 20:52:36,697", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #39: text/plain - MODEL"}
 {"timestamp": "2025-07-21 20:52:36,730", "level": "DEBUG", "name": "websockets.client", "message": "< BINARY 7b 0a 20 20 22 73 65 72 76 65 72 43 6f 6e 74 65 ... 7d 0a 20 20 7d 0a 7d 0a [295 bytes]"}
-{"timestamp": "2025-07-21 20:52:36,731", "level": "DEBUG", "name": "leonidas_v2", "message": "Parte recebida #40: text/plain - None"}
+{"timestamp": "2025-07-21 20:52:36,731", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #40: text/plain - None"}
 {"timestamp": "2025-07-21 20:52:36,740", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:36,809", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"9...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:36,871", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"9...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
@@ -546,7 +546,7 @@
 {"timestamp": "2025-07-21 20:52:37,157", "level": "DEBUG", "name": "websockets.client", "message": "< BINARY 7b 0a 20 20 22 73 65 72 76 65 72 43 6f 6e 74 65 ... 7d 0a 20 20 7d 0a 7d 0a [15568 bytes]"}
 {"timestamp": "2025-07-21 20:52:37,157", "level": "DEBUG", "name": "websockets.client", "message": "< BINARY 7b 0a 20 20 22 73 65 72 76 65 72 43 6f 6e 74 65 ... 7d 0a 20 20 7d 0a 7d 0a [84 bytes]"}
 {"timestamp": "2025-07-21 20:52:37,191", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"5...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
-{"timestamp": "2025-07-21 20:52:37,228", "level": "DEBUG", "name": "leonidas_v2", "message": "Parte recebida #41: text/plain - MODEL"}
+{"timestamp": "2025-07-21 20:52:37,228", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #41: text/plain - MODEL"}
 {"timestamp": "2025-07-21 20:52:37,232", "level": "DEBUG", "name": "websockets.client", "message": "< BINARY 7b 0a 20 20 22 73 65 72 76 65 72 43 6f 6e 74 65 ... 7d 0a 20 20 7d 0a 7d 0a [15568 bytes]"}
 {"timestamp": "2025-07-21 20:52:37,233", "level": "DEBUG", "name": "websockets.client", "message": "< BINARY 7b 0a 20 20 22 73 65 72 76 65 72 43 6f 6e 74 65 ... 7d 0a 20 20 7d 0a 7d 0a [84 bytes]"}
 {"timestamp": "2025-07-21 20:52:37,249", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
@@ -567,53 +567,53 @@
 {"timestamp": "2025-07-21 20:52:37,384", "level": "DEBUG", "name": "websockets.client", "message": "< BINARY 7b 0a 20 20 22 73 65 72 76 65 72 43 6f 6e 74 65 ... 7d 0a 20 20 7d 0a 7d 0a [82 bytes]"}
 {"timestamp": "2025-07-21 20:52:37,385", "level": "DEBUG", "name": "websockets.client", "message": "< BINARY 7b 0a 20 20 22 73 65 72 76 65 72 43 6f 6e 74 65 ... 65 0a 20 20 7d 0a 7d 0a [60 bytes]"}
 {"timestamp": "2025-07-21 20:52:37,450", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"c...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
-{"timestamp": "2025-07-21 20:52:37,461", "level": "DEBUG", "name": "leonidas_v2", "message": "Parte recebida #42: text/plain - MODEL"}
+{"timestamp": "2025-07-21 20:52:37,461", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #42: text/plain - MODEL"}
 {"timestamp": "2025-07-21 20:52:37,510", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"3...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:37,570", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:37,640", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:37,700", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"_...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
-{"timestamp": "2025-07-21 20:52:37,701", "level": "DEBUG", "name": "leonidas_v2", "message": "Parte recebida #43: text/plain - MODEL"}
+{"timestamp": "2025-07-21 20:52:37,701", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #43: text/plain - MODEL"}
 {"timestamp": "2025-07-21 20:52:37,770", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"_...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:37,830", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"_...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:37,889", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
-{"timestamp": "2025-07-21 20:52:37,943", "level": "DEBUG", "name": "leonidas_v2", "message": "Parte recebida #44: text/plain - MODEL"}
+{"timestamp": "2025-07-21 20:52:37,943", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #44: text/plain - MODEL"}
 {"timestamp": "2025-07-21 20:52:37,960", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:38,020", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:38,090", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:38,149", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"X...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
-{"timestamp": "2025-07-21 20:52:38,177", "level": "DEBUG", "name": "leonidas_v2", "message": "Parte recebida #45: text/plain - MODEL"}
+{"timestamp": "2025-07-21 20:52:38,177", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #45: text/plain - MODEL"}
 {"timestamp": "2025-07-21 20:52:38,210", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"G...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:38,280", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:38,342", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"K...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:38,411", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"d...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
-{"timestamp": "2025-07-21 20:52:38,426", "level": "DEBUG", "name": "leonidas_v2", "message": "Parte recebida #46: text/plain - MODEL"}
+{"timestamp": "2025-07-21 20:52:38,426", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #46: text/plain - MODEL"}
 {"timestamp": "2025-07-21 20:52:38,470", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:38,530", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:38,600", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"_...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
-{"timestamp": "2025-07-21 20:52:38,660", "level": "DEBUG", "name": "leonidas_v2", "message": "Parte recebida #47: text/plain - MODEL"}
+{"timestamp": "2025-07-21 20:52:38,660", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #47: text/plain - MODEL"}
 {"timestamp": "2025-07-21 20:52:38,661", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"_...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:38,729", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"_...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:38,790", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:38,850", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
-{"timestamp": "2025-07-21 20:52:38,908", "level": "DEBUG", "name": "leonidas_v2", "message": "Parte recebida #48: text/plain - MODEL"}
+{"timestamp": "2025-07-21 20:52:38,908", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #48: text/plain - MODEL"}
 {"timestamp": "2025-07-21 20:52:38,920", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"_...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:38,980", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"_...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:39,052", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"_...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:39,110", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"_...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
-{"timestamp": "2025-07-21 20:52:39,142", "level": "DEBUG", "name": "leonidas_v2", "message": "Parte recebida #49: text/plain - MODEL"}
+{"timestamp": "2025-07-21 20:52:39,142", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #49: text/plain - MODEL"}
 {"timestamp": "2025-07-21 20:52:39,170", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:39,240", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:39,300", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"_...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:39,369", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
-{"timestamp": "2025-07-21 20:52:39,378", "level": "DEBUG", "name": "leonidas_v2", "message": "Parte recebida #50: text/plain - MODEL"}
+{"timestamp": "2025-07-21 20:52:39,378", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #50: text/plain - MODEL"}
 {"timestamp": "2025-07-21 20:52:39,430", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:39,490", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
-{"timestamp": "2025-07-21 20:52:39,504", "level": "DEBUG", "name": "leonidas_v2", "message": "Parte recebida #51: text/plain - MODEL"}
-{"timestamp": "2025-07-21 20:52:39,516", "level": "DEBUG", "name": "leonidas_v2", "message": "Parte recebida #52: text/plain - MODEL"}
-{"timestamp": "2025-07-21 20:52:39,516", "level": "DEBUG", "name": "leonidas_v2", "message": "Parte recebida #53: text/plain - MODEL"}
+{"timestamp": "2025-07-21 20:52:39,504", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #51: text/plain - MODEL"}
+{"timestamp": "2025-07-21 20:52:39,516", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #52: text/plain - MODEL"}
+{"timestamp": "2025-07-21 20:52:39,516", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #53: text/plain - MODEL"}
 {"timestamp": "2025-07-21 20:52:39,539", "level": "DEBUG", "name": "websockets.client", "message": "< BINARY 7b 0a 20 20 22 73 65 72 76 65 72 43 6f 6e 74 65 ... 5d 0a 20 20 7d 0a 7d 0a [454 bytes]"}
-{"timestamp": "2025-07-21 20:52:39,540", "level": "DEBUG", "name": "leonidas_v2", "message": "Parte recebida #54: text/plain - MODEL"}
-{"timestamp": "2025-07-21 20:52:39,540", "level": "DEBUG", "name": "leonidas_v2", "message": "Parte recebida #55: text/plain - MODEL"}
+{"timestamp": "2025-07-21 20:52:39,540", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #54: text/plain - MODEL"}
+{"timestamp": "2025-07-21 20:52:39,540", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #55: text/plain - MODEL"}
 {"timestamp": "2025-07-21 20:52:39,560", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:39,620", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:52:39,690", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"_...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
@@ -987,14 +987,14 @@
 {"timestamp": "2025-07-21 20:53:02,982", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"_...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:53:03,051", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:53:03,111", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
-{"timestamp": "2025-07-21 20:53:03,123", "level": "INFO", "name": "leonidas_v2", "message": "Stream cancelado"}
-{"timestamp": "2025-07-21 20:53:03,123", "level": "INFO", "name": "leonidas_v2", "message": "Stream finalizado ap\u00f3s 55 partes"}
+{"timestamp": "2025-07-21 20:53:03,123", "level": "INFO", "name": "leonidas", "message": "Stream cancelado"}
+{"timestamp": "2025-07-21 20:53:03,123", "level": "INFO", "name": "leonidas", "message": "Stream finalizado ap\u00f3s 55 partes"}
 {"timestamp": "2025-07-21 20:53:03,171", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:53:03,241", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"3...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:53:03,302", "level": "DEBUG", "name": "websockets.client", "message": "> TEXT '{\"realtime_input\": {\"mediaChunks\": [{\"data\": \"A...dio/pcm;rate=16000\"}]}}' [2820 bytes]"}
 {"timestamp": "2025-07-21 20:53:03,324", "level": "DEBUG", "name": "websockets.client", "message": "> CLOSE 1000 (OK) [2 bytes]"}
 {"timestamp": "2025-07-21 20:53:03,325", "level": "DEBUG", "name": "websockets.client", "message": "= connection is CLOSING"}
-{"timestamp": "2025-07-21 20:53:03,341", "level": "INFO", "name": "leonidas_v2", "message": "============================================================"}
-{"timestamp": "2025-07-21 20:53:03,342", "level": "INFO", "name": "leonidas_v2", "message": "LEONIDAS V2 SESSION ENDED"}
-{"timestamp": "2025-07-21 20:53:03,342", "level": "INFO", "name": "leonidas_v2", "message": "Log file saved: logs\\leonidas_v2_20250721_205209.log"}
-{"timestamp": "2025-07-21 20:53:03,343", "level": "INFO", "name": "leonidas_v2", "message": "============================================================"}
+{"timestamp": "2025-07-21 20:53:03,341", "level": "INFO", "name": "leonidas", "message": "============================================================"}
+{"timestamp": "2025-07-21 20:53:03,342", "level": "INFO", "name": "leonidas", "message": "LEONIDAS V2 SESSION ENDED"}
+{"timestamp": "2025-07-21 20:53:03,342", "level": "INFO", "name": "leonidas", "message": "Log file saved: logs\\leonidas_20250721_205209.log"}
+{"timestamp": "2025-07-21 20:53:03,343", "level": "INFO", "name": "leonidas", "message": "============================================================"}

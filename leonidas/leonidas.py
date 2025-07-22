@@ -72,7 +72,7 @@ def setup_logging(debug: bool = False) -> str:
     
     # Generate unique log filename with timestamp
     timestamp = dt.now().strftime("%Y%m%d_%H%M%S")
-    log_filename = f"leonidas_v2_{timestamp}.log"
+    log_filename = f"leonidas_{timestamp}.log"
     log_path = logs_dir / log_filename
     
     # Configure logging level
@@ -818,7 +818,7 @@ def create_leonidas_agent_v2(api_key: str, pya: pyaudio.PyAudio = None, video_mo
 
 # === MAIN EXECUTION ===
 
-async def run_leonidas_v2(api_key: str, video_mode: Optional[str] = None, debug: bool = False):
+async def run_leonidas(api_key: str, video_mode: Optional[str] = None, debug: bool = False):
     """
     Run the Leonidas v2 agent.
     
@@ -926,7 +926,7 @@ if __name__ == '__main__':
     
     # Run the agent with logging setup
     try:
-        asyncio.run(run_leonidas_v2(api_key, args.mode, args.debug))
+        asyncio.run(run_leonidas(api_key, args.mode, args.debug))
     except Exception as e:
         logging.error(f"Erro no Leonidas v2: {e}")
         raise

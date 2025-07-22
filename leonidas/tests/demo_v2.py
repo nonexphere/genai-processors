@@ -10,7 +10,7 @@ import asyncio
 import os
 import sys
 from genai_processors import content_api, streams
-import leonidas_v2
+import leonidas
 
 async def demo_basic_usage():
     """Demonstração básica do uso do Leonidas v2."""
@@ -39,9 +39,9 @@ async def demo_basic_usage():
     print("   • Colaboração inteligente")
     
     print("\n📋 Para usar o Leonidas v2:")
-    print("   1. Modo Câmera: python leonidas_v2_cli.py --mode camera")
-    print("   2. Modo Tela: python leonidas_v2_cli.py --mode screen")
-    print("   3. Debug: python leonidas_v2_cli.py --debug")
+    print("   1. Modo Câmera: python leonidas_cli.py --mode camera")
+    print("   2. Modo Tela: python leonidas_cli.py --mode screen")
+    print("   3. Debug: python leonidas_cli.py --debug")
     
     return True
 
@@ -63,11 +63,11 @@ def demo_architecture():
         print(f"      {description}")
     
     print("\n🔧 Sistema de Tools:")
-    tools = leonidas_v2.LEONIDAS_TOOLS[0].function_declarations
+    tools = leonidas.LEONIDAS_TOOLS[0].function_declarations
     for tool in tools:
         print(f"   🛠️ {tool.name}: {tool.description[:50]}...")
     
-    print(f"\n📝 Sistema de Prompt: {len(leonidas_v2.LEONIDAS_SYSTEM_PROMPT)} seções")
+    print(f"\n📝 Sistema de Prompt: {len(leonidas.LEONIDAS_SYSTEM_PROMPT)} seções")
     print("   • Identidade core")
     print("   • Filosofia operacional")
     print("   • Estilo de comunicação")
@@ -81,9 +81,9 @@ def demo_configuration():
     print("=" * 20)
     
     config_items = [
-        ("Modelo", leonidas_v2.MODEL_LIVE),
-        ("Áudio Entrada", f"{leonidas_v2.AUDIO_INPUT_RATE}Hz"),
-        ("Áudio Saída", f"{leonidas_v2.AUDIO_OUTPUT_RATE}Hz"),
+        ("Modelo", leonidas.MODEL_LIVE),
+        ("Áudio Entrada", f"{leonidas.AUDIO_INPUT_RATE}Hz"),
+        ("Áudio Saída", f"{leonidas.AUDIO_OUTPUT_RATE}Hz"),
         ("Voz", "Kore (profissional, clara)"),
         ("Linguagem", "Português Brasileiro"),
         ("Resolução", "Média (balanceada)")
@@ -100,7 +100,7 @@ async def demo_orchestrator():
     
     try:
         # Criar orquestrador (falhará sem API key real, mas mostra estrutura)
-        orchestrator = leonidas_v2.LeonidasOrchestrator("demo_key")
+        orchestrator = leonidas.LeonidasOrchestrator("demo_key")
         
         print(f"   🎯 Estado inicial: {orchestrator.agent_state}")
         print(f"   📊 Métricas: {dict(orchestrator.metrics['tool_calls'])}")
@@ -150,7 +150,7 @@ async def main():
     print("Leonidas v2 está pronto para uso!")
     print("\n🚀 Próximos passos:")
     print("   1. Configure GOOGLE_API_KEY")
-    print("   2. Execute: python leonidas_v2_cli.py")
+    print("   2. Execute: python leonidas_cli.py")
     print("   3. Use fones de ouvido para evitar feedback")
     print("   4. Fale naturalmente - Leonidas pensará antes de responder")
     

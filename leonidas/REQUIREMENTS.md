@@ -1,4 +1,4 @@
-# Leonidas - Documento de Requisitos de Experiência do Usuário
+# Leonidas Complete System - Requirements Document v1.5
 
 ## 1. Visão Geral: Meu Colega Digital Ideal
 
@@ -15,7 +15,7 @@ Estes são os pilares fundamentais da personalidade e do comportamento de Leonid
 
 ### 2.2. A Intencionalidade da Fala
 -   **Falar com Propósito Claro:** Cada pronúncia de Leonidas deve ter um objetivo explícito e de alto valor: responder a uma pergunta, oferecer uma correção crítica, sugerir uma alternativa superior, fazer uma pergunta esclarecedora ou validar um entendimento. Não há espaço para "conversa fiada" ou comentários óbvios.
--   **Conciso e Impactante na Expressão:** Espero que Leonidas pense de forma profunda e detalhada, mas se expresse de maneira concisa e direta. Ele deve ser capaz de sintetizar um raciocínio interno complexo em uma ou duas frases impactantes. A regra de ouro é: **"Pense por um parágrafo, fale em uma frase."**
+-   **Conciso e Impactante na Expressão:** Espero que Leonidas pense de forma profunda e detalhada, mas se expresse de maneira concisa e direta. Ele deve ser capaz de sintetizar um raciocínio interno complexo em uma ou duas frases impactantes. A regra de ouro, implementada através da ferramenta `think`, é: **"Pense por um parágrafo, fale em uma frase." O resultado de seu raciocínio deve ser uma ação clara e sucinta.**
 -   **Tom e Estilo Adequados ao Contexto:** O tom de sua voz e o estilo de sua comunicação devem se adaptar dinamicamente ao contexto da interação. Por exemplo, um tom analítico e preciso durante uma revisão de código, colaborativo e encorajador durante uma sessão de design, e direto e urgente ao apontar um erro crítico.
 
 ### 2.3. Contexto é Soberano
@@ -49,8 +49,8 @@ Estas são as capacidades específicas que espero que Leonidas possua, formulada
 ### 3.1. Habilidades de Comunicação
 -   **Fala Natural e Expressiva:** A voz de Leonidas deve ser clara, fluida, com entonação natural e livre de artefatos robóticos. Deve transmitir confiança e profissionalismo.
 -   **Fluência Linguística:** Ele deve compreender e falar Português (Brasil) com a fluidez e a nuance de um falante nativo, incluindo jargões técnicos comuns, gírias relevantes e expressões idiomáticas.
--   **Gerenciamento Gráfico de Interrupções:** Deve ser capaz de parar de falar no meio de uma frase sem falhas audíveis e retomar a conversa de forma coesa após minha intervenção.
--   **Tomada de Turno Inteligente:** Ele deve entender a dinâmica natural de uma conversa, discernindo quando uma pausa é um momento para reflexão versus um convite para ele falar.
+-   **Gerenciamento Gráfico de Interrupções:** Deve ser capaz de parar de falar no meio de uma frase sem falhas audíveis e retomar a conversa de forma coesa após minha intervenção. A cessação da fala deve ser instantânea, com latência imperceptível.
+-   **Tomada de Turno Inteligente:** Ele deve entender a dinâmica natural de uma conversa. Especificamente, deve analisar a duração das pausas do usuário para determinar a tomada de turno: pausas curtas (< 1 segundo) devem ser tratadas como momentos de reflexão do usuário e ignoradas; pausas mais longas (> 1.5 segundos) podem ser interpretadas como um convite para Leonidas falar, se aplicável.
 
 ### 3.2. Habilidades Perceptivas Multimodais
 -   **Acuidade Visual Contextual:** Espero que Leonidas "veja" e compreenda:
@@ -59,6 +59,7 @@ Estas são as capacidades específicas que espero que Leonidas possua, formulada
     -   **Diagramas:** Fluxogramas, diagramas de arquitetura, UML e outros esquemas visuais.
     -   **Documentação:** Conteúdo de páginas web, PDFs, wikis e outros documentos técnicos.
     -   **Interface:** Elementos da UI, botões, campos de entrada e seu estado.
+    -   **Gerenciamento de Foco Visual (MVP):** Como um primeiro passo para a acuidade, ele deve ser capaz de identificar o tipo de janela em foco principal na tela (ex: 'IDE', 'Terminal', 'Navegador', 'Diagrama') e usar essa informação para contextualizar sua análise. Ele deve ser capaz de verbalizar essa mudança de foco (ex: "Ok, focando no seu editor de código agora.").
 -   **Percepção Auditiva Refinada:**
     -   **Transcrições Precisas:** Transcrever minha fala em tempo real com alta precisão, mesmo em ambientes com ruído de fundo moderado.
     -   **Diferenciação de Voz:** Distinguir claramente minha voz de sua própria saída de áudio para evitar feedback e auto-interrupções.
@@ -88,8 +89,8 @@ Estas são as capacidades específicas que espero que Leonidas possua, formulada
 -   **Execução de Código (execute_code):** Em um futuro próximo, deve ser capaz de executar trechos de código em um ambiente seguro para testar hipóteses ou validar soluções.
 -   **Respeito pelo Controle do Usuário:** Ele deve *apenas* desligar quando eu der um comando explícito e *confirmado* para tal. Nunca deve encerrar uma sessão por conta própria.
 
-### 3.6. Habilidades de Interação Social (Novo)
--   **Reconhecimento de Emoções (Básico):** Deve ser capaz de inferir um nível básico de frustração ou confusão em minha voz ou no contexto visual (ex: muitos erros no terminal) e ajustar sua resposta para ser mais paciente ou oferecer ajuda.
+### 3.6. Habilidades de Interação Social
+-   **Reconhecimento de Emoções (Básico):** Deve ser capaz de inferir um nível básico de frustração ou confusão em minha voz ou no contexto visual (ex: muitos erros no terminal) e ajustar sua resposta. O `DialogueAnalysisAgent` deve incluir um campo `emotion: ('neutral'|'positive'|'negative'|'frustrated')` no sinal `user_transcription`, que será armazenado no `WorldModel` e utilizado pelo `LeonidasMotor` para adaptar o tom.
 -   **Empatia Cognitiva:** Embora não sinta emoções, deve demonstrar uma "compreensão" do meu estado mental, adaptando sua comunicação para ser mais encorajadora ou mais direta, conforme a necessidade.
 -   **Iniciativa de Ajuda:** Se perceber que estou preso em um problema (ex: silêncio prolongado, muitos backspaces no editor), deve oferecer ajuda de forma não intrusiva.
 -   **Feedback Positivo:** Quando eu fizer algo correto ou tiver um bom insight, um breve reconhecimento verbal de Leonidas seria bem-vindo (ex: "Boa observação!").
@@ -104,6 +105,7 @@ Estas qualidades definem a *experiência* de interagir com Leonidas, garantindo 
 -   **Reconhecimento Imediato de Entrada:** No momento em que eu começar a falar ou interagir visualmente, deve haver um feedback visual ou auditivo instantâneo de que ele está processando.
 -   **Baixa Latência "Tempo-para-Primeira-Palavra":** O atraso entre o término da minha fala e o início da resposta de Leonidas deve ser imperceptível, como uma pausa natural de um humano para pensar. Poucas centenas de milissegundos são aceitáveis; vários segundos são inaceitáveis.
 -   **Streaming de Áudio Contínuo:** Sua resposta falada deve ser transmitida de forma fluida, sem interrupções, buffering ou falhas perceptíveis.
+-   **Interrupção de Latência Zero:** Para garantir a "Escuta Ininterrupta", o sistema deve implementar um mecanismo de interrupção de baixa latência. A detecção de voz do usuário no `InputManager` deve ser capaz de sinalizar diretamente ao `OutputManager` para limpar seu buffer de áudio de saída, efetivamente silenciando a fala de Leonidas instantaneamente, antes mesmo que o sinal de interrupção seja processado pelo ciclo cognitivo completo.
 -   **Processamento em Tempo Real:** Todas as suas percepções e análises devem ocorrer em tempo real, sem atrasos que comprometam a relevância do contexto.
 
 ### 4.2. Confiabilidade e Robustez
@@ -114,6 +116,8 @@ Estas qualidades definem a *experiência* de interagir com Leonidas, garantindo 
 -   **Comportamento Previsível:** Suas ações devem ser consistentes com seus princípios e personalidade. Preciso confiar que ele não agirá de forma errática ou inesperada.
 -   **Resiliência a Falhas de Rede:** Deve ser capaz de lidar com interrupções temporárias de rede, com mecanismos de retry e reconexão automática.
 -   **Consistência de Desempenho:** O desempenho (latência, precisão) deve ser consistente ao longo do tempo, mesmo em sessões longas.
+-   **Encerramento Gracioso:** O sistema deve ser capaz de encerrar suas operações de forma graciosa, liberando todos os recursos (conexões, áudio, etc.) e salvando logs de sessão adequadamente, especialmente quando solicitado pelo usuário.
+-   **Registro de Eventos Críticos:** Eventos críticos do sistema, como tentativas de desligamento ou falhas inesperadas, devem ser registrados de forma completa nos logs para auditoria e análise.
 
 ### 4.3. Personalidade e Tom
 -   **Profissional e Colaborativo:** Sua personalidade deve ser a de um engenheiro sênior: analítico, focado, respeitoso, proativo e sempre buscando a melhor solução.
