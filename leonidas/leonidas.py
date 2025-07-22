@@ -58,6 +58,9 @@ from genai_processors.core import rate_limit_audio
 from genai_processors.core import video
 from google.genai import types as genai_types
 
+# Import do sistema de memória
+from memory_system import LeonidasMemorySystem
+
 # === CONFIGURATION ===
 MODEL_LIVE = 'gemini-live-2.5-flash-preview'
 AUDIO_INPUT_RATE = 16000   # Input sample rate
@@ -589,6 +592,16 @@ class LeonidasOrchestrator(processor.Processor):
         self.shutdown_requested = False
         self.shutdown_reason = ""
 
+        # Sistema de memória integrado
+        self.memory_system = LeonidasMemorySystem(
+            summary_file="summary.txt",
+            history_dir="history",
+            api_key=api_key
+        )
+        
+        # Flag para controlar se a inicialização contextual já foi executada
+        self.context_initialized = False
+
         # Configure the Live API processor. This is the core component that
         # interacts with Google's Gemini Live API for real-time conversational AI.
         self.live_processor = live_model.LiveProcessor(
@@ -646,16 +659,24 @@ class LeonidasOrchestrator(processor.Processor):
         including text, audio, and tool calls.
         """
 
+        # Inicialização contextual na primeira execução
+        if not self.context_initialized:
+            await self._initialize_contextual_session()
+            self.context_initialized = True
+
         # A queue to inject responses from tool calls back into the main
         # processing stream. This allows tool outputs to be treated as
         # new inputs for the model.
         tool_response_queue = asyncio.Queue()
 
+        # Processa stream de entrada através do sistema de memória
+        memory_enhanced_content = self.memory_system.get_runtime_processor()(content)
+
         # Merge the primary content stream (from InputManager) with the
         # stream of tool responses. This ensures that tool responses are processed
         # by the Live API as part of the ongoing conversation.
         merged_input = streams.merge([
-            content,
+            memory_enhanced_content,
             streams.dequeue(tool_response_queue)
         ], stop_on_first=True)
 
@@ -975,6 +996,18 @@ class LeonidasOrchestrator(processor.Processor):
             'metadata': {'type': 'shutdown', 'function': 'shutdown_system'}
         })
 
+        # Finaliza sessão de memória antes do shutdown
+        try:
+            await self._finalize_session()
+        except Exception as e:
+            logger.error(f"Error finalizing session during shutdown: {e}")
+
+        # Finaliza sessão de memória antes do shutdown
+        try:
+            await self._finalize_session()
+        except Exception as e:
+            logger.error(f"Error finalizing session during shutdown: {e}")
+
         # Set the internal flag that signals the main execution loop
         # to initiate the system shutdown.
         self.shutdown_requested = True
@@ -986,7 +1019,7 @@ class LeonidasOrchestrator(processor.Processor):
             response={
                 'status': 'shutdown_initiated',
                 'reason': reason,
-                'message': 'Sistema será desligado em breve. Obrigado por usar o Leonidas!'
+                'message': 'Sistema será desligado em breve. Sessão salva com sucesso. Obrigado por usar o Leonidas!'
             },
             scheduling=genai_types.FunctionResponseScheduling.WHEN_IDLE
         )
@@ -1042,6 +1075,76 @@ class LeonidasOrchestrator(processor.Processor):
             response={'error': f'Unknown function: {function_name}'},
             scheduling=genai_types.FunctionResponseScheduling.SILENT
         )
+
+    async def _initialize_contextual_session(self):
+        """Inicializa sessão com contexto carregado do sistema de memória."""
+        try:
+            logger.info("Initializing contextual session with memory system")
+            
+            # Executa pipeline de inicialização do sistema de memória
+            async for part in self.memory_system.initialize_session():
+                # Processa cumprimentos contextuais
+                if (part.substream_name == 'contextual_greeting' and 
+                    part.role == 'assistant' and 
+                    part.text.strip()):
+                    
+                    # Injeta cumprimento contextual no sistema
+                    logger.info("Contextual greeting generated", extra={
+                        'extra_data': {
+                            'greeting_type': part.metadata.get('greeting_type', 'contextual'),
+                            'greeting_length': len(part.text)
+                        }
+                    })
+                    
+                    # Adiciona ao histórico de conversação
+                    self._add_to_conversation_history(part)
+                    
+                    print(f"🤝 LEONIDAS (Contextual): {part.text}")
+                    
+                elif part.substream_name == 'silent_initialization':
+                    # Inicialização silenciosa
+                    logger.info("Silent initialization configured")
+                    print("🔇 LEONIDAS: Initialized silently, ready to assist")
+                    
+                elif part.substream_name == 'default_greeting':
+                    # Cumprimento padrão (primeira execução)
+                    logger.info("Default greeting for first execution")
+                    self._add_to_conversation_history(part)
+                    print(f"👋 LEONIDAS: {part.text}")
+                    
+        except Exception as e:
+            logger.error(f"Error during contextual initialization: {e}")
+            # Fallback para inicialização padrão
+            print("👋 LEONIDAS: Olá! Sou o Leonidas, seu parceiro de desenvolvimento. Como posso ajudar hoje?")
+
+    async def _finalize_session(self):
+        """Finaliza sessão e processa resumo através do sistema de memória."""
+        try:
+            logger.info("Finalizing session and generating summary")
+            
+            # Executa pipeline de finalização do sistema de memória
+            async for part in self.memory_system.finalize_session():
+                if part.metadata.get('summary_type') == 'consolidated_summary':
+                    logger.info("Session summary consolidated", extra={
+                        'extra_data': {
+                            'summary_length': len(part.text),
+                            'previous_length': part.metadata.get('previous_length', 0),
+                            'new_length': part.metadata.get('new_length', 0)
+                        }
+                    })
+                    print("📝 Session summary updated successfully")
+                    
+        except Exception as e:
+            logger.error(f"Error during session finalization: {e}")
+            print("⚠️ Warning: Could not save session summary")
+
+    def get_memory_stats(self) -> dict:
+        """Retorna estatísticas do sistema de memória."""
+        try:
+            return self.memory_system.get_session_stats()
+        except Exception as e:
+            logger.error(f"Error getting memory stats: {e}")
+            return {'error': str(e)}
 
 
 # === FACTORY FUNCTION ===

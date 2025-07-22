@@ -251,6 +251,7 @@ await self.state_machine.transition(
 - ❌ Não ignorar os steering rules Tier 1
 - ❌ Não sobrecarregar com todos os steering rules simultaneamente
 - ❌ Não quebrar a arquitetura modular estabelecida
+- ❌ **NÃO REINVENTAR A RODA**: Não implementar funcionalidades que já existem ou podem ser compostas com `genai-processors`. A biblioteca é a fonte de verdade para padrões de processamento de stream.
 
 ---
 

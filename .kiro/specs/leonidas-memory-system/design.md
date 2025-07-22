@@ -2,151 +2,332 @@
 
 ## Overview
 
-O sistema de memória e contexto avançado para o Leonidas implementa uma arquitetura de três camadas: **Histórico de Sessões** (dados brutos), **Processamento de Resumo** (inteligência), e **Memória Persistente** (conhecimento acumulado). O design segue os padrões estabelecidos na arquitetura modular do Leonidas (InputManager → Orchestrator → OutputManager) e integra-se nativamente com o sistema de ferramentas existente.
+O sistema de memória e contexto avançado para o Leonidas implementa uma arquitetura baseada em **genai-processors**, utilizando processadores especializados para gerenciar histórico, resumos e contexto. O design segue os padrões fundamentais da biblioteca: processamento assíncrono baseado em streams, composição modular de processadores, e uso de `ProcessorPart` para fluxo de dados.
 
 ## Architecture
 
-### Visão Geral da Arquitetura
+### Arquitetura Baseada em Processadores
 
 ```mermaid
 graph TB
-    A[Leonidas Startup] --> B[MemoryManager.initialize]
-    B --> C[Load summary.txt]
-    C --> D[Process Initial Context]
-    D --> E[Session Active]
+    A[Input Stream] --> B[MemoryInputProcessor]
+    B --> C[SessionHistoryProcessor]
+    C --> D[ContextMemoryProcessor]
+    D --> E[Output Stream]
     
-    E --> F[SessionHistoryManager]
-    F --> G[Real-time History Logging]
-    G --> H[Conversation Memory Buffer]
+    F[Session End] --> G[SummaryGenerationProcessor]
+    G --> H[SummaryConsolidationProcessor] 
+    H --> I[PersistentMemoryProcessor]
     
-    E --> I[Session End]
-    I --> J[SummaryProcessor]
-    J --> K[Generate Session Summary]
-    K --> L[Update summary.txt]
-    L --> M[Archive History File]
+    J[Session Start] --> K[ContextLoadProcessor]
+    K --> L[InitialContextProcessor]
+    L --> M[ContextualGreetingProcessor]
     
-    subgraph "Memory Components"
-        N[MemoryManager]
-        O[SessionHistoryManager] 
-        P[SummaryProcessor]
-        Q[ContextualInitializer]
+    subgraph "Memory Pipeline"
+        N[memory_input + session_history + context_memory]
+        O[summary_generation + consolidation + persistence]
+        P[context_load + initial_context + greeting]
     end
 ```
 
-### Integração com Arquitetura Existente
+### Integração com Arquitetura Existente do Leonidas
 
-O sistema se integra com a arquitetura modular existente do Leonidas:
+O sistema se integra como processadores na pipeline existente:
 
 ```python
-# Integração no LeonidasOrchestrator
-class LeonidasOrchestrator:
+# Integração no LeonidasOrchestrator usando padrões genai-processors
+class LeonidasOrchestrator(processor.Processor):
     def __init__(self):
-        # Componentes existentes...
-        self.memory_manager = MemoryManager()
-        self.session_history = SessionHistoryManager()
+        # Pipeline de memória integrada
+        self.memory_pipeline = (
+            MemoryInputProcessor() +
+            SessionHistoryProcessor() +
+            ContextMemoryProcessor()
+        )
         
-    async def initialize(self):
-        # Carregamento de contexto inicial
-        await self.memory_manager.initialize()
-        initial_context = await self.memory_manager.get_initial_context()
+        # Pipeline de inicialização
+        self.initialization_pipeline = (
+            ContextLoadProcessor() +
+            InitialContextProcessor() +
+            ContextualGreetingProcessor()
+        )
         
-        # Processamento contextual inicial usando função think
-        if initial_context:
-            await self._process_initial_context(initial_context)
+        # Pipeline de finalização
+        self.finalization_pipeline = (
+            SummaryGenerationProcessor() +
+            SummaryConsolidationProcessor() +
+            PersistentMemoryProcessor()
+        )
+    
+    async def call(self, content: AsyncIterable[content_api.ProcessorPart]) -> AsyncIterable[content_api.ProcessorPartTypes]:
+        # Processamento com memória integrada
+        memory_enhanced_stream = self.memory_pipeline(content)
+        
+        async for part in memory_enhanced_stream:
+            yield part
 ```
 
 ## Components and Interfaces
 
-### 1. MemoryManager (Componente Principal)
+### 1. MemoryInputProcessor (Entrada de Dados)
 
 ```python
-class MemoryManager:
-    """Gerenciador principal do sistema de memória."""
+class MemoryInputProcessor(processor.Processor):
+    """Processa entrada de dados para o sistema de memória."""
     
     def __init__(self, 
                  summary_file: str = "summary.txt",
-                 history_dir: str = "history",
-                 max_summary_size: int = 50000):
+                 history_dir: str = "history"):
         self.summary_file = Path(summary_file)
         self.history_dir = Path(history_dir)
-        self.max_summary_size = max_summary_size
-        self.current_context = {}
         
-    async def initialize(self) -> dict:
-        """Inicializa o sistema de memória e carrega contexto."""
-        
-    async def get_initial_context(self) -> Optional[dict]:
-        """Retorna contexto inicial para nova sessão."""
-        
-    async def finalize_session(self, session_history: list) -> None:
-        """Finaliza sessão e atualiza resumo persistente."""
+    async def call(self, content: AsyncIterable[content_api.ProcessorPart]) -> AsyncIterable[content_api.ProcessorPartTypes]:
+        """Processa stream de entrada adicionando contexto de memória."""
+        async for part in content:
+            # Adiciona metadata de memória
+            part.metadata['memory_timestamp'] = time.time()
+            part.metadata['session_id'] = self._get_current_session_id()
+            
+            # Emite parte original com metadata enriquecida
+            yield part
+            
+            # Emite debug info
+            yield processor.debug(f"Memory input processed: {part.role}")
+    
+    @functools.cached_property
+    def key_prefix(self) -> str:
+        return f"{self.__class__.__qualname__}:{self.summary_file}"
 ```
 
-### 2. SessionHistoryManager (Histórico de Sessão)
+### 2. SessionHistoryProcessor (Histórico de Sessão)
 
 ```python
-class SessionHistoryManager:
-    """Gerencia histórico da sessão atual."""
+class SessionHistoryProcessor(processor.PartProcessor):
+    """Processa e armazena histórico da sessão em tempo real."""
     
     def __init__(self, history_dir: str = "history"):
         self.history_dir = Path(history_dir)
         self.current_session_file = None
-        self.session_data = []
-        self.session_start_time = None
+        self.session_data = collections.deque(maxlen=10000)
         
-    async def start_session(self) -> str:
-        """Inicia nova sessão e cria arquivo de histórico."""
+    def match(self, part: content_api.ProcessorPart) -> bool:
+        """Processa todas as partes que têm conteúdo conversacional."""
+        return (content_api.is_text(part.mimetype) and 
+                part.role in ['user', 'assistant', 'system'])
+    
+    async def call(self, part: content_api.ProcessorPart) -> AsyncIterable[content_api.ProcessorPartTypes]:
+        """Registra interação no histórico e passa adiante."""
+        if self.match(part):
+            # Registra no histórico da sessão
+            await self._log_interaction(part)
+            
+            # Emite status de logging
+            yield processor.status(f"Logged {part.role} interaction")
         
-    async def log_interaction(self, 
-                            role: str, 
-                            content: str, 
-                            metadata: dict = None) -> None:
+        # Sempre passa a parte adiante
+        yield part
+    
+    async def _log_interaction(self, part: content_api.ProcessorPart):
         """Registra interação no histórico atual."""
+        interaction_data = {
+            'timestamp': part.metadata.get('memory_timestamp', time.time()),
+            'role': part.role,
+            'content': part.text,
+            'metadata': part.metadata.copy()
+        }
         
-    async def end_session(self) -> list:
-        """Finaliza sessão e retorna dados completos."""
+        self.session_data.append(interaction_data)
+        
+        # Persiste periodicamente
+        if len(self.session_data) % 10 == 0:
+            await self._persist_session_data()
+    
+    @functools.cached_property
+    def key_prefix(self) -> str:
+        return f"{self.__class__.__qualname__}:{self.history_dir}"
 ```
 
-### 3. SummaryProcessor (Processamento Inteligente)
+### 3. SummaryGenerationProcessor (Geração de Resumos)
 
 ```python
-class SummaryProcessor:
-    """Processa históricos para gerar resumos inteligentes."""
+class SummaryGenerationProcessor(processor.Processor):
+    """Gera resumos inteligentes usando modelo Gemini."""
     
-    def __init__(self, model: str = "gemini-2.0-flash-live-001"):
+    def __init__(self, 
+                 model: str = "gemini-2.0-flash-live-001",
+                 api_key: str = None):
         self.model = model
-        self.client = genai.Client()
+        self.genai_model = GenaiModel(
+            model=model,
+            api_key=api_key,
+            generation_config={'max_output_tokens': 2000}
+        )
         
-    async def process_session_history(self, 
-                                    session_data: list) -> dict:
+    async def call(self, content: AsyncIterable[content_api.ProcessorPart]) -> AsyncIterable[content_api.ProcessorPartTypes]:
         """Processa histórico de sessão e gera resumo estruturado."""
         
-    async def consolidate_summaries(self, 
-                                  existing_summary: str, 
-                                  new_summary: dict) -> str:
-        """Consolida novo resumo com resumo existente."""
+        # Coleta dados da sessão
+        session_parts = []
+        async for part in content:
+            session_parts.append(part)
+            yield part  # Passa adiante
         
-    async def compress_summary(self, summary: str) -> str:
-        """Comprime resumo mantendo informações críticas."""
+        # Gera resumo se há dados suficientes
+        if len(session_parts) > 5:  # Mínimo de interações
+            summary_prompt = self._create_summary_prompt(session_parts)
+            
+            # Processa com modelo Gemini
+            summary_stream = self.genai_model(streams.stream_content([
+                content_api.ProcessorPart(
+                    summary_prompt,
+                    role='user',
+                    substream_name='summary_generation'
+                )
+            ]))
+            
+            async for summary_part in summary_stream:
+                # Emite resumo gerado
+                summary_part.metadata['summary_type'] = 'session_summary'
+                summary_part.metadata['source_parts_count'] = len(session_parts)
+                yield summary_part
+    
+    def _create_summary_prompt(self, session_parts: list) -> str:
+        """Cria prompt para geração de resumo."""
+        conversation_text = "\n".join([
+            f"{part.role}: {part.text}" 
+            for part in session_parts 
+            if content_api.is_text(part.mimetype)
+        ])
+        
+        return f"""
+        Analise a seguinte conversa e gere um resumo estruturado em português:
+
+        CONVERSA:
+        {conversation_text}
+
+        Gere um resumo no seguinte formato JSON:
+        {{
+            "contexto_geral": "Resumo do contexto da conversa",
+            "decisoes_importantes": ["decisão 1", "decisão 2"],
+            "tarefas_pendentes": ["tarefa 1", "tarefa 2"],
+            "preferencias_usuario": ["preferência 1", "preferência 2"],
+            "contexto_tecnico": "Detalhes técnicos relevantes"
+        }}
+        """
+    
+    @functools.cached_property
+    def key_prefix(self) -> str:
+        return f"{self.__class__.__qualname__}:{self.model}"
 ```
 
-### 4. ContextualInitializer (Inicialização Inteligente)
+### 4. PersistentMemoryProcessor (Memória Persistente)
 
 ```python
-class ContextualInitializer:
-    """Gerencia inicialização contextual do Leonidas."""
+class PersistentMemoryProcessor(processor.PartProcessor):
+    """Gerencia memória persistente e arquivo summary.txt."""
     
-    def __init__(self, orchestrator):
-        self.orchestrator = orchestrator
+    def __init__(self, summary_file: str = "summary.txt"):
+        self.summary_file = Path(summary_file)
+        self.cache = cache.InMemoryCache(
+            ttl_hours=24,
+            max_items=100,
+            hash_fn=self._summary_hash_fn
+        )
         
-    async def process_initial_context(self, context: dict) -> str:
-        """Processa contexto inicial e decide ação de inicialização."""
+    def match(self, part: content_api.ProcessorPart) -> bool:
+        """Processa partes que são resumos de sessão."""
+        return (part.metadata.get('summary_type') == 'session_summary' and
+                content_api.is_text(part.mimetype))
+    
+    async def call(self, part: content_api.ProcessorPart) -> AsyncIterable[content_api.ProcessorPartTypes]:
+        """Atualiza summary.txt com novo resumo."""
+        if self.match(part):
+            # Carrega summary existente
+            existing_summary = await self._load_existing_summary()
+            
+            # Consolida com novo resumo
+            consolidated_summary = await self._consolidate_summaries(
+                existing_summary, part.text
+            )
+            
+            # Persiste summary atualizado
+            await self._save_summary(consolidated_summary)
+            
+            # Emite confirmação
+            yield processor.status("Summary.txt updated successfully")
+            
+            # Emite summary consolidado
+            yield content_api.ProcessorPart(
+                consolidated_summary,
+                role='system',
+                metadata={
+                    'summary_type': 'consolidated_summary',
+                    'updated_at': time.time()
+                }
+            )
+        else:
+            yield part
+    
+    def _summary_hash_fn(self, content: content_api.ProcessorContentTypes) -> str:
+        """Hash function customizada para cache de summaries."""
+        # Exclui timestamps para cache consistente
+        filtered_content = []
+        for part in content_api.ProcessorContent(content).all_parts:
+            if 'updated_at' not in part.metadata:
+                filtered_content.append(part)
         
-    async def generate_contextual_greeting(self, context: dict) -> str:
-        """Gera cumprimento contextual baseado no histórico."""
+        return cache.default_processor_content_hash(filtered_content) if filtered_content else None
+    
+    @functools.cached_property
+    def key_prefix(self) -> str:
+        return f"{self.__class__.__qualname__}:{self.summary_file}"
+```
+
+### 5. ContextLoadProcessor (Carregamento de Contexto)
+
+```python
+class ContextLoadProcessor(processor.Processor):
+    """Carrega contexto inicial do summary.txt na inicialização."""
+    
+    def __init__(self, summary_file: str = "summary.txt"):
+        self.summary_file = Path(summary_file)
         
-    async def identify_pending_tasks(self, context: dict) -> list:
-        """Identifica tarefas pendentes do contexto."""
+    async def call(self, content: AsyncIterable[content_api.ProcessorPart]) -> AsyncIterable[content_api.ProcessorPartTypes]:
+        """Carrega contexto inicial e injeta no stream."""
+        
+        # Carrega summary existente
+        summary_content = await self._load_summary_content()
+        
+        if summary_content:
+            # Emite contexto inicial
+            yield content_api.ProcessorPart(
+                summary_content,
+                role='system',
+                substream_name='initial_context',
+                metadata={
+                    'context_type': 'initial_summary',
+                    'loaded_at': time.time()
+                }
+            )
+            
+            yield processor.debug("Initial context loaded from summary.txt")
+        
+        # Processa stream original
+        async for part in content:
+            yield part
+    
+    async def _load_summary_content(self) -> Optional[str]:
+        """Carrega conteúdo do summary.txt."""
+        try:
+            if self.summary_file.exists():
+                return self.summary_file.read_text(encoding='utf-8')
+        except Exception as e:
+            logging.error(f"Error loading summary: {e}")
+        return None
+    
+    @functools.cached_property
+    def key_prefix(self) -> str:
+        return f"{self.__class__.__qualname__}:{self.summary_file}"
 ```
 
 ## Data Models
@@ -431,3 +612,232 @@ class SecurityManager:
 ```
 
 Este design técnico fornece uma base sólida para implementar o sistema de memória e contexto avançado do Leonidas, mantendo compatibilidade com a arquitetura existente e seguindo as melhores práticas de desenvolvimento estabelecidas no projeto.
+
+### 6. InitialContextProcessor (Processamento de Contexto Inicial)
+
+```python
+class InitialContextProcessor(processor.PartProcessor):
+    """Processa contexto inicial carregado e prepara para decisão de inicialização."""
+    
+    def __init__(self):
+        self.genai_model = GenaiModel(
+            model="gemini-2.0-flash-live-001",
+            generation_config={'max_output_tokens': 500}
+        )
+    
+    def match(self, part: content_api.ProcessorPart) -> bool:
+        """Processa partes que são contexto inicial."""
+        return (part.substream_name == 'initial_context' and
+                part.metadata.get('context_type') == 'initial_summary')
+    
+    async def call(self, part: content_api.ProcessorPart) -> AsyncIterable[content_api.ProcessorPartTypes]:
+        """Processa contexto inicial usando função think do modelo."""
+        if self.match(part):
+            # Cria prompt para análise do contexto
+            analysis_prompt = self._create_context_analysis_prompt(part.text)
+            
+            # Processa com modelo para análise
+            analysis_stream = self.genai_model(streams.stream_content([
+                content_api.ProcessorPart(
+                    analysis_prompt,
+                    role='user',
+                    substream_name='context_analysis'
+                )
+            ]))
+            
+            async for analysis_part in analysis_stream:
+                # Emite análise do contexto
+                analysis_part.metadata['analysis_type'] = 'initial_context_analysis'
+                analysis_part.metadata['source_context_length'] = len(part.text)
+                yield analysis_part
+        
+        # Sempre passa a parte original adiante
+        yield part
+    
+    def _create_context_analysis_prompt(self, context: str) -> str:
+        """Cria prompt para análise do contexto inicial."""
+        return f"""
+        Analise o seguinte resumo de contexto e determine como inicializar a sessão:
+
+        CONTEXTO HISTÓRICO:
+        {context}
+
+        Com base neste contexto, responda em JSON:
+        {{
+            "deve_cumprimentar": true/false,
+            "tipo_inicializacao": "contextual|silenciosa|pergunta",
+            "tarefas_pendentes_encontradas": ["tarefa1", "tarefa2"],
+            "contexto_relevante": "resumo do que é mais relevante",
+            "acao_sugerida": "descrição da ação inicial recomendada"
+        }}
+        """
+    
+    @functools.cached_property
+    def key_prefix(self) -> str:
+        return f"{self.__class__.__qualname__}"
+```
+
+### 7. ContextualGreetingProcessor (Geração de Cumprimento Contextual)
+
+```python
+class ContextualGreetingProcessor(processor.PartProcessor):
+    """Gera cumprimento contextual baseado na análise do contexto inicial."""
+    
+    def __init__(self):
+        self.genai_model = GenaiModel(
+            model="gemini-2.0-flash-live-001",
+            generation_config={'max_output_tokens': 200}
+        )
+    
+    def match(self, part: content_api.ProcessorPart) -> bool:
+        """Processa análises de contexto inicial."""
+        return part.metadata.get('analysis_type') == 'initial_context_analysis'
+    
+    async def call(self, part: content_api.ProcessorPart) -> AsyncIterable[content_api.ProcessorPartTypes]:
+        """Gera cumprimento contextual baseado na análise."""
+        if self.match(part):
+            try:
+                # Parse da análise JSON
+                import json
+                analysis = json.loads(part.text)
+                
+                if analysis.get('deve_cumprimentar', False):
+                    # Gera cumprimento contextual
+                    greeting_prompt = self._create_greeting_prompt(analysis)
+                    
+                    greeting_stream = self.genai_model(streams.stream_content([
+                        content_api.ProcessorPart(
+                            greeting_prompt,
+                            role='user',
+                            substream_name='greeting_generation'
+                        )
+                    ]))
+                    
+                    async for greeting_part in greeting_stream:
+                        # Emite cumprimento gerado
+                        greeting_part.metadata['greeting_type'] = 'contextual'
+                        greeting_part.metadata['initialization_type'] = analysis.get('tipo_inicializacao')
+                        greeting_part.role = 'assistant'  # Resposta do Leonidas
+                        yield greeting_part
+                
+                elif analysis.get('tipo_inicializacao') == 'silenciosa':
+                    # Emite indicação de inicialização silenciosa
+                    yield content_api.ProcessorPart(
+                        "",  # Conteúdo vazio para inicialização silenciosa
+                        role='system',
+                        metadata={
+                            'initialization_type': 'silent',
+                            'context_processed': True
+                        }
+                    )
+                    
+            except json.JSONDecodeError:
+                # Fallback para inicialização padrão
+                yield processor.debug("Failed to parse context analysis, using default initialization")
+        
+        # Passa parte original adiante
+        yield part
+    
+    def _create_greeting_prompt(self, analysis: dict) -> str:
+        """Cria prompt para geração de cumprimento contextual."""
+        return f"""
+        Gere um cumprimento natural e contextual em português brasileiro para iniciar uma sessão do Leonidas.
+
+        CONTEXTO DA ANÁLISE:
+        - Tipo de inicialização: {analysis.get('tipo_inicializacao')}
+        - Tarefas pendentes: {analysis.get('tarefas_pendentes_encontradas', [])}
+        - Contexto relevante: {analysis.get('contexto_relevante', '')}
+        - Ação sugerida: {analysis.get('acao_sugerida', '')}
+
+        Gere um cumprimento que:
+        1. Seja natural e não robótico
+        2. Mencione brevemente o contexto relevante
+        3. Sugira continuidade se há tarefas pendentes
+        4. Seja conciso (máximo 2 frases)
+        
+        Responda apenas com o cumprimento, sem explicações adicionais.
+        """
+    
+    @functools.cached_property
+    def key_prefix(self) -> str:
+        return f"{self.__class__.__qualname__}"
+```
+
+### 8. Pipeline de Composição Completa
+
+```python
+class LeonidasMemorySystem:
+    """Sistema completo de memória integrado com genai-processors."""
+    
+    def __init__(self, 
+                 summary_file: str = "summary.txt",
+                 history_dir: str = "history",
+                 api_key: str = None):
+        
+        # Processadores individuais
+        self.memory_input = MemoryInputProcessor(summary_file, history_dir)
+        self.session_history = SessionHistoryProcessor(history_dir)
+        self.context_load = ContextLoadProcessor(summary_file)
+        self.initial_context = InitialContextProcessor()
+        self.contextual_greeting = ContextualGreetingProcessor()
+        self.summary_generation = SummaryGenerationProcessor(api_key=api_key)
+        self.persistent_memory = PersistentMemoryProcessor(summary_file)
+        
+        # Pipelines compostas usando padrões genai-processors
+        self.initialization_pipeline = (
+            self.context_load +
+            self.initial_context +
+            self.contextual_greeting
+        )
+        
+        self.runtime_pipeline = (
+            self.memory_input +
+            self.session_history
+        )
+        
+        self.finalization_pipeline = (
+            self.summary_generation +
+            self.persistent_memory
+        )
+    
+    def get_initialization_processor(self) -> processor.Processor:
+        """Retorna pipeline de inicialização."""
+        return self.initialization_pipeline
+    
+    def get_runtime_processor(self) -> processor.Processor:
+        """Retorna pipeline de runtime."""
+        return self.runtime_pipeline
+    
+    def get_finalization_processor(self) -> processor.Processor:
+        """Retorna pipeline de finalização."""
+        return self.finalization_pipeline
+    
+    async def initialize_session(self) -> AsyncIterable[content_api.ProcessorPart]:
+        """Inicializa sessão com contexto carregado."""
+        # Stream vazio para trigger de inicialização
+        empty_stream = streams.stream_content([
+            content_api.ProcessorPart(
+                "",
+                role='system',
+                metadata={'trigger': 'session_initialization'}
+            )
+        ])
+        
+        async for part in self.initialization_pipeline(empty_stream):
+            yield part
+    
+    async def finalize_session(self, session_data: list) -> AsyncIterable[content_api.ProcessorPart]:
+        """Finaliza sessão e processa resumo."""
+        # Converte dados da sessão para stream
+        session_stream = streams.stream_content([
+            content_api.ProcessorPart(
+                interaction['content'],
+                role=interaction['role'],
+                metadata=interaction.get('metadata', {})
+            )
+            for interaction in session_data
+        ])
+        
+        async for part in self.finalization_pipeline(session_stream):
+            yield part
+```

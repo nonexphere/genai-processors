@@ -44,7 +44,7 @@ stream_content = streams_.stream_content
 gather_stream = streams_.gather_stream
 
 # Core processors
-GenaiModel = core.genai_model.GenaiModel
+GenaiModel = core.models.genai_model.GenaiModel
 LiveModelProcessor = core.realtime.LiveModelProcessor
 LiveProcessor = core.live_model.LiveProcessor
 OllamaModel = core.ollama_model.OllamaModel
