@@ -1,0 +1,26 @@
+{"timestamp": "2025-07-22 04:34:32,728", "level": "INFO", "name": "leonidas", "message": "============================================================"}
+{"timestamp": "2025-07-22 04:34:32,729", "level": "INFO", "name": "leonidas", "message": "LEONIDAS V2 SESSION STARTED"}
+{"timestamp": "2025-07-22 04:34:32,729", "level": "INFO", "name": "leonidas", "message": "============================================================"}
+{"timestamp": "2025-07-22 04:34:32,729", "level": "INFO", "name": "leonidas", "message": "Log file: logs\\leonidas_20250722_043432.log"}
+{"timestamp": "2025-07-22 04:34:32,730", "level": "INFO", "name": "leonidas", "message": "Timestamp: 2025-07-22 04:34:32"}
+{"timestamp": "2025-07-22 04:34:32,741", "level": "INFO", "name": "leonidas", "message": "Debug mode: False"}
+{"timestamp": "2025-07-22 04:34:32,741", "level": "INFO", "name": "leonidas", "message": "Model: gemini-live-2.5-flash-preview"}
+{"timestamp": "2025-07-22 04:34:32,742", "level": "INFO", "name": "leonidas", "message": "============================================================"}
+{"timestamp": "2025-07-22 04:34:32,885", "level": "WARNING", "name": "google_genai._api_client", "message": "Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY."}
+{"timestamp": "2025-07-22 04:34:35,518", "level": "WARNING", "name": "google_genai._api_client", "message": "Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY."}
+{"timestamp": "2025-07-22 04:34:36,981", "level": "WARNING", "name": "google_genai._api_client", "message": "Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY."}
+{"timestamp": "2025-07-22 04:34:38,417", "level": "INFO", "name": "memory_system", "message": "Leonidas Memory System initialized", "summary_file": "summary.txt", "history_dir": "history", "has_api_key": true}
+{"timestamp": "2025-07-22 04:34:38,419", "level": "WARNING", "name": "google_genai._api_client", "message": "Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY."}
+{"timestamp": "2025-07-22 04:34:39,902", "level": "INFO", "name": "leonidas", "message": "Leonidas v2 iniciando..."}
+{"timestamp": "2025-07-22 04:34:39,902", "level": "INFO", "name": "leonidas", "message": "Logs sendo salvos em: logs\\leonidas_20250722_043432.log"}
+{"timestamp": "2025-07-22 04:34:39,902", "level": "INFO", "name": "leonidas", "message": "Use Ctrl+C para encerrar"}
+{"timestamp": "2025-07-22 04:34:39,903", "level": "INFO", "name": "leonidas", "message": "Criando contexto do processador..."}
+{"timestamp": "2025-07-22 04:34:39,903", "level": "INFO", "name": "leonidas", "message": "Contexto criado, iniciando stream..."}
+{"timestamp": "2025-07-22 04:34:39,903", "level": "INFO", "name": "leonidas", "message": "Iniciando captura de \u00e1udio..."}
+{"timestamp": "2025-07-22 04:34:39,942", "level": "INFO", "name": "leonidas", "message": "Stream cancelado"}
+{"timestamp": "2025-07-22 04:34:39,942", "level": "INFO", "name": "leonidas", "message": "Stream finalizado ap\u00f3s 0 partes"}
+{"timestamp": "2025-07-22 04:34:39,943", "level": "ERROR", "name": "leonidas", "message": "Erro no Leonidas v2: 'LeonidasOrchestrator' object has no attribute '_initialize_contextual_session'"}
+{"timestamp": "2025-07-22 04:34:39,951", "level": "INFO", "name": "leonidas", "message": "============================================================"}
+{"timestamp": "2025-07-22 04:34:39,951", "level": "INFO", "name": "leonidas", "message": "LEONIDAS V2 SESSION ENDED"}
+{"timestamp": "2025-07-22 04:34:39,952", "level": "INFO", "name": "leonidas", "message": "Log file saved: logs\\leonidas_20250722_043432.log"}
+{"timestamp": "2025-07-22 04:34:39,952", "level": "INFO", "name": "leonidas", "message": "============================================================"}

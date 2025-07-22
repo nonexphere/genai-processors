@@ -53,6 +53,7 @@ from genai_processors import processor
 from genai_processors import streams
 from genai_processors.streams import endless_stream
 from genai_processors.core import audio_io
+from genai_processors.core import genai_model
 from genai_processors.core import live_model
 from genai_processors.core import rate_limit_audio
 from genai_processors.core import video
@@ -274,6 +275,11 @@ LEONIDAS_SYSTEM_PROMPT = [
         "    - **Exemplo de Uso:** Antes de responder a uma pergunta sobre código, "
         "use `think` para analisar o trecho, identificar padrões e planejar a "
         "explicação.\n"
+        "•   **`deep_think`:**\n"
+        "    - **Mandato:** Use para problemas complexos que exigem uma análise mais profunda do que o `think` rápido permite.\n"
+        "    - **Descrição:** Invoca um modelo mais poderoso (Gemini 2.5 Pro) para realizar uma análise detalhada, como planejamento de arquitetura, revisão de código complexo ou brainstorming de soluções. É uma ferramenta de raciocínio pesado.\n"
+        "    - **Parâmetros:** {'problem_statement': '...', 'additional_context': '...'}\n"
+        "    - **Exemplo de Uso:** Quando o usuário pedir 'vamos projetar a arquitetura para o novo serviço de notificações', use `deep_think` com o `problem_statement` apropriado.\n"
         "•   **`change_state`:**\n"
         "    - **Mandato:** Use para gerenciar seu foco e sinalizar sua intenção.\n"
         "    - **Descrição:** Altera seu estado operacional (ex: de 'listening' "
@@ -347,6 +353,31 @@ LEONIDAS_TOOLS = [
                         )
                     },
                     required=['analysis', 'reasoning', 'plan']
+                )
+            ),
+
+            genai_types.FunctionDeclaration(
+                name='deep_think',
+                description=(
+                    "Executa um processo de raciocínio profundo e detalhado sobre um tópico "
+                    "ou problema complexo, utilizando um modelo de linguagem mais poderoso (Gemini 2.5 Pro). "
+                    "Use para análises que exigem maior profundidade, como planejamento de arquitetura, "
+                    "revisão de código complexo ou brainstorming de soluções."
+                ),
+                behavior='BLOCKING',
+                parameters=genai_types.Schema(
+                    type=genai_types.Type.OBJECT,
+                    properties={
+                        'problem_statement': genai_types.Schema(
+                            type=genai_types.Type.STRING,
+                            description='Uma descrição clara e concisa do problema ou tópico a ser analisado em profundidade.'
+                        ),
+                        'additional_context': genai_types.Schema(
+                            type=genai_types.Type.STRING,
+                            description='Opcional. Contexto adicional, como trechos de código, histórico de decisões ou requisitos, para informar a análise.'
+                        )
+                    },
+                    required=['problem_statement']
                 )
             ),
 
@@ -597,6 +628,16 @@ class LeonidasOrchestrator(processor.Processor):
         self.shutdown_requested = False
         self.shutdown_reason = ""
 
+        # Adiciona um modelo dedicado para a ferramenta deep_think
+        self.deep_think_model = genai_model.GenaiModel(
+            api_key=api_key,
+            model_name="gemini-2.5-pro",
+            generate_content_config=genai_types.GenerateContentConfig(
+                temperature=0.4,
+                max_output_tokens=4096,
+            )
+        )
+
         # Sistema de memória integrado
         self.memory_system = LeonidasMemorySystem(
             summary_file="summary.txt",
@@ -764,6 +805,8 @@ class LeonidasOrchestrator(processor.Processor):
             response = await self._handle_shutdown_system(call_id, arguments)
         elif function_name == 'wait_in_silence':
             response = await self._handle_wait_in_silence(call_id, arguments)
+        elif function_name == 'deep_think':
+            response = await self._handle_deep_think(call_id, arguments)
         else:
             response = await self._handle_unknown_function(call_id, function_name)
 
@@ -1060,6 +1103,85 @@ class LeonidasOrchestrator(processor.Processor):
             response={'status': 'waiting_initiated', 'duration_seconds': duration, 'reason': reason},
             scheduling=genai_types.FunctionResponseScheduling.SILENT
         )
+
+    async def _handle_deep_think(self, call_id: str, args: dict) -> content_api.ProcessorPart:
+        """Handles the `deep_think` tool call using a more powerful model."""
+        problem_statement = args.get('problem_statement')
+        additional_context = args.get('additional_context', 'Nenhum contexto adicional fornecido.')
+
+        if not problem_statement:
+            return content_api.ProcessorPart.from_function_response(
+                function_call_id=call_id,
+                name='deep_think',
+                response={'error': 'O parâmetro "problem_statement" é obrigatório.'},
+                scheduling=genai_types.FunctionResponseScheduling.SILENT
+            )
+
+        # Log the initiation of the deep thinking process
+        log_data = {
+            'tool_call': 'deep_think',
+            'problem_statement': problem_statement,
+        }
+        logger.info("Initiating deep think process", extra={'extra_data': log_data})
+        print(f"🤔 LEONIDAS DEEP THINKING on: {problem_statement}")
+
+        # Construct the prompt for the deep think model
+        prompt = f"""
+        Você é um especialista sênior em engenharia de software e arquitetura. Sua tarefa é realizar uma análise profunda e estruturada sobre o seguinte problema. Seja detalhado, claro e forneça insights acionáveis.
+
+        **Problema/Tópico para Análise Profunda:**
+        {problem_statement}
+
+        **Contexto Adicional:**
+        {additional_context}
+
+        **Instruções de Saída:**
+        1.  **Análise do Problema:** Decomponha o problema em suas partes fundamentais.
+        2.  **Abordagens Possíveis:** Descreva pelo menos duas soluções ou abordagens distintas, com seus prós e contras.
+        3.  **Recomendação:** Forneça uma recomendação clara e justificada sobre a melhor abordagem.
+        4.  **Plano de Ação:** Descreva os próximos passos ou um plano de implementação de alto nível.
+        5.  **Riscos e Mitigações:** Identifique potenciais riscos e como mitigá-los.
+
+        Responda de forma estruturada usando markdown.
+        """
+
+        # Create a stream for the model input
+        input_stream = streams.stream_content([
+            content_api.ProcessorPart(prompt, role='user')
+        ])
+
+        # Call the deep think model
+        try:
+            response_stream = self.deep_think_model(input_stream)
+            # Gather the full response
+            response_parts = await streams.gather_stream(response_stream)
+            deep_thought_output = content_api.as_text(response_parts)
+
+            logger.info("Deep think process completed successfully.", extra={
+                'extra_data': {'output_length': len(deep_thought_output)}
+            })
+            print("✅ DEEP THINKING complete.")
+
+            # Return the result to the main model
+            return content_api.ProcessorPart.from_function_response(
+                function_call_id=call_id,
+                name='deep_think',
+                response={
+                    'status': 'success',
+                    'deep_thought_output': deep_thought_output
+                },
+                # Use BLOCKING as the main model will likely need this result to proceed.
+                scheduling=genai_types.FunctionResponseScheduling.BLOCKING
+            )
+        except Exception as e:
+            logger.error(f"Error during deep think process: {e}", exc_info=True)
+            print(f"❌ DEEP THINKING failed: {e}")
+            return content_api.ProcessorPart.from_function_response(
+                function_call_id=call_id,
+                name='deep_think',
+                response={'error': f'An error occurred during deep thinking: {str(e)}'},
+                scheduling=genai_types.FunctionResponseScheduling.SILENT
+            )
 
     async def _handle_unknown_function(self, call_id: str, function_name: str) -> content_api.ProcessorPart: # type: ignore
         """Handles calls to functions not explicitly defined in `LEONIDAS_TOOLS`.

@@ -1,0 +1,13 @@
+{"timestamp": "2025-07-22 04:32:18,471", "level": "INFO", "name": "leonidas", "message": "============================================================"}
+{"timestamp": "2025-07-22 04:32:18,472", "level": "INFO", "name": "leonidas", "message": "LEONIDAS V2 SESSION STARTED"}
+{"timestamp": "2025-07-22 04:32:18,472", "level": "INFO", "name": "leonidas", "message": "============================================================"}
+{"timestamp": "2025-07-22 04:32:18,472", "level": "INFO", "name": "leonidas", "message": "Log file: logs\\leonidas_20250722_043218.log"}
+{"timestamp": "2025-07-22 04:32:18,473", "level": "INFO", "name": "leonidas", "message": "Timestamp: 2025-07-22 04:32:18"}
+{"timestamp": "2025-07-22 04:32:18,484", "level": "INFO", "name": "leonidas", "message": "Debug mode: False"}
+{"timestamp": "2025-07-22 04:32:18,484", "level": "INFO", "name": "leonidas", "message": "Model: gemini-live-2.5-flash-preview"}
+{"timestamp": "2025-07-22 04:32:18,484", "level": "INFO", "name": "leonidas", "message": "============================================================"}
+{"timestamp": "2025-07-22 04:32:18,616", "level": "ERROR", "name": "leonidas", "message": "Erro no Leonidas v2: GenaiModel.__init__() got an unexpected keyword argument 'generation_config'. Did you mean 'generate_content_config'?"}
+{"timestamp": "2025-07-22 04:32:18,617", "level": "INFO", "name": "leonidas", "message": "============================================================"}
+{"timestamp": "2025-07-22 04:32:18,617", "level": "INFO", "name": "leonidas", "message": "LEONIDAS V2 SESSION ENDED"}
+{"timestamp": "2025-07-22 04:32:18,617", "level": "INFO", "name": "leonidas", "message": "Log file saved: logs\\leonidas_20250722_043218.log"}
+{"timestamp": "2025-07-22 04:32:18,618", "level": "INFO", "name": "leonidas", "message": "============================================================"}

@@ -1,0 +1,149 @@
+{"timestamp": "2025-07-22 10:39:56,434", "level": "INFO", "name": "leonidas", "message": "============================================================"}
+{"timestamp": "2025-07-22 10:39:56,434", "level": "INFO", "name": "leonidas", "message": "LEONIDAS V2 SESSION STARTED"}
+{"timestamp": "2025-07-22 10:39:56,434", "level": "INFO", "name": "leonidas", "message": "============================================================"}
+{"timestamp": "2025-07-22 10:39:56,435", "level": "INFO", "name": "leonidas", "message": "Log file: logs\\leonidas_20250722_103956.log"}
+{"timestamp": "2025-07-22 10:39:56,435", "level": "INFO", "name": "leonidas", "message": "Timestamp: 2025-07-22 10:39:56"}
+{"timestamp": "2025-07-22 10:39:56,435", "level": "INFO", "name": "leonidas", "message": "Debug mode: False"}
+{"timestamp": "2025-07-22 10:39:56,436", "level": "INFO", "name": "leonidas", "message": "Model: gemini-live-2.5-flash-preview"}
+{"timestamp": "2025-07-22 10:39:56,436", "level": "INFO", "name": "leonidas", "message": "============================================================"}
+{"timestamp": "2025-07-22 10:39:56,552", "level": "WARNING", "name": "google_genai._api_client", "message": "Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY."}
+{"timestamp": "2025-07-22 10:39:58,050", "level": "WARNING", "name": "google_genai._api_client", "message": "Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY."}
+{"timestamp": "2025-07-22 10:39:59,392", "level": "WARNING", "name": "google_genai._api_client", "message": "Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY."}
+{"timestamp": "2025-07-22 10:40:00,656", "level": "INFO", "name": "memory_system", "message": "Leonidas Memory System initialized", "summary_file": "summary.txt", "history_dir": "history", "has_api_key": true}
+{"timestamp": "2025-07-22 10:40:00,656", "level": "WARNING", "name": "google_genai._api_client", "message": "Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY."}
+{"timestamp": "2025-07-22 10:40:01,855", "level": "INFO", "name": "leonidas", "message": "Leonidas v2 iniciando..."}
+{"timestamp": "2025-07-22 10:40:01,855", "level": "INFO", "name": "leonidas", "message": "Logs sendo salvos em: logs\\leonidas_20250722_103956.log"}
+{"timestamp": "2025-07-22 10:40:01,855", "level": "INFO", "name": "leonidas", "message": "Use Ctrl+C para encerrar"}
+{"timestamp": "2025-07-22 10:40:01,856", "level": "INFO", "name": "leonidas", "message": "Criando contexto do processador..."}
+{"timestamp": "2025-07-22 10:40:01,856", "level": "INFO", "name": "leonidas", "message": "Contexto criado, iniciando stream..."}
+{"timestamp": "2025-07-22 10:40:01,856", "level": "INFO", "name": "leonidas", "message": "Iniciando captura de \u00e1udio..."}
+{"timestamp": "2025-07-22 10:40:01,857", "level": "WARNING", "name": "leonidas", "message": "Could not find orchestrator for shutdown monitoring"}
+{"timestamp": "2025-07-22 10:40:01,877", "level": "INFO", "name": "leonidas", "message": "Initializing contextual session with memory system"}
+{"timestamp": "2025-07-22 10:40:03,906", "level": "INFO", "name": "memory_system", "message": "Contextual greeting generated", "initialization_type": "primeira_execucao", "greeting_length": 1}
+{"timestamp": "2025-07-22 10:40:04,222", "level": "INFO", "name": "memory_system", "message": "Contextual greeting generated", "initialization_type": "primeira_execucao", "greeting_length": 12}
+{"timestamp": "2025-07-22 10:40:04,223", "level": "INFO", "name": "leonidas", "message": "Contextual greeting generated", "greeting_type": "contextual", "greeting_length": 12}
+{"timestamp": "2025-07-22 10:40:13,301", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #1: text/plain - None"}
+{"timestamp": "2025-07-22 10:40:13,301", "level": "INFO", "name": "leonidas", "message": "Parte #1: text/plain (0 bytes)"}
+{"timestamp": "2025-07-22 10:40:13,322", "level": "INFO", "name": "leonidas", "message": "Model is thinking", "tool_call": "think", "analysis": "O usu\u00e1rio me saudou com \"Oi Mense.\". Isso indica que ele est\u00e1 pronto para iniciar uma intera\u00e7\u00e3o.", "reasoning": "Preciso responder \u00e0 sauda\u00e7\u00e3o do usu\u00e1rio para estabelecer a comunica\u00e7\u00e3o. A resposta deve ser simples e direta, refletindo que estou pronto para ajud\u00e1-lo.", "plan": "Vou responder com uma sauda\u00e7\u00e3o e me colocar \u00e0 disposi\u00e7\u00e3o."}
+{"timestamp": "2025-07-22 10:40:13,324", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #2: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:13,324", "level": "INFO", "name": "leonidas", "message": "Parte #2: text/plain (0 bytes)"}
+{"timestamp": "2025-07-22 10:40:13,328", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #3: text/plain - None"}
+{"timestamp": "2025-07-22 10:40:13,328", "level": "INFO", "name": "leonidas", "message": "Parte #3: text/plain (0 bytes)"}
+{"timestamp": "2025-07-22 10:40:13,963", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #4: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:14,199", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #5: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:14,448", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #6: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:14,591", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #7: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:14,591", "level": "INFO", "name": "leonidas", "message": "Parte #7: text/plain (0 bytes)"}
+{"timestamp": "2025-07-22 10:40:14,592", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #8: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:14,592", "level": "INFO", "name": "leonidas", "message": "Parte #8: text/plain (0 bytes)"}
+{"timestamp": "2025-07-22 10:40:14,592", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #9: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:14,592", "level": "INFO", "name": "leonidas", "message": "Parte #9: text/plain (0 bytes)"}
+{"timestamp": "2025-07-22 10:40:18,273", "level": "INFO", "name": "leonidas", "message": "Model is thinking", "tool_call": "think", "analysis": "O usu\u00e1rio fez uma afirma\u00e7\u00e3o de que estamos \"desde l\u00e1\", o que pode se referir a um contexto anterior ou a uma expectativa de continuidade de alguma atividade. N\u00e3o tenho contexto suficiente para entender o que \"l\u00e1\" significa.", "reasoning": "Preciso pedir mais informa\u00e7\u00f5es ao usu\u00e1rio para entender a que ele se refere e poder ajud\u00e1-lo de forma eficaz. Evitarei fazer suposi\u00e7\u00f5es.", "plan": "Vou perguntar ao usu\u00e1rio a que ele se refere com \"l\u00e1\" para obter mais contexto."}
+{"timestamp": "2025-07-22 10:40:18,274", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #10: text/plain - None"}
+{"timestamp": "2025-07-22 10:40:18,275", "level": "INFO", "name": "leonidas", "message": "Parte #10: text/plain (0 bytes)"}
+{"timestamp": "2025-07-22 10:40:18,275", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #11: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:18,275", "level": "INFO", "name": "leonidas", "message": "Parte #11: text/plain (0 bytes)"}
+{"timestamp": "2025-07-22 10:40:18,276", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #12: text/plain - None"}
+{"timestamp": "2025-07-22 10:40:18,276", "level": "INFO", "name": "leonidas", "message": "Parte #12: text/plain (0 bytes)"}
+{"timestamp": "2025-07-22 10:40:18,950", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #13: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:18,951", "level": "INFO", "name": "leonidas", "message": "Parte #13: text/plain (0 bytes)"}
+{"timestamp": "2025-07-22 10:40:18,951", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #14: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:18,951", "level": "INFO", "name": "leonidas", "message": "Parte #14: text/plain (0 bytes)"}
+{"timestamp": "2025-07-22 10:40:18,951", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #15: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:18,952", "level": "INFO", "name": "leonidas", "message": "Parte #15: text/plain (0 bytes)"}
+{"timestamp": "2025-07-22 10:40:20,593", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #16: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:20,593", "level": "INFO", "name": "leonidas", "message": "Parte #16: text/plain (0 bytes)"}
+{"timestamp": "2025-07-22 10:40:20,593", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #17: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:20,594", "level": "INFO", "name": "leonidas", "message": "Parte #17: text/plain (0 bytes)"}
+{"timestamp": "2025-07-22 10:40:20,594", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #18: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:20,594", "level": "INFO", "name": "leonidas", "message": "Parte #18: text/plain (0 bytes)"}
+{"timestamp": "2025-07-22 10:40:22,445", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #19: text/plain - None"}
+{"timestamp": "2025-07-22 10:40:22,445", "level": "INFO", "name": "leonidas", "message": "Parte #19: text/plain (0 bytes)"}
+{"timestamp": "2025-07-22 10:40:22,469", "level": "INFO", "name": "leonidas", "message": "Model is thinking", "tool_call": "think", "analysis": "O usu\u00e1rio disse \"Sofia, M. T. I. Acordou?\". Isso parece ser uma refer\u00eancia a um evento ou estado de um sistema ou pessoa chamada Sofia, e M. T. I. pode ser uma sigla ou abrevia\u00e7\u00e3o. Ele est\u00e1 buscando uma confirma\u00e7\u00e3o sobre o estado de \"Sofia\".", "reasoning": "Preciso entender quem ou o que \u00e9 \"Sofia\" e o que \"M. T. I.\" significa para poder responder adequadamente. N\u00e3o tenho contexto sobre essa entidade ou sigla.", "plan": "Vou perguntar ao usu\u00e1rio quem \u00e9 Sofia e o que M. T. I. significa para que eu possa fornecer uma resposta relevante."}
+{"timestamp": "2025-07-22 10:40:22,470", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #20: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:22,470", "level": "INFO", "name": "leonidas", "message": "Parte #20: text/plain (0 bytes)"}
+{"timestamp": "2025-07-22 10:40:22,470", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #21: text/plain - None"}
+{"timestamp": "2025-07-22 10:40:23,145", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #22: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:23,378", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #23: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:23,615", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #24: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:23,866", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #25: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:24,100", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #26: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:24,333", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #27: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:24,585", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #28: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:24,819", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #29: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:25,055", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #30: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:25,308", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #31: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:25,494", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #32: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:25,698", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #33: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:25,946", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #34: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:26,182", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #35: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:26,415", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #36: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:26,664", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #37: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:26,895", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #38: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:27,146", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #39: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:27,378", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #40: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:27,628", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #41: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:27,861", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #42: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:28,466", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #43: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:28,485", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #44: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:28,485", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #45: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:40,534", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #46: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:40,534", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #47: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:40,535", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #48: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:45,275", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #49: text/plain - None"}
+{"timestamp": "2025-07-22 10:40:45,300", "level": "INFO", "name": "leonidas", "message": "Model is thinking", "tool_call": "think", "analysis": "O usu\u00e1rio est\u00e1 me fornecendo informa\u00e7\u00f5es sobre um compromisso (\"amanh\u00e3 tem consulta \u00e0s 8h\") e tamb\u00e9m expressou a inten\u00e7\u00e3o de \"anotar aqui que tenho que falar com o Monge\". Ele parece estar usando o sistema para organizar suas tarefas e lembretes.", "reasoning": "Minha fun\u00e7\u00e3o \u00e9 ser um parceiro de engenharia s\u00eanior. O que o usu\u00e1rio est\u00e1 fazendo \u00e9 mais relacionado a um assistente pessoal ou agenda. Embora eu possa registrar as informa\u00e7\u00f5es, \u00e9 importante refor\u00e7ar minha fun\u00e7\u00e3o. No entanto, posso confirmar que entendi as informa\u00e7\u00f5es.", "plan": "Vou confirmar que entendi as informa\u00e7\u00f5es sobre a consulta e a inten\u00e7\u00e3o de falar com o Monge. Em seguida, vou me colocar \u00e0 disposi\u00e7\u00e3o para assuntos relacionados a desenvolvimento de software."}
+{"timestamp": "2025-07-22 10:40:45,302", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #50: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:45,302", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #51: text/plain - None"}
+{"timestamp": "2025-07-22 10:40:46,467", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #52: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:46,717", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #53: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:46,949", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #54: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:47,198", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #55: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:47,435", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #56: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:47,669", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #57: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:47,918", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #58: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:48,150", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #59: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:48,398", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #60: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:48,632", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #61: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:48,867", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #62: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:49,118", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #63: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:49,354", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #64: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:49,587", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #65: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:49,837", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #66: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:50,071", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #67: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:50,308", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #68: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:50,557", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #69: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:50,792", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #70: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:51,024", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #71: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:51,272", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #72: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:51,349", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #73: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:51,552", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #74: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:51,785", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #75: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:52,035", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #76: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:52,273", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #77: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:52,504", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #78: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:52,752", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #79: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:52,986", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #80: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:53,237", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #81: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:53,473", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #82: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:53,705", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #83: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:53,950", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #84: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:54,184", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #85: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:54,436", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #86: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:54,668", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #87: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:54,915", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #88: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:55,149", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #89: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:55,384", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #90: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:55,632", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #91: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:55,874", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #92: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:55,875", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #93: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:55,876", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #94: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:55,910", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #95: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:40:55,910", "level": "DEBUG", "name": "leonidas", "message": "Parte recebida #96: text/plain - MODEL"}
+{"timestamp": "2025-07-22 10:42:01,569", "level": "INFO", "name": "leonidas", "message": "Stream cancelado"}
+{"timestamp": "2025-07-22 10:42:01,569", "level": "INFO", "name": "leonidas", "message": "Stream finalizado ap\u00f3s 96 partes"}
+{"timestamp": "2025-07-22 10:42:01,742", "level": "INFO", "name": "leonidas", "message": "Controllable stream is shutting down."}
+{"timestamp": "2025-07-22 10:42:01,928", "level": "INFO", "name": "leonidas", "message": "Leonidas v2 encerrado pelo usu\u00e1rio"}
+{"timestamp": "2025-07-22 10:42:01,970", "level": "INFO", "name": "leonidas", "message": "============================================================"}
+{"timestamp": "2025-07-22 10:42:01,970", "level": "INFO", "name": "leonidas", "message": "LEONIDAS V2 SESSION ENDED"}
+{"timestamp": "2025-07-22 10:42:01,970", "level": "INFO", "name": "leonidas", "message": "Log file saved: logs\\leonidas_20250722_103956.log"}
+{"timestamp": "2025-07-22 10:42:01,970", "level": "INFO", "name": "leonidas", "message": "============================================================"}

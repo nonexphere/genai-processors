@@ -1,0 +1,42 @@
+{"timestamp": "2025-07-22 12:37:54,260", "level": "INFO", "name": "leonidas", "message": "============================================================"}
+{"timestamp": "2025-07-22 12:37:54,260", "level": "INFO", "name": "leonidas", "message": "LEONIDAS V2 SESSION STARTED"}
+{"timestamp": "2025-07-22 12:37:54,261", "level": "INFO", "name": "leonidas", "message": "============================================================"}
+{"timestamp": "2025-07-22 12:37:54,261", "level": "INFO", "name": "leonidas", "message": "Log file: logs\\leonidas_20250722_123754.log"}
+{"timestamp": "2025-07-22 12:37:54,262", "level": "INFO", "name": "leonidas", "message": "Timestamp: 2025-07-22 12:37:54"}
+{"timestamp": "2025-07-22 12:37:54,291", "level": "INFO", "name": "leonidas", "message": "Debug mode: False"}
+{"timestamp": "2025-07-22 12:37:54,291", "level": "INFO", "name": "leonidas", "message": "Model: gemini-live-2.5-flash-preview"}
+{"timestamp": "2025-07-22 12:37:54,291", "level": "INFO", "name": "leonidas", "message": "============================================================"}
+{"timestamp": "2025-07-22 12:37:54,445", "level": "WARNING", "name": "google_genai._api_client", "message": "Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY."}
+{"timestamp": "2025-07-22 12:37:56,246", "level": "WARNING", "name": "google_genai._api_client", "message": "Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY."}
+{"timestamp": "2025-07-22 12:37:57,817", "level": "WARNING", "name": "google_genai._api_client", "message": "Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY."}
+{"timestamp": "2025-07-22 12:37:59,365", "level": "WARNING", "name": "google_genai._api_client", "message": "Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY."}
+{"timestamp": "2025-07-22 12:38:00,783", "level": "INFO", "name": "memory_system", "message": "Leonidas Memory System initialized", "summary_file": "summary.txt", "history_dir": "history", "has_api_key": true}
+{"timestamp": "2025-07-22 12:38:00,784", "level": "WARNING", "name": "google_genai._api_client", "message": "Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY."}
+{"timestamp": "2025-07-22 12:38:02,272", "level": "INFO", "name": "leonidas", "message": "Leonidas v2 iniciando..."}
+{"timestamp": "2025-07-22 12:38:02,272", "level": "INFO", "name": "leonidas", "message": "Logs sendo salvos em: logs\\leonidas_20250722_123754.log"}
+{"timestamp": "2025-07-22 12:38:02,272", "level": "INFO", "name": "leonidas", "message": "Use Ctrl+C para encerrar"}
+{"timestamp": "2025-07-22 12:38:02,273", "level": "INFO", "name": "leonidas", "message": "Criando contexto do processador..."}
+{"timestamp": "2025-07-22 12:38:02,273", "level": "INFO", "name": "leonidas", "message": "Contexto criado, iniciando stream..."}
+{"timestamp": "2025-07-22 12:38:02,273", "level": "INFO", "name": "leonidas", "message": "Iniciando captura de \u00e1udio..."}
+{"timestamp": "2025-07-22 12:38:02,274", "level": "WARNING", "name": "leonidas", "message": "Could not find orchestrator for shutdown monitoring"}
+{"timestamp": "2025-07-22 12:38:02,300", "level": "INFO", "name": "leonidas", "message": "Initializing contextual session with memory system"}
+{"timestamp": "2025-07-22 12:38:04,215", "level": "INFO", "name": "memory_system", "message": "Contextual greeting generated", "initialization_type": "primeira_execucao", "greeting_length": 1}
+{"timestamp": "2025-07-22 12:38:04,419", "level": "INFO", "name": "memory_system", "message": "Contextual greeting generated", "initialization_type": "primeira_execucao", "greeting_length": 8}
+{"timestamp": "2025-07-22 12:38:04,420", "level": "INFO", "name": "leonidas", "message": "Contextual greeting generated", "greeting_type": "contextual", "greeting_length": 8}
+{"timestamp": "2025-07-22 12:38:10,194", "level": "INFO", "name": "leonidas", "message": "Parte #2: text/plain (0 bytes)"}
+{"timestamp": "2025-07-22 12:38:10,227", "level": "INFO", "name": "leonidas", "message": "Model is thinking", "tool_call": "think", "analysis": "O usu\u00e1rio iniciou a conversa com um simples \"Ol\u00e1\".", "reasoning": "A sauda\u00e7\u00e3o inicial exige uma resposta educada para estabelecer a intera\u00e7\u00e3o.", "plan": "Vou responder com uma sauda\u00e7\u00e3o e me apresentar, oferecendo ajuda."}
+{"timestamp": "2025-07-22 12:38:10,229", "level": "INFO", "name": "leonidas", "message": "Parte #3: text/plain (0 bytes)"}
+{"timestamp": "2025-07-22 12:38:10,229", "level": "INFO", "name": "leonidas", "message": "Parte #4: text/plain (0 bytes)"}
+{"timestamp": "2025-07-22 12:38:22,614", "level": "INFO", "name": "leonidas", "message": "Model is thinking", "tool_call": "think", "analysis": "O usu\u00e1rio solicitou explicitamente o uso da ferramenta `deep_think`. Para utiliz\u00e1-la, preciso de um problema ou t\u00f3pico para an\u00e1lise.", "reasoning": "A ferramenta `deep_think` requer um `problem_statement`. Sem isso, n\u00e3o posso prosseguir com a an\u00e1lise profunda solicitada.", "plan": "Vou perguntar ao usu\u00e1rio qual problema ou t\u00f3pico ele gostaria que eu analisasse em profundidade, para que eu possa usar a ferramenta `deep_think` adequadamente."}
+{"timestamp": "2025-07-22 12:38:41,996", "level": "INFO", "name": "leonidas", "message": "Model is thinking", "tool_call": "think", "analysis": "O usu\u00e1rio est\u00e1 relutante em fornecer um problema espec\u00edfico para `deep_think` e apenas pediu \"algo interessante\". A ferramenta `deep_think` precisa de um `problem_statement` para operar de forma eficaz e gerar valor.", "reasoning": "N\u00e3o posso usar `deep_think` sem um problema definido. For\u00e7ar uma an\u00e1lise em algo vago pode levar a resultados irrelevantes. Preciso direcionar o usu\u00e1rio a me fornecer um problema concreto.", "plan": "Vou reiterar a necessidade de um problema ou t\u00f3pico espec\u00edfico para usar `deep_think` e dar exemplos de como ele pode ser \u00fatil, incentivando o usu\u00e1rio a ser mais espec\u00edfico."}
+{"timestamp": "2025-07-22 12:39:13,094", "level": "INFO", "name": "leonidas", "message": "Initiating deep think process", "tool_call": "deep_think", "problem_statement": "Analisar o pr\u00f3prio contexto operacional e funcionamento para identificar pontos de melhoria na conversa\u00e7\u00e3o em tempo real."}
+{"timestamp": "2025-07-22 12:40:02,047", "level": "INFO", "name": "leonidas", "message": "Deep think process completed successfully.", "output_length": 6851}
+{"timestamp": "2025-07-22 12:40:02,047", "level": "ERROR", "name": "leonidas", "message": "Error during deep think process: type object 'FunctionResponseScheduling' has no attribute 'BLOCKING'"}
+{"timestamp": "2025-07-22 12:40:05,022", "level": "INFO", "name": "leonidas", "message": "Stream cancelado"}
+{"timestamp": "2025-07-22 12:40:05,022", "level": "INFO", "name": "leonidas", "message": "Stream finalizado ap\u00f3s 225 partes"}
+{"timestamp": "2025-07-22 12:40:05,023", "level": "INFO", "name": "leonidas", "message": "Controllable stream is shutting down."}
+{"timestamp": "2025-07-22 12:40:05,024", "level": "ERROR", "name": "leonidas", "message": "Erro no Leonidas v2: received 1011 (internal error) Internal error encountered.; then sent 1011 (internal error) Internal error encountered."}
+{"timestamp": "2025-07-22 12:40:05,046", "level": "INFO", "name": "leonidas", "message": "============================================================"}
+{"timestamp": "2025-07-22 12:40:05,047", "level": "INFO", "name": "leonidas", "message": "LEONIDAS V2 SESSION ENDED"}
+{"timestamp": "2025-07-22 12:40:05,047", "level": "INFO", "name": "leonidas", "message": "Log file saved: logs\\leonidas_20250722_123754.log"}
+{"timestamp": "2025-07-22 12:40:05,048", "level": "INFO", "name": "leonidas", "message": "============================================================"}

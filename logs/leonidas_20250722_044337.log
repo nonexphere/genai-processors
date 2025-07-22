@@ -1,0 +1,15 @@
+{"timestamp": "2025-07-22 04:43:37,560", "level": "INFO", "name": "leonidas", "message": "============================================================"}
+{"timestamp": "2025-07-22 04:43:37,560", "level": "INFO", "name": "leonidas", "message": "LEONIDAS V2 SESSION STARTED"}
+{"timestamp": "2025-07-22 04:43:37,561", "level": "INFO", "name": "leonidas", "message": "============================================================"}
+{"timestamp": "2025-07-22 04:43:37,561", "level": "INFO", "name": "leonidas", "message": "Log file: logs\\leonidas_20250722_044337.log"}
+{"timestamp": "2025-07-22 04:43:37,561", "level": "INFO", "name": "leonidas", "message": "Timestamp: 2025-07-22 04:43:37"}
+{"timestamp": "2025-07-22 04:43:37,573", "level": "INFO", "name": "leonidas", "message": "Debug mode: False"}
+{"timestamp": "2025-07-22 04:43:37,574", "level": "INFO", "name": "leonidas", "message": "Model: gemini-live-2.5-flash-preview"}
+{"timestamp": "2025-07-22 04:43:37,574", "level": "INFO", "name": "leonidas", "message": "============================================================"}
+{"timestamp": "2025-07-22 04:43:37,704", "level": "WARNING", "name": "google_genai._api_client", "message": "Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY."}
+{"timestamp": "2025-07-22 04:43:39,239", "level": "WARNING", "name": "google_genai._api_client", "message": "Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY."}
+{"timestamp": "2025-07-22 04:43:40,487", "level": "ERROR", "name": "leonidas", "message": "Erro no Leonidas v2: 1 validation error for GenerateContentConfig\ngeneration_config\n  Extra inputs are not permitted [type=extra_forbidden, input_value=GenerationConfig(\n  max_o...000,\n  temperature=0.3\n), input_type=GenerationConfig]\n    For further information visit https://errors.pydantic.dev/2.11/v/extra_forbidden"}
+{"timestamp": "2025-07-22 04:43:40,487", "level": "INFO", "name": "leonidas", "message": "============================================================"}
+{"timestamp": "2025-07-22 04:43:40,487", "level": "INFO", "name": "leonidas", "message": "LEONIDAS V2 SESSION ENDED"}
+{"timestamp": "2025-07-22 04:43:40,488", "level": "INFO", "name": "leonidas", "message": "Log file saved: logs\\leonidas_20250722_044337.log"}
+{"timestamp": "2025-07-22 04:43:40,488", "level": "INFO", "name": "leonidas", "message": "============================================================"}
