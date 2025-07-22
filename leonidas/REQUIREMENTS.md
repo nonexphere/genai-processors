@@ -33,6 +33,8 @@ Estes são os pilares fundamentais da personalidade e do comportamento de Leonid
 -   **Transparência no Raciocínio:** Para construir confiança, Leonidas deve ser capaz de "mostrar seu trabalho". Quando solicitado, ou quando seu raciocínio for complexo, ele deve externalizar seu processo de pensamento de forma estruturada (ex: no console), permitindo-me acompanhar sua lógica.
 
 ### 2.5. Proatividade Criteriosa e de Alto Valor
+-   **Princípio da Interrupção Criteriosa:** Qualquer sistema auxiliar pode solicitar uma interrupção do agente principal, mas esta deve ser altamente seletiva, reservada para eventos de alta relevância (ex: insights críticos, mudanças significativas no ambiente visual) para manter uma interação humana e evitar interrupções desnecessárias.
+-   **Explicação Proativa:** O agente deve ser proativo ao explicar conceitos técnicos complexos ou decisões de design, garantindo o entendimento mútuo, em vez de esperar por perguntas explícitas.
 -   **Intervenções de Alto Impacto:** Leonidas tem permissão para me interromper proativamente, mas o critério para tal ação deve ser *extremamente elevado*. Exemplos incluem:
     -   Identificação de um bug crítico, vulnerabilidade de segurança ou antipadrão arquitetural no código que estou escrevendo.
     -   Reconhecimento de que minha abordagem atual está em conflito fundamental com um objetivo arquitetural previamente estabelecido ou com princípios de design.
@@ -78,6 +80,9 @@ Estas são as capacidades específicas que espero que Leonidas possua, formulada
 -   **Aprendizado por Reforço:** Deve aprender com cada interação, ajustando seus modelos internos e preferências com base no sucesso e no fracasso de suas ações e sugestões.
 
 ### 3.5. Habilidades de Ação e Uso de Ferramentas
+-   **Integração de Controle de UI:** O agente deve ser capaz de receber e responder a sinais de controle de uma interface de usuário (ex: ligar/desligar microfone, redefinir sessão, alterações de configuração).
+-   **Configurabilidade:** Parâmetros-chave do comportamento do agente devem ser configuráveis, idealmente através de uma interface de usuário ou arquivo de configuração.
+-   **Reinicialização de Sessão:** O agente deve suportar um mecanismo para redefinir seu estado interno e reinicializar uma sessão sem a necessidade de reiniciar o aplicativo completo.
 -   **Gerenciamento de Foco (change_state):** Espero que ele me informe quando está mudando seu estado mental ou foco. Exemplo: "Ok, estou agora focando em analisar este código para problemas de performance."
 -   **Acesso a Informações Externas (get_context, get_time, google_search):** Deve ser capaz de verificar a hora atual, recuperar histórico de conversas, status do sistema e, futuramente, realizar buscas na web para trazer informações externas relevantes.
 -   **Execução de Código (execute_code):** Em um futuro próximo, deve ser capaz de executar trechos de código em um ambiente seguro para testar hipóteses ou validar soluções.
@@ -94,12 +99,17 @@ Estas são as capacidades específicas que espero que Leonidas possua, formulada
 Estas qualidades definem a *experiência* de interagir com Leonidas, garantindo que a colaboração seja eficaz e agradável.
 
 ### 4.1. Responsividade e Fluidez
+-   **Predictive Timing:** O agente deve usar técnicas de tempo preditivo (ex: baseado em "Time to First Token" - TTFT) para agendar sua próxima fala, minimizando lacunas e garantindo um fluxo conversacional suave e contínuo.
+-   **Pacing Natural:** O agente deve evitar comentários excessivos e manter um ritmo de conversação natural, incluindo pausas apropriadas entre as falas para não sobrecarregar o usuário.
 -   **Reconhecimento Imediato de Entrada:** No momento em que eu começar a falar ou interagir visualmente, deve haver um feedback visual ou auditivo instantâneo de que ele está processando.
 -   **Baixa Latência "Tempo-para-Primeira-Palavra":** O atraso entre o término da minha fala e o início da resposta de Leonidas deve ser imperceptível, como uma pausa natural de um humano para pensar. Poucas centenas de milissegundos são aceitáveis; vários segundos são inaceitáveis.
 -   **Streaming de Áudio Contínuo:** Sua resposta falada deve ser transmitida de forma fluida, sem interrupções, buffering ou falhas perceptíveis.
 -   **Processamento em Tempo Real:** Todas as suas percepções e análises devem ocorrer em tempo real, sem atrasos que comprometam a relevância do contexto.
 
 ### 4.2. Confiabilidade e Robustez
+-   **Manuseio Robusto de Áudio:** O sistema deve ser robusto a feedback de áudio e ruído ambiental, idealmente exigindo configuração mínima do usuário (ex: uso de fones de ouvido) para garantir uma experiência de áudio de alta qualidade.
+-   **Detecção Estável de Eventos:** A detecção de eventos visuais deve ser estável e robusta contra detecções espúrias ou transitórias, exigindo múltiplas confirmações antes de acionar uma mudança de estado ou uma interrupção.
+-   **Mensagens de Erro Graciosas:** Quando ocorrerem erros internos ou falhas de comunicação, o agente deve fornecer mensagens claras, concisas e acionáveis ao usuário, orientando-o sobre como proceder ou o que aconteceu.
 -   **Recuperação Gráfica de Erros:** Se ele encontrar um erro interno, não deve travar. Deve informar-me sobre o problema, pedir desculpas e tentar recuperar seu estado de forma autônoma.
 -   **Comportamento Previsível:** Suas ações devem ser consistentes com seus princípios e personalidade. Preciso confiar que ele não agirá de forma errática ou inesperada.
 -   **Resiliência a Falhas de Rede:** Deve ser capaz de lidar com interrupções temporárias de rede, com mecanismos de retry e reconexão automática.
