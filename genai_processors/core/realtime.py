@@ -26,12 +26,9 @@ application needs.
 """
 
 import asyncio
-import collections
-from collections.abc import AsyncIterable, Awaitable
+from collections.abc import AsyncIterable
 import enum
-import time
 import traceback
-from typing import Callable
 
 from genai_processors import content_api
 from genai_processors import context
@@ -40,6 +37,7 @@ from genai_processors import mime_types
 from genai_processors import processor
 from genai_processors import streams
 from genai_processors.core import speech_to_text
+from genai_processors.core import window
 
 
 ProcessorPart = content_api.ProcessorPart
@@ -53,151 +51,6 @@ DIRECT_OUTPUT_SUBSTREAM = speech_to_text.TRANSCRIPTION_SUBSTREAM_NAME
 # Metadata key that should be set to True if the part that is output directly
 # as text (see DIRECT_OUTPUT_TEXT) should also be in the prompt.
 DIRECT_OUTPUT_IN_PROMPT = 'is_final'
-
-
-class _RollingPrompt:
-  """Rolling prompt (aka iterator of prompts) for conversation processors.
-
-  This class acts as a buffer and organizer for a continuous, "infinite" stream
-  of multimodal parts (e.g., from a real-time camera feed). It transforms this
-  stream into finite, time-segmented prompts suitable for turn-based models.
-
-  Adding Parts:
-    add_part(part): Immediately appends a multimodal part to the current prompt.
-    stash_part(part): Temporarily stores a part to be appended later. This is
-      useful when it's not the client's "turn" to send parts (e.g., while a
-      model is generating a response) and you want to delay its inclusion in the
-      active prompt.
-    apply_stash(): Appends all currently stashed parts to the active prompt.
-
-  Accessing prompts:
-    pending() -> `AsyncIterable[ProcessorPart]`: Returns an asynchronous
-      iterator representing the current prompt state. This iterator first yields
-      the compressed conversation history, then *continues* to stream any new
-      parts added via `add_part` or `apply_stash`. This streaming behavior
-      allows models to begin processing the current turn *before it is fully
-      completed*, significantly minimizing Time To First Token (TTFT).
-   finalize_pending(): This method should be called when it is time for the
-     underlying model to make the turn.
-     * The `AsyncIterable` previously returned by `pending()` will cease
-       yielding parts after all current parts have been delivered, signaling the
-       model to generate its response.
-     * The history compression is applied to accumulated conversation (which
-       does not include the ongoing model response, as it has not arrived yet).
-     * A new `pending` iterator is then implicitly created for the *next* turn.
-     * The compressed history is written to this new iterator, and any parts
-       added subsequently will be directed to this new turn's pendig prompt.
-
-  Consider a scenario where a model is actively generating a response, but the
-  real-time stream (e.g., a video feed) continues to produce new parts (e.g.,
-  image frames). Directly using `add_part` for these new frames would
-  incorrectly place them *within* or before the ongoing model response, falsely
-  suggesting the model considered these new images during its computation for
-  the *current* response.
-
-  To address this, such parts coming from the application should be added using
-  `stash_part` and appended to the prompt after the model turn is completed
-  using `apply_stash`.
-  """
-
-  def __init__(
-      self,
-      *,
-      duration_prompt_sec: float | None = None,
-      compress_history: (
-          Callable[[collections.deque[ProcessorPart]], Awaitable[None]] | None
-      ) = None,
-  ):
-    """Initializes the rolling prompt.
-
-    Args:
-      duration_prompt_sec: the length of the prompt in terms of the time when
-        the parts were added: we consider any part added after now -
-        duration_prompt_sec. Set to None to keep all incoming parts. Set to 10
-        minutes by default.
-      compress_history: A callable that takes a deque of ProcessorPart and
-        modifies it in place to compress the history.
-    """
-    # Current prompt as a queue.
-    self._pending = asyncio.Queue[ProcessorPart | None]()
-    # Main prompt content used to build the next prompt and the prompt queues.
-    self._conversation_history = collections.deque(maxlen=10_000)
-    # stashed parts to be added to the prompt later.
-    self._stash: list[ProcessorPart] = []
-
-    async def _noop_compress_history(
-        _: collections.deque[ProcessorPart],
-    ) -> None:
-      pass
-
-    self._compress_history = compress_history or _noop_compress_history
-    if duration_prompt_sec:
-      if compress_history:
-        raise ValueError(
-            'compress_history and duration_prompt_sec can not be set'
-            ' simultaneously.'
-        )
-
-      async def remove_old_parts(history: collections.deque[ProcessorPart]):
-        time_cut_point = time.perf_counter() - duration_prompt_sec
-        while history and history[0].metadata['capture_time'] < time_cut_point:
-          history.popleft()
-
-      self._compress_history = remove_old_parts
-
-  def add_part(
-      self,
-      part: ProcessorPart,
-  ) -> None:
-    """Adds a part to the current prompt."""
-    part.metadata.setdefault('capture_time', time.perf_counter())
-    self._conversation_history.append(part)
-    self._pending.put_nowait(part)
-
-  def stash_part(self, part: ProcessorPart):
-    """Stashes the part to be appended to the prompt later using `apply_stash`.
-
-    If it is not our turn to send parts (e.g. model is currently generating),
-    we can stash them and append to the prompt when we get the turn (after the
-    model generation is done).
-
-    Args:
-      part: The part to stash.
-    """
-    self._stash.append(part)
-
-  def apply_stash(self):
-    """Append all parts from the stash to the prompt."""
-    for part in self._stash:
-      self.add_part(part)
-    self._stash = []
-
-  def pending(self) -> AsyncIterable[ProcessorPart]:
-    """Returns the current pending prompt.
-
-    Note that the same AsyncIterable is returned unless `finalize_pending` is
-    called which creates a new pending prompt. So consuming Parts from it will
-    affect all callers of `pending`.
-    """
-    return streams.dequeue(self._pending)
-
-  async def finalize_pending(self) -> None:
-    """Close the current pending prompt and starts a new one.
-
-    * The iterator previously returned from `pending` will stop after all Parts
-      added so far.
-    * Then history compression is applied.
-    * At last, a new `pending` iterator is created and the compressed history
-      is written to it.
-    * Any parts added afterwards will go to the new iterator.
-    """
-    # Close the current queue.
-    self._pending.put_nowait(None)
-    # And create a new one.
-    self._pending = asyncio.Queue[ProcessorPart | None]()
-    await self._compress_history(self._conversation_history)
-    for part in self._conversation_history:
-      self._pending.put_nowait(part)
 
 
 class AudioTriggerMode(enum.StrEnum):
@@ -274,7 +127,7 @@ class LiveModelProcessor(Processor):
       self,
       content: AsyncIterable[ProcessorPart],
       output_queue: asyncio.Queue[ProcessorPart | None],
-      rolling_prompt: _RollingPrompt,
+      rolling_prompt: window.RollingPrompt,
   ):
     user_not_talking = asyncio.Event()
     user_not_talking.set()
@@ -327,7 +180,7 @@ class LiveModelProcessor(Processor):
   ) -> AsyncIterable[ProcessorPart]:
     """Generates a conversation with a model."""
     output_queue = asyncio.Queue[ProcessorPart | None]()
-    rolling_prompt = _RollingPrompt(
+    rolling_prompt = window.RollingPrompt(
         duration_prompt_sec=self.duration_prompt_sec
     )
     # Create the main conversation loop.
@@ -352,7 +205,7 @@ class _RealTimeConversationModel:
       self,
       output_queue: asyncio.Queue[ProcessorPart | None],
       generation: Processor,
-      rolling_prompt: _RollingPrompt,
+      rolling_prompt: window.RollingPrompt,
       user_not_talking: asyncio.Event,
   ):
     self._output_queue = output_queue

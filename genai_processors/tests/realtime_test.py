@@ -8,6 +8,7 @@ from genai_processors import content_api
 from genai_processors import processor
 from genai_processors import streams
 from genai_processors.core import realtime
+from genai_processors.core import window
 from PIL import Image
 
 
@@ -124,7 +125,7 @@ class RealTimeConversationModelTest(unittest.IsolatedAsyncioTestCase):
     self.output_queue = asyncio.Queue()
     self.user_not_talking = asyncio.Event()
     self.user_not_talking.set()
-    self.rolling_prompt = realtime._RollingPrompt()
+    self.rolling_prompt = window.RollingPrompt()
 
   def end_conversation(self):
     # To be called within an asyncio loop.
@@ -180,70 +181,6 @@ class RealTimeConversationModelTest(unittest.IsolatedAsyncioTestCase):
         content_api.as_text(prompt_actual, substream_name=''),
         'helloworldmodel(helloworld)',
     )
-
-
-class RealTimePromptTest(unittest.IsolatedAsyncioTestCase):
-
-  async def test_add_part(self):
-    rolling_prompt = realtime._RollingPrompt()
-    prompt_content = rolling_prompt.pending()
-    part_list = [ProcessorPart(str(i)) for i in range(5)]
-    for c in part_list:
-      rolling_prompt.add_part(c)
-    await rolling_prompt.finalize_pending()
-    prompt_text = ProcessorContent(
-        await streams.gather_stream(prompt_content)
-    ).as_text()
-    # prompt = part0-4.
-    self.assertEqual(prompt_text, '01234')
-
-  async def test_stashing(self):
-    rolling_prompt = realtime._RollingPrompt()
-    prompt_content = rolling_prompt.pending()
-    part_list = [ProcessorPart(str(i)) for i in range(5)]
-    for c in part_list:
-      rolling_prompt.add_part(c)
-    rolling_prompt.stash_part(ProcessorPart('while_outputting'))
-    for c in part_list:
-      rolling_prompt.add_part(c)
-    rolling_prompt.apply_stash()
-    await rolling_prompt.finalize_pending()
-    prompt_text = ProcessorContent(
-        await streams.gather_stream(prompt_content)
-    ).as_text()
-    # prompt = part0-4, part0-4, part while outputting, prompt_suffix
-    # -> part while outputting should always be put at the end.
-    self.assertEqual(prompt_text, '0123401234while_outputting')
-
-  async def test_cut_history(self):
-    rolling_prompt = realtime._RollingPrompt(duration_prompt_sec=0.1)
-    prompt_content = rolling_prompt.pending()
-    part_count = 2
-    part_list = [ProcessorPart(str(i)) for i in range(part_count)]
-    img_list = [ProcessorPart(create_image(3, 3))] * part_count
-    for idx, part in enumerate(part_list):
-      rolling_prompt.add_part(part)
-      rolling_prompt.add_part(img_list[idx])
-      await asyncio.sleep(0.01)
-    await rolling_prompt.finalize_pending()
-    prompt_text = [
-        content_api.as_text(c) if content_api.is_text(c.mimetype) else 'img'
-        for c in await streams.gather_stream(prompt_content)
-    ]
-    # First prompt gets the full history.
-    self.assertEqual(prompt_text, ['0', 'img', '1', 'img'])
-    await asyncio.sleep(0.08)
-    await rolling_prompt.finalize_pending()
-    prompt_content = rolling_prompt.pending()
-    for part in part_list:
-      rolling_prompt.add_part(part)
-    await rolling_prompt.finalize_pending()
-    prompt_text = [
-        content_api.as_text(c) if content_api.is_text(c.mimetype) else 'img'
-        for c in await streams.gather_stream(prompt_content)
-    ]
-    # Second prompt gets the cut history + what was fed now.
-    self.assertEqual(prompt_text, ['1', 'img', '0', '1'])
 
 
 if __name__ == '__main__':
