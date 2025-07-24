@@ -1,4 +1,5 @@
 import dataclasses
+import re
 from absl.testing import absltest
 from absl.testing import parameterized
 import dataclasses_json
@@ -38,6 +39,19 @@ class MatchProcessorTest(parameterized.TestCase):
     output = processor.apply_sync(extractor, input_content)
     actual = content_api.ProcessorContent(output)
     self.assertEqual(actual.as_text(substream_name='event'), '[event: query]')
+    self.assertEqual(actual.as_text(substream_name=''), 'before  after')
+
+  def test_extract_with_compiled_pattern_and_flags(self):
+    compiled_pattern = re.compile(r'\[event:(.*?)\]', re.IGNORECASE)
+    extractor = text.MatchProcessor(
+        pattern=compiled_pattern,
+        substream_output='event',
+    )
+    # Input has mixed case that would fail without re.IGNORECASE.
+    input_content = ['before ', '[EVENT: query]', ' after']
+    output = processor.apply_sync(extractor, input_content)
+    actual = content_api.ProcessorContent(output)
+    self.assertEqual(actual.as_text(substream_name='event'), '[EVENT: query]')
     self.assertEqual(actual.as_text(substream_name=''), 'before  after')
 
   @parameterized.named_parameters(

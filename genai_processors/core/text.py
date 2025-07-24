@@ -83,7 +83,7 @@ class MatchProcessor(processor.Processor):
   def __init__(
       self,
       *,
-      pattern: str,
+      pattern: str | re.Pattern[str],
       word_start: str | None = None,
       substream_input: str = '',
       substream_output: str = '',
@@ -126,8 +126,9 @@ class MatchProcessor(processor.Processor):
       pattern: pattern to match a text to extract into a part. When
         `remove_from_input_stream` is True, the matched text will be removed
         from the stream and will be replaced by a single extracted part. The
-        parts before and after this match will be returned as is. Note that
-        re.DOTALL is used to match newlines.
+        parts before and after this match will be returned as is. Note that by
+        default, re.DOTALL is used to match newlines. To override this behavior,
+        pass a re.Pattern object instead.
       word_start: text to match the start of the text that needs to be captured.
         `word_start` is not a regular expression but a plain string that will be
         matched exactly. `word_start` should be a substring of the pattern and
@@ -148,7 +149,10 @@ class MatchProcessor(processor.Processor):
       transform: A transformation to be applied to the matched Parts.
     """
     self._word_start = word_start
-    self._pattern = re.compile(pattern, re.DOTALL)
+    if isinstance(pattern, str):
+      self._pattern = re.compile(pattern, re.DOTALL)
+    else:
+      self._pattern = pattern
     self._substream_input = substream_input
     self._substream_output = substream_output
     self._flush_fn = flush_fn or (lambda _: False)
