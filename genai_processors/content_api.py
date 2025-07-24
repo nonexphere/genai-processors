@@ -363,7 +363,7 @@ class ProcessorPart:
   ) -> 'ProcessorPart':
     """Constructs a ProcessorPart from a tool cancellation id.
 
-    The role is overridden to MODEL.
+    The role is overridden to 'model'.
 
     Args:
       function_call_id: The id of the function call to be cancelled.
@@ -376,13 +376,13 @@ class ProcessorPart:
         name='tool_cancellation',
         response={'function_call_id': function_call_id},
     )
-    if 'role' in kwargs and kwargs['role'].upper() != 'MODEL':
+    if 'role' in kwargs and kwargs['role'].lower() != 'model':
       logging.warning(
           'Role {kwargs["role"]} is not supported for tool cancellation.'
           ' Overriding it with the model role.'
       )
     extra_args = kwargs
-    extra_args['role'] = 'MODEL'
+    extra_args['role'] = 'model'
     return cls(part, **extra_args)
 
   @classmethod

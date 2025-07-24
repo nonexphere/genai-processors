@@ -61,7 +61,7 @@ class ProcessorPartTest(parameterized.TestCase):
         role='user',
     )
     # Enforce that the role is always MODEL for tool cancellation.
-    self.assertEqual(part.role, 'MODEL')
+    self.assertEqual(part.role, 'model')
     self.assertEqual(part.tool_cancellation, 'foo')
 
     part = content_api.ProcessorPart('bar')
