@@ -588,8 +588,8 @@ END_OF_TURN = ProcessorPart('', role='user', metadata={'turn_complete': True})
 
 
 def is_end_of_turn(part: ProcessorPart) -> bool:
-  """Returns the end of turn event if the part is an end of turn event."""
-  if part.role == 'user' and part.get_metadata('turn_complete'):
+  """Returns whether the part is an end of turn event."""
+  if part.get_metadata('turn_complete'):
     return True
   return False
 
