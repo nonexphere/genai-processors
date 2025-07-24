@@ -192,9 +192,9 @@ class Window(Processor):
   encountered, `window_processor` is invoked with the accumulated content.
 
   NOTE: You can put a processor before the Window which will mark Parts with
-  `part.metadata['end_of_turn'] = true` or filter-out unwanted parts. For
+  `part.metadata['turn_complete'] = true` or filter-out unwanted parts. For
   example when detecting events in a video stream you may leave only image parts
-  and mark each as end_of_turn.
+  and mark each as turn_complete.
 
   The output of `window_processor` is propagated to the Window output, but
   unlike `LiveModelProcessor` it is not added to the prompt and not visible to

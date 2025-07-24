@@ -330,3 +330,9 @@ class _RealTimeConversationModel:
       # output.
       for c in part_to_prompt:
         self._prompt.add_part(c)
+      # Notify that the end of the turn has been reached.
+      self._output_queue.put_nowait(
+          content_api.ProcessorPart(
+              '', metadata={'turn_complete': True}, role='model'
+          )
+      )

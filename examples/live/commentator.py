@@ -932,7 +932,7 @@ def create_live_commentator(
                   'start commentating',
                   role='USER',
                   substream_name='realtime',
-                  metadata={'end_of_turn': True},
+                  metadata={'turn_complete': True},
               )
           ],
           (EventTypes.DETECTION, EventTypes.NO_DETECTION): [
@@ -940,7 +940,7 @@ def create_live_commentator(
                   'stop commentating',
                   role='USER',
                   substream_name='realtime',
-                  metadata={'end_of_turn': True},
+                  metadata={'turn_complete': True},
               )
           ],
           (EventTypes.DETECTION, EventTypes.INTERRUPTION): [
