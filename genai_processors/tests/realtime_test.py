@@ -88,7 +88,7 @@ class RealTimeConversationTest(
   async def test_realtime_single_ok(self, input_stream, output_text):
     input_stream = streams.stream_content(input_stream)
     output_parts = await streams.gather_stream(
-        realtime.LiveModelProcessor(
+        realtime.LiveProcessor(
             main_model_fake.to_processor(),
         )(input_stream)
     )
@@ -96,7 +96,7 @@ class RealTimeConversationTest(
     self.assertEqual(actual, output_text)
 
   async def test_realtime_raise_exception(self):
-    conversation_mgr = realtime.LiveModelProcessor(
+    conversation_mgr = realtime.LiveProcessor(
         turn_processor=main_model_exception_fake.to_processor()
     )
     input_stream = streams.stream_content([

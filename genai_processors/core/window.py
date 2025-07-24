@@ -18,7 +18,7 @@ When dealing with long streams (e.g. video file) or doing contigous inference on
 realtime streams one may need to slice them in-to prompts to be sent to an LLM.
 This module contains utilities for that.
 
-Also see genai_processors.core.realtime.LiveModelProcessor for bidirectional
+Also see genai_processors.core.realtime.LiveProcessor for bidirectional
 "Live" chat implementation.
 """
 
@@ -40,7 +40,7 @@ Processor = processor.Processor
 class RollingPrompt:
   """Rolling prompt (aka iterator of prompts) for conversation processors.
 
-  NOTE: This is a low level utility. Prefer using realtime.LiveModelProcessor or
+  NOTE: This is a low level utility. Prefer using realtime.LiveProcessor or
   window.Window which provide higher level abstractions.
 
   This class acts as a buffer and organizer for a continuous, "infinite" stream
@@ -197,7 +197,7 @@ class Window(Processor):
   and mark each as turn_complete.
 
   The output of `window_processor` is propagated to the Window output, but
-  unlike `LiveModelProcessor` it is not added to the prompt and not visible to
+  unlike `LiveProcessor` it is not added to the prompt and not visible to
   the consecutive `window_processor` invocations.
 
   Many instances of `window_processor` may be run concurrently, but their output

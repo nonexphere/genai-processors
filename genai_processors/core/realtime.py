@@ -15,7 +15,7 @@
 """Module to manage a real time conversation with GenAI processors.
 
 A client side hackable alternative to the Gemini Live API: wraps a turn based
-non streaming model into a bidirectional streaming API. See LiveModelProcessor
+non streaming model into a bidirectional streaming API. See LiveProcessor
 for details.
 
 genai_processors.core.live_model provides server-side bidirectional streaming
@@ -30,6 +30,7 @@ from collections.abc import AsyncIterable
 import enum
 import traceback
 
+from absl import logging
 from genai_processors import content_api
 from genai_processors import context
 from genai_processors import debug
@@ -67,7 +68,7 @@ class AudioTriggerMode(enum.StrEnum):
   FINAL_TRANSCRIPTION = 'final_transcription'
 
 
-class LiveModelProcessor(Processor):
+class LiveProcessor(Processor):
   """Converts a turn-based model into a real-time aka live processor.
 
   The `turn_processor` passed in the constructor models a single turn, i.e.
@@ -196,6 +197,22 @@ class LiveModelProcessor(Processor):
       yield part
 
     await control_loop_task
+
+
+class LiveModelProcessor(LiveProcessor):
+  """For backward compatibility we also provide LiveProcessor under this name.
+
+  Please prefer using just `LiveProcessor`.
+  """
+
+  def __init__(
+      self,
+      turn_processor: Processor,
+      duration_prompt_sec: float | None = 600,  # 10 minutes
+      trigger_model_mode: AudioTriggerMode = AudioTriggerMode.FINAL_TRANSCRIPTION,
+  ):
+    logging.warning('Please use LiveProcessor instead of LiveModelProcessor.')
+    super().__init__(turn_processor, duration_prompt_sec, trigger_model_mode)
 
 
 class _RealTimeConversationModel:
