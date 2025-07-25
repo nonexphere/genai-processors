@@ -85,7 +85,12 @@ class ProcessorPart:
               'MIME type must be specified when constructing a ProcessorPart'
               ' from bytes.'
           )
-        self._part = genai_types.Part.from_bytes(data=value, mime_type=mimetype)
+        if is_text(mimetype):
+          self._part = genai_types.Part(text=value.decode('utf-8'))
+        else:
+          self._part = genai_types.Part.from_bytes(
+              data=value, mime_type=mimetype
+          )
       case PIL.Image.Image():
         if mimetype:
           # If the mimetype is explicitly specified, ensure it is an image.
