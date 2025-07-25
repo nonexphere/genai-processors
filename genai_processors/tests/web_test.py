@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import asyncio
 from collections.abc import Sequence
 import unittest
-
 from absl.testing import absltest
 from absl.testing import parameterized
 from genai_processors import content_api
@@ -148,6 +148,18 @@ class TestFetchRequestExtractor(
           self.assertEqual(actual.text, expected.text)
         else:
           self.assertEqual(actual.bytes, expected.bytes)
+
+  async def test_streaming(self):
+    extractor = web.FetchRequestExtractor()
+
+    async def one_hello():
+      yield content_api.ProcessorPart('Hello', metadata={'turn_complete': True})
+      await asyncio.sleep(300)
+
+    async for part in extractor(one_hello()):
+      # Test that we got one part despite the input stream not being complete.
+      self.assertEqual(part.text, 'Hello')
+      break
 
 
 if __name__ == '__main__':

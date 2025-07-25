@@ -155,7 +155,7 @@ class MatchProcessor(processor.Processor):
       self._pattern = pattern
     self._substream_input = substream_input
     self._substream_output = substream_output
-    self._flush_fn = flush_fn or (lambda _: False)
+    self._flush_fn = flush_fn or content_api.is_end_of_turn
     self._remove_from_input_stream = remove_from_input_stream
     if transform:
       self._transform = transform
